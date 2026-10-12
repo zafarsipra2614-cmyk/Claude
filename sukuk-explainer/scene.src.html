@@ -1,0 +1,348 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sukuk on PSX</title>
+<style>
+@font-face{font-family:Hand;src:url(data:font/woff2;base64,__FONT__) format('woff2');font-weight:700}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#fbfaf6}
+svg{display:block}
+text{font-family:Hand;font-weight:700}
+</style></head>
+<body>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="1920" fill="#fbfaf6"/>
+  <defs id="defs"></defs>
+  <g id="world"></g>
+  <g id="pen"></g>
+</svg>
+<script>
+const DURS = __DURS__;
+const SCRIPT = __SCRIPT__;
+const INK = '#23262b', GREEN = '#1d7a4a', RED = '#c4402a', BLUE = '#2a5ca8', PAPER = '#fbfaf6';
+const NS = 'http://www.w3.org/2000/svg';
+const world = document.getElementById('world'), defs = document.getElementById('defs'), penG = document.getElementById('pen');
+function el(tag, attrs, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); (parent || world).appendChild(n); return n; }
+
+// ---------- hand-drawn geometry ----------
+function rng(seed) { let s = (seed * 2654435761) >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+let SEED = 7;
+function wobble(pts, amp = 1.6, step = 24) {
+  const r = rng(SEED++), out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], L = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const n = Math.max(1, Math.round(L / step)), nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
+    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
+      const u = k / n, end = (i === 0 && k === 0) || (i === pts.length - 2 && k === n);
+      const a = end ? 0 : (r() - 0.5) * 2 * amp;
+      out.push([x0 + (x1 - x0) * u + nx * a, y0 + (y1 - y0) * u + ny * a]);
+    }
+  }
+  return out;
+}
+function cr(p) {
+  let d = `M${p[0][0].toFixed(1)},${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+    d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+const line = (pts, amp) => cr(wobble(pts, amp));
+function rect(x0, y0, x1, y1, amp = 1.4) { // drawn as one stroke with a small overshoot past the start
+  return line([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0 - 6]], amp);
+}
+function circ(cx, cy, r, amp = 0.05, turns = 1.08, a0 = -1.9) {
+  const g = rng(SEED++), pts = [], n = Math.max(16, Math.round(r * 0.6));
+  for (let k = 0; k <= n * turns; k++) {
+    const a = a0 + (k / n) * Math.PI * 2, rr = r * (1 + (g() - 0.5) * amp * 2);
+    pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+  }
+  return cr(pts);
+}
+function ell(cx, cy, rx, ry) { const pts = []; for (let k = 0; k <= 44; k++) { const a = -2.4 + k / 40 * Math.PI * 2; pts.push([cx + Math.cos(a) * rx * (1 + 0.04 * Math.sin(k)), cy + Math.sin(a) * ry]); } return cr(pts); }
+function quad(a, c, b, n = 24) { const pts = []; for (let k = 0; k <= n; k++) { const t = k / n, u = 1 - t; pts.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); } return pts; }
+function arrowPts(pts, size = 22) { // shaft + head as subpaths, head drawn last
+  const b = pts[pts.length - 1], a = pts[pts.length - 3] || pts[0];
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const h1 = [b[0] - size * Math.cos(ang - 0.45), b[1] - size * Math.sin(ang - 0.45)];
+  const h2 = [b[0] - size * Math.cos(ang + 0.45), b[1] - size * Math.sin(ang + 0.45)];
+  return cr(wobble(pts, 1.2, 30)) + cr([h1, b, h2]);
+}
+
+// ---------- element registry ----------
+const E = {}; // id -> element record
+function P(id, d, o = {}) {
+  const n = el('path', { d, fill: 'none', stroke: o.color || INK, 'stroke-width': o.w || 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, o.parent);
+  E[id] = { id, kind: 'path', node: n, color: o.color || INK, t0: 1e9, t1: 1e9, e0: 1e9, e1: 1e9 };
+  return E[id];
+}
+function T(id, str, x, y, o = {}) {
+  const cid = 'c_' + id;
+  const cp = el('clipPath', { id: cid }, defs);
+  const cr_ = el('rect', { x: 0, y: 0, width: 0, height: 0 }, cp);
+  const n = el('text', { x, y, 'font-size': o.size || 40, fill: o.color || INK, 'text-anchor': o.anchor || 'start', 'clip-path': `url(#${cid})` }, o.parent);
+  n.textContent = str;
+  const words = str.split(/\s+/).filter(w => /[A-Za-z0-9]/.test(w)).length;
+  E[id] = { id, kind: 'text', node: n, clip: cr_, str, words, color: o.color || INK, t0: 1e9, t1: 1e9, e0: 1e9, e1: 1e9 };
+  return E[id];
+}
+// movers: an icon carried along a path
+const MOVERS = [];
+function icon(d, color, parent) { const g = el('g', { visibility: 'hidden' }, parent); el('path', { d, fill: PAPER, stroke: color, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g); return g; }
+const COIN = () => circ(0, 0, 14, 0.03, 1.05) + circ(0, 0, 7, 0.05, 1.0);
+const MINICERT = () => rect(-18, -13, 18, 13, 0.6) + line([[-10, -3], [10, -3]], 0.4) + line([[-10, 4], [4, 4]], 0.4);
+
+// ---------- the diagram (fixed layout, world units) ----------
+const SL = k => 100 + k * (880 / 6);           // slice edges on the road
+const SC = k => SL(k) + 880 / 12;             // slice centres
+function build() {
+  // PSX board (bottom)
+  P('board', rect(300, 1300, 760, 1535));
+  P('boardHead', line([[300, 1366], [760, 1366]]));
+  T('psx', 'PSX', 530, 1352, { size: 64, anchor: 'middle' });
+  T('shares', 'SHARES', 322, 1430, { size: 48 });
+  P('sharesLine', line([[520, 1420], [555, 1400], [585, 1412], [620, 1385], [650, 1398], [690, 1375], [740, 1385]], 0.8), { color: GREEN, w: 4 });
+  T('sukukRow', 'SUKUK', 322, 1505, { size: 48 });
+  T('q', '?', 630, 1508, { size: 70, color: RED, anchor: 'middle' });
+  T('psx2', 'PSX', 530, 1352, { size: 64, anchor: 'middle' });
+  T('sukukRow2', 'SUKUK', 322, 1505, { size: 48 });
+  T('q2', '?', 630, 1508, { size: 70, color: RED, anchor: 'middle' });
+  // road (asset)
+  P('roadTop', line([[100, 330], [980, 330]], 1.8));
+  P('roadBot', line([[100, 445], [980, 445]], 1.8));
+  let dash = ''; for (let x = 120; x < 960; x += 70) dash += line([[x, 388], [x + 34, 388]], 0.5);
+  P('roadMid', dash, { w: 4 });
+  // slice 1 hatch + dividers
+  let h = ''; for (let c = 100 + 330 + 18; c < 246 + 445; c += 22) {
+    const pts = []; // line x + y = c clipped to slice rect
+    const xa = Math.max(104, c - 441), xb = Math.min(242, c - 334);
+    if (xb - xa > 4) h += line([[xa, c - xa], [xb, c - xb]], 0.3);
+  }
+  P('hatch1', h, { color: GREEN, w: 3 });
+  for (let k = 1; k <= 5; k++) P('div' + k, line([[SL(k), 320], [SL(k) + 2, 455]], 1.2), { color: GREEN, w: 5 });
+  P('slArrow', arrowPts(quad([SC(0), 452], [SC(0) + 6, 478], [SC(0), 502]), 14), { color: GREEN, w: 4 });
+  for (let k = 0; k < 6; k++) {
+    const cx = SC(k), y = 512;
+    P('cert' + k, rect(cx - 55, y, cx + 55, y + 82) + line([[cx - 38, y + 24], [cx + 36, y + 24]], 0.6) + line([[cx - 38, y + 44], [cx + 14, y + 44]], 0.6) + circ(cx + 34, y + 62, 9));
+  }
+  T('sukukLbl', 'sukuk', SC(0), 650, { size: 50, anchor: 'middle', color: GREEN });
+  T('equal', 'equal slices', 540, 302, { size: 50, anchor: 'middle', color: GREEN });
+  P('m1sign', line([[165, 330], [165, 252]], 1) + rect(108, 186, 222, 250), { color: GREEN });
+  T('m1', 'M-1', 165, 233, { size: 48, anchor: 'middle', color: GREEN });
+  P('plane', line([[812, 214], [830, 205], [930, 203], [952, 210], [930, 218], [830, 222], [812, 214]], 0.6)
+    + line([[880, 205], [860, 166], [878, 166], [906, 205]], 0.6) + line([[880, 219], [862, 256], [880, 256], [906, 219]], 0.6)
+    + line([[832, 205], [818, 180], [832, 180], [850, 205]], 0.6));
+  T('airport', 'Jinnah Airport', 872, 300, { size: 44, anchor: 'middle' });
+  // investors (left) and government (right)
+  for (const [i, x] of [[0, 185], [1, 255], [2, 325]]) {
+    P('inv' + i, circ(x, 845, 21) + line([[x, 866], [x, 922]], 0.8) + line([[x - 28, 902], [x, 884], [x + 28, 902]], 0.8) + line([[x - 21, 966], [x, 922], [x + 21, 966]], 0.8));
+  }
+  T('investors', 'Investors', 255, 1018, { size: 50, anchor: 'middle' });
+  P('gov', line([[735, 832], [840, 772], [945, 832], [735, 832]], 1)
+    + [775, 815, 865, 905].map(x => line([[x, 846], [x, 944]], 0.7)).join('')
+    + line([[745, 946], [935, 946]], 0.8) + line([[733, 960], [947, 960]], 0.8), { color: BLUE });
+  T('government', 'Government', 840, 1018, { size: 50, anchor: 'middle', color: BLUE });
+  // flows
+  const moneyPts = quad([365, 838], [552, 798], [720, 838]);
+  P('money', arrowPts(moneyPts), { color: GREEN });
+  T('moneyLbl', 'money', 552, 796, { size: 46, anchor: 'middle', color: GREEN });
+  const sharePts = quad([SC(0), 600], [150, 705], [184, 812]);
+  P('share', arrowPts(sharePts, 18));
+  const carG = el('g', {}); E.car = P('car', line([[-38, 8], [-38, -6], [-22, -8], [-12, -22], [14, -22], [26, -8], [38, -6], [38, 8], [-38, 8]], 0.5) + circ(-20, 10, 8) + circ(20, 10, 8), { parent: carG, w: 4, color: BLUE });
+  const leasePts = quad([885, 452], [935, 620], [872, 765]);
+  P('lease', arrowPts(leasePts), { color: BLUE });
+  T('leaseLbl', 'lease', 760, 630, { size: 48, color: BLUE });
+  T('ijarah', 'Ijarah = lease', 878, 632, { size: 50, color: BLUE, anchor: 'end' });
+  const rentPts = quad([720, 905], [552, 945], [365, 905]);
+  P('rent', arrowPts(rentPts), { color: GREEN });
+  T('rentLbl', 'rent', 552, 992, { size: 54, anchor: 'middle', color: GREEN });
+  T('interest', 'interest', 552, 1046, { size: 44, anchor: 'middle', color: RED });
+  P('strike', line([[484, 1032], [620, 1027]], 0.8), { color: RED, w: 5 });
+  P('rentCircle', ell(552, 975, 70, 38), { color: GREEN, w: 4 });
+  // maturity clock
+  P('clock', circ(552, 1095, 55, 0.02, 1.06));
+  const nums = [['1', 552, 1076], ['3', 590, 1106], ['5', 552, 1138], ['10', 514, 1106]];
+  nums.forEach(([s, x, y], i) => T('n' + i, s, x, y, { size: 32, anchor: 'middle' }));
+  const handG = el('g', {}); E.hand = P('hand', line([[0, 0], [0, -17]], 0.2), { parent: handG, w: 4, color: RED });
+  const buyPts = quad([335, 1050], [545, 1330], [765, 1050]);
+  P('buyback', arrowPts(buyPts));
+  const backPts = quad([765, 1082], [545, 1400], [335, 1082]);
+  P('moneyBack', arrowPts(backPts), { color: GREEN });
+  // PSX side
+  const aucPts = quad([952, 880], [1070, 1160], [766, 1298]);
+  P('auction', arrowPts(aucPts));
+  P('calendar', rect(85, 1310, 245, 1410) + line([[85, 1342], [245, 1342]], 0.8) + line([[125, 1296], [125, 1324]], 0.4) + line([[205, 1296], [205, 1324]], 0.4));
+  T('dec', 'Dec 2023', 165, 1392, { size: 42, anchor: 'middle' });
+  P('cert5000', rect(72, 1438, 258, 1530) + circ(232, 1508, 10), { color: GREEN });
+  T('rs5000', 'Rs 5,000', 158, 1497, { size: 42, anchor: 'middle', color: GREEN });
+  P('broker', rect(842, 1312, 1010, 1386));
+  T('brokerLbl', 'broker', 926, 1362, { size: 44, anchor: 'middle' });
+  P('toBoard', arrowPts([[836, 1349], [802, 1350], [768, 1349]], 16));
+  P('cdc', rect(842, 1452, 1010, 1526));
+  T('cdcLbl', 'CDC', 926, 1503, { size: 46, anchor: 'middle' });
+  P('toCdc', arrowPts([[768, 1489], [802, 1490], [836, 1489]], 16));
+  for (let k = 0; k < 4; k++) { const yb = 1626 - k * 16; P('note' + k, rect(360, yb - 13, 500, yb, 0.6), { color: GREEN, w: 4 }); }
+  T('trillion', 'Rs1 trillion+', 518, 1618, { size: 52, color: GREEN });
+  P('paid', (() => { let d = ''; for (let x = 520; x < 745; x += 26) d += line([[x, 1484], [x + 13, 1484]], 0.2); return d; })(), { w: 3 });
+  P('price', line([[520, 1490], [560, 1470], [590, 1497], [630, 1466], [665, 1494], [700, 1460], [745, 1478]], 0.6), { color: RED, w: 5 });
+  T('take', 'Own a slice.', 540, -22, { size: 112, anchor: 'middle' });
+  T('take2', 'Collect the rent.', 540, 100, { size: 112, anchor: 'middle', color: GREEN });
+
+  MOVERS.push(...[0, 1, 2].map(i => ({ id: 'coinA' + i, g: icon(COIN(), GREEN), pts: moneyPts })));
+  MOVERS.push({ id: 'certA', g: icon(MINICERT(), INK), pts: sharePts });
+  MOVERS.push(...[0, 1, 2].map(i => ({ id: 'coinR' + i, g: icon(COIN(), GREEN), pts: rentPts })));
+  MOVERS.push({ id: 'certB', g: icon(MINICERT(), INK), pts: buyPts });
+  MOVERS.push(...[0, 1, 2].map(i => ({ id: 'coinB' + i, g: icon(COIN(), GREEN), pts: backPts })));
+  MOVERS.push({ id: 'certC', g: icon(MINICERT(), INK), pts: aucPts });
+  MOVERS.push({ id: 'certD', g: icon(MINICERT(), INK), pts: [[768, 1489], [836, 1489]] });
+  MOVERS.push({ id: 'car', g: carG, pts: [[560, 420], [862, 420]], persist: true, drawAt: [560, 420] });
+  MOVERS.push({ id: 'hand', g: handG, rot: true, at: [552, 1095] });
+  for (const m of MOVERS) { m.t0 = 1e9; m.t1 = 1e9; m.len = polyLen(m.pts || [[0, 0], [0, 0]]); }
+}
+function polyLen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+function polyAt(p, u) { let tgt = u * polyLen(p); for (let i = 1; i < p.length; i++) { const s = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (tgt <= s || i === p.length - 1) { const f = s ? Math.min(1, tgt / s) : 0; return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * f, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * f]; } tgt -= s; } return p[p.length - 1]; }
+
+// ---------- timeline ----------
+const GAP = 0.07;
+let clock = 0;
+const CAMS = []; // {t0,t1,to}
+const LINES = [];
+const ACTS = []; // every scheduled motion, for checks: [t0,t1,label]
+const CAM0 = { cx: 530, cy: 1418, w: 640 };
+const FULL = { cx: 540, cy: 890, w: 1080 };
+const q = {
+  wait(d) { clock += d; },
+  until(t) { clock = Math.max(clock, t); },
+  draw(id, d) {
+    const e = E[id];
+    if (d == null) d = e.kind === 'text' ? 0.18 + 0.075 * e.str.length : Math.min(1.1, Math.max(0.3, e.node.getTotalLength() / 750));
+    e.t0 = clock; e.t1 = clock + d; ACTS.push([clock, clock + d, 'draw ' + id]); clock += d + GAP;
+  },
+  erase(...ids) { for (const id of ids) { const e = E[id], d = e.kind === 'text' ? 0.28 : 0.3; e.e0 = clock; e.e1 = clock + d; ACTS.push([clock, clock + d, 'erase ' + id]); clock += d + 0.04; } clock += GAP; },
+  cam(to, d = 1.1) { CAMS.push({ t0: clock, t1: clock + d, to }); ACTS.push([clock, clock + d, 'camera']); clock += d + 0.12; },
+  move(id, d) { const m = MOVERS.find(m => m.id === id); m.t0 = clock; m.t1 = clock + d; ACTS.push([clock, clock + d, 'move ' + id]); clock += d + GAP; },
+  stream(prefix, d = 0.95, stagger = 0.24) { // three coins along one path = one flow
+    for (let i = 0; i < 3; i++) { const m = MOVERS.find(m => m.id === prefix + i); m.t0 = clock + i * stagger; m.t1 = m.t0 + d; }
+    ACTS.push([clock, clock + d + 2 * stagger, 'flow ' + prefix]); clock += d + 2 * stagger + GAP;
+  },
+};
+// when, inside line i's narration, a given word is spoken (character-proportional estimate)
+function W(i, word) { const L = LINES[i], s = SCRIPT[i].say, k = s.indexOf(word); return L.v0 + L.dur * Math.max(0, k) / s.length; }
+
+// pre: seconds of picture before the voice starts; post: hold after the voice
+const SCENES = [
+  /* 0 hook */ [1.9, 0.7, (i) => { q.draw('board', 0.9); q.draw('boardHead', 0.3); q.draw('psx'); q.draw('shares'); q.draw('sharesLine', 0.5); q.until(W(i, 'But') - 0.1); q.draw('sukukRow'); q.until(W(i, 'sukuk') - 0.15); q.draw('q', 0.35); }],
+  /* 1 */ [2.6, 0.8, (i) => { q.erase('q', 'sukukRow', 'sharesLine', 'shares', 'psx'); q.cam(FULL, 1.0); q.cam({ cx: 540, cy: 410, w: 980 }, 1.1); q.draw('roadTop', 0.6); q.draw('roadBot', 0.6); q.until(W(i, 'stretch')); q.draw('roadMid', 0.7); }],
+  /* 2 */ [1.2, 0.6, (i) => { q.cam({ cx: 300, cy: 500, w: 660 }, 0.9); q.draw('div1', 0.3); q.draw('hatch1', 0.6); q.until(W(i, 'certificate') - 0.2); q.draw('slArrow', 0.3); q.draw('cert0', 0.8); q.until(W(i, 'share') - 0.2); q.draw('sukukLbl'); }],
+  /* 3 */ [1.2, 0.7, (i) => { q.cam({ cx: 540, cy: 430, w: 1000 }, 0.9); for (let k = 2; k <= 5; k++) q.draw('div' + k, 0.22); for (let k = 1; k < 6; k++) q.draw('cert' + k, 0.42); q.until(W(i, 'equal') - 0.2); q.draw('equal'); }],
+  /* 4 */ [1.7, 0.9, (i) => { q.cam({ cx: 540, cy: 400, w: 1080 }, 0.9); q.draw('m1sign', 0.6); q.until(W(i, 'M 1') - 0.3); q.draw('m1', 0.35); q.until(W(i, 'Jinnah') - 0.9); q.draw('plane', 0.8); q.draw('airport'); }],
+  /* 5 */ [2.9, 0.9, (i) => {
+    q.erase('equal', 'airport', 'sukukLbl'); q.cam({ cx: 540, cy: 720, w: 1080 }, 1.1);
+    q.draw('inv0', 0.4); q.draw('inv1', 0.4); q.draw('inv2', 0.4); q.draw('investors'); q.draw('gov', 0.9); q.draw('government');
+    q.until(W(i, 'money') - 0.2); q.draw('money', 0.6); q.stream('coinA'); q.draw('moneyLbl');
+    q.until(W(i, 'share') - 0.3); q.draw('share', 0.6); q.move('certA', 0.9);
+  }],
+  /* 6 */ [1.6, 0.8, (i) => { q.cam({ cx: 610, cy: 640, w: 900 }, 1.0); q.draw('car', 0.5); q.until(W(i, 'needs') - 0.1); q.move('car', 1.3); q.until(W(i, 'leases') - 0.3); q.draw('lease', 0.7); q.draw('leaseLbl'); }],
+  /* 7 */ [1.3, 0.9, (i) => { q.erase('moneyLbl'); q.cam({ cx: 560, cy: 890, w: 880 }, 1.0); q.until(W(i, 'pays') - 0.4); q.draw('rent', 0.6); q.stream('coinR'); q.draw('rentLbl'); }],
+  /* 8 */ [0.7, 0.8, (i) => { q.erase('leaseLbl'); q.until(W(i, 'rent') - 0.2); q.draw('rentCircle', 0.6); q.until(W(i, 'interest') - 0.3); q.draw('interest'); q.draw('strike', 0.35); }],
+  /* 9 */ [2.6, 1.0, (i) => { q.erase('strike', 'interest', 'rentCircle'); q.cam({ cx: 760, cy: 640, w: 700 }, 1.0); q.until(W(i, 'Ijarah means') - 0.3); q.draw('ijarah'); }],
+  /* 10 */ [2.7, 0.5, (i) => { q.erase('ijarah'); q.cam({ cx: 552, cy: 1090, w: 840 }, 1.0); q.draw('clock', 0.6);
+    q.until(W(i, 'one') - 0.1); q.draw('n0', 0.2); q.draw('n1', 0.2); q.draw('n2', 0.2); q.draw('n3', 0.25); q.move('hand', 1.4); q.until(W(i, 'buys') - 0.2); q.draw('buyback', 0.6); q.move('certB', 0.9); }],
+  /* 11 */ [0.2, 1.0, (i) => { q.draw('moneyBack', 0.6); q.stream('coinB'); }],
+  /* 12 */ [2.4, 0.6, (i) => { q.erase('n0', 'n1', 'n2', 'n3'); q.cam(FULL, 1.1); q.until(W(i, 'stock') - 0.3); q.draw('psx2'); q.draw('sukukRow2'); q.draw('q2', 0.3); }],
+  /* 13 */ [1.4, 0.8, (i) => { q.cam({ cx: 330, cy: 1420, w: 720 }, 1.1); q.until(W(i, 'December') - 0.2); q.draw('calendar', 0.6); q.draw('dec'); q.until(W(i, 'auctioned') - 0.6); q.cam({ cx: 560, cy: 1250, w: 1060 }, 0.9); q.draw('auction', 0.7); q.move('certC', 1.0); }],
+  /* 14 */ [1.2, 0.8, (i) => { q.erase('dec'); q.cam({ cx: 330, cy: 1430, w: 720 }, 0.9); q.draw('cert5000', 0.6); q.until(W(i, 'five') - 0.2); q.draw('rs5000'); }],
+  /* 15 */ [1.3, 0.9, (i) => { q.erase('rs5000'); q.cam({ cx: 600, cy: 1420, w: 880 }, 1.0); q.draw('broker', 0.5); q.draw('brokerLbl'); q.until(W(i, 'C D C') - 0.2); q.draw('cdc', 0.5); q.draw('cdcLbl'); q.until(W(i, 'buy') - 0.2); q.draw('toBoard', 0.35); q.draw('toCdc', 0.35); q.move('certD', 0.6); }],
+  /* 16 */ [1.4, 0.8, (i) => { q.erase('brokerLbl', 'cdcLbl'); q.cam({ cx: 540, cy: 1470, w: 820 }, 0.9); for (let k = 0; k < 4; k++) q.draw('note' + k, 0.3); q.until(W(i, 'one trillion') - 0.4); q.draw('trillion'); }],
+  /* 17 */ [1.2, 1.0, (i) => { q.erase('trillion', 'q2'); q.draw('paid', 0.5); q.until(W(i, 'price') - 0.3); q.draw('price', 0.9); }],
+  /* 18 */ [1.6, 0.4, (i) => { q.cam({ cx: 540, cy: 770, w: 1250 }, 1.4); q.until(LINES[i].v1 + 0.4); q.erase('m1', 'investors', 'government', 'rentLbl', 'sukukRow2', 'psx2'); q.draw('take', 0.9); q.draw('take2', 1.2); q.wait(2.6); }],
+];
+function schedule() {
+  clock = 0;
+  for (let i = 0; i < SCENES.length; i++) {
+    const [pre, post0, fn] = SCENES[i], slot = clock, post = i === SCENES.length - 1 ? post0 : Math.max(0.4, post0 - 0.3);
+    LINES[i] = { i, slot, v0: slot + pre, dur: DURS[i], v1: slot + pre + DURS[i] };
+    fn(i);
+    clock = Math.max(LINES[i].v1 + post, clock);
+    LINES[i].end = clock;
+  }
+  E.hand.t0 = E.clock.t1; E.hand.t1 = E.clock.t1 + 0.15; // the hand appears with the clock face
+  window.TOTAL = clock;
+}
+
+// ---------- rendering a moment ----------
+const ease = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+const clamp = u => Math.max(0, Math.min(1, u));
+function camAt(t) {
+  let c = CAM0;
+  for (const k of CAMS) {
+    if (t >= k.t1) { c = k.to; continue; }
+    if (t > k.t0) { const u = ease((t - k.t0) / (k.t1 - k.t0)); const s0 = 1080 / c.w, s1 = 1080 / k.to.w, s = s0 * Math.pow(s1 / s0, u);
+      // keep the screen motion straight: interpolate the focus in screen-weighted space
+      const w0 = 1 / s0, w1 = 1 / s1, f = (1 / s - w0) / ((w1 - w0) || 1);
+      const g = Math.abs(w1 - w0) < 1e-6 ? u : f;
+      return { cx: c.cx + (k.to.cx - c.cx) * g, cy: c.cy + (k.to.cy - c.cy) * g, s }; }
+    break;
+  }
+  return { cx: c.cx, cy: c.cy, s: 1080 / c.w };
+}
+const toScreen = (c, x, y) => [(x - c.cx) * c.s + 540, (y - c.cy) * c.s + 860];
+let penIcon;
+function seek(t) {
+  const c = camAt(t);
+  world.setAttribute('transform', `translate(540 860) scale(${c.s}) translate(${-c.cx} ${-c.cy})`);
+  let pen = null;
+  for (const id in E) {
+    const e = E[id];
+    const p = clamp((t - e.t0) / (e.t1 - e.t0)), qd = clamp((t - e.e0) / (e.e1 - e.e0));
+    const drawing = t > e.t0 && t < e.t1, erasing = t > e.e0 && t < e.e1;
+    if (e.kind === 'path') {
+      const L = e.len, a = L * qd, b = L * p;
+      if (b - a < 0.5) { e.node.setAttribute('visibility', 'hidden'); }
+      else { e.node.setAttribute('visibility', 'visible'); e.node.setAttribute('stroke-dasharray', `${(b - a).toFixed(2)} ${(2 * L + 10).toFixed(1)}`); e.node.setAttribute('stroke-dashoffset', (-a).toFixed(2)); }
+      if (drawing || erasing) { const pt = e.node.getPointAtLength(drawing ? b : a); const m = e.node.getCTM(); pen = { x: m.a * pt.x + m.c * pt.y + m.e, y: m.b * pt.x + m.d * pt.y + m.f, color: e.color }; }
+    } else {
+      const bb = e.bb, x0 = bb.x - 8, W = bb.width + 16;
+      const xa = x0 + W * qd, xb = x0 + W * p;
+      e.clip.setAttribute('x', xa); e.clip.setAttribute('y', bb.y - 10); e.clip.setAttribute('height', bb.height + 20); e.clip.setAttribute('width', Math.max(0, xb - xa));
+      if (drawing || erasing) { const [sx, sy] = toScreen(c, drawing ? xb : xa, bb.y + bb.height * (0.55 + 0.25 * Math.sin(t * 38))); pen = { x: sx, y: sy, color: e.color }; }
+    }
+  }
+  for (const m of MOVERS) {
+    if (m.rot) { const u = clamp((t - m.t0) / (m.t1 - m.t0)); m.g.setAttribute('transform', `translate(${m.at[0]} ${m.at[1]}) rotate(${(360 * ease(u)).toFixed(2)})`); continue; }
+    if (m.persist) { const u = ease(clamp((t - m.t0) / (m.t1 - m.t0))); const [x, y] = polyAt(m.pts, u); m.g.setAttribute('transform', `translate(${x} ${y})`); continue; }
+    if (t <= m.t0 || t >= m.t1) { m.g.setAttribute('visibility', 'hidden'); continue; }
+    const u = ease((t - m.t0) / (m.t1 - m.t0)), [x, y] = polyAt(m.pts, u);
+    m.g.setAttribute('visibility', 'visible'); m.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  }
+  if (pen) { penIcon.setAttribute('visibility', 'visible'); penIcon.setAttribute('transform', `translate(${pen.x.toFixed(1)} ${pen.y.toFixed(1)}) rotate(28)`); penIcon.querySelector('.cap').setAttribute('fill', pen.color); }
+  else penIcon.setAttribute('visibility', 'hidden');
+}
+function makePen() {
+  penIcon = el('g', { visibility: 'hidden' }, penG);
+  el('path', { d: 'M0,0 L-6,-15 L6,-15 Z', fill: INK }, penIcon);
+  el('rect', { class: 'cap', x: -10, y: -34, width: 20, height: 19, rx: 3, fill: INK }, penIcon);
+  el('rect', { x: -13, y: -170, width: 26, height: 137, rx: 6, fill: '#e9e6dd', stroke: '#8d8a82', 'stroke-width': 2 }, penIcon);
+  el('rect', { x: -6, y: -160, width: 5, height: 118, rx: 2, fill: '#fff', opacity: 0.8 }, penIcon);
+}
+
+// ---------- checks used before rendering ----------
+function visibleWords(t) {
+  const c = camAt(t); let n = 0; const names = [];
+  for (const id in E) { const e = E[id]; if (e.kind !== 'text') continue;
+    const p = clamp((t - e.t0) / (e.t1 - e.t0)), qd = clamp((t - e.e0) / (e.e1 - e.e0));
+    if (p - qd <= 0.02) continue;
+    const [x, y] = toScreen(c, e.bb.x + e.bb.width / 2, e.bb.y + e.bb.height / 2);
+    if (x < 0 || x > 1080 || y < 0 || y > 1920) continue;
+    n += e.words; names.push(e.str); }
+  return { n, names };
+}
+window.seek = seek;
+window.ready = document.fonts.ready.then(() => {
+  build(); makePen();
+  for (const id in E) { const e = E[id]; if (e.kind === 'path') e.len = e.node.getTotalLength(); else e.bb = e.node.getBBox(); }
+  schedule(); seek(0);
+  window.LINES = LINES; window.ACTS = ACTS; window.visibleWords = visibleWords;
+  window.TEXTS = Object.values(E).filter(e => e.kind === 'text').map(e => ({ id: e.id, str: e.str, words: e.words, t1: e.t1, e0: e.e0 }));
+  return true;
+});
+</script>
+</body></html>

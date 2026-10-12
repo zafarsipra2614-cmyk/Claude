@@ -1,0 +1,167 @@
+[
+ {
+  "sub": "You know how shares work. But what is a sukuk, on the Pakistan Stock Exchange?",
+  "say": "You know how shares work. But what is a sukuk, on the Pakistan Stock Exchange?",
+  "chunks": [
+   "You know how shares work.",
+   "But what is a sukuk,",
+   "on the Pakistan Stock Exchange?"
+  ]
+ },
+ {
+  "sub": "Start with something real. Say, a stretch of motorway.",
+  "say": "Start with something real. Say, a stretch of motorway.",
+  "chunks": [
+   "Start with something real.",
+   "Say, a stretch of motorway."
+  ]
+ },
+ {
+  "sub": "A sukuk is a certificate that gives you a share in owning an asset like this.",
+  "say": "A sukuk is a certificate that gives you a share in owning an asset like this.",
+  "chunks": [
+   "A sukuk is a certificate",
+   "that gives you a share",
+   "in owning an asset like this."
+  ]
+ },
+ {
+  "sub": "Every certificate has the same value, so each one is an equal slice.",
+  "say": "Every certificate has the same value, so each one is an equal slice.",
+  "chunks": [
+   "Every certificate has the same value,",
+   "so each one is an equal slice."
+  ]
+ },
+ {
+  "sub": "In Pakistan, government sukuk have used assets like the M-1 motorway and Jinnah International Airport.",
+  "say": "In Pakistan, government sukuk have used assets like the M 1 motorway, and Jinnah International Airport.",
+  "chunks": [
+   "In Pakistan, government sukuk have used",
+   "assets like the M-1 motorway",
+   "and Jinnah International Airport."
+  ]
+ },
+ {
+  "sub": "Here's how it works. Investors pay money, and the government sells them a share of the asset.",
+  "say": "Here's how it works. Investors pay money, and the government sells them a share of the asset.",
+  "chunks": [
+   "Here's how it works.",
+   "Investors pay money,",
+   "and the government sells them",
+   "a share of the asset."
+  ]
+ },
+ {
+  "sub": "But the government still needs the motorway, so it leases it back.",
+  "say": "But the government still needs the motorway, so it leases it back.",
+  "chunks": [
+   "But the government still needs the motorway,",
+   "so it leases it back."
+  ]
+ },
+ {
+  "sub": "For using it, the government pays rent to the sukuk holders.",
+  "say": "For using it, the government pays rent to the sukuk holders.",
+  "chunks": [
+   "For using it, the government",
+   "pays rent to the sukuk holders."
+  ]
+ },
+ {
+  "sub": "That's the big idea. Your return is rent from an asset, not interest on a loan.",
+  "say": "That's the big idea. Your return is rent from an asset, not interest on a loan.",
+  "chunks": [
+   "That's the big idea.",
+   "Your return is rent from an asset,",
+   "not interest on a loan."
+  ]
+ },
+ {
+  "sub": "That's why it's called an Ijarah sukuk. Ijarah means lease.",
+  "say": "That's why it's called an Ijarah sukuk. Ijarah means lease.",
+  "chunks": [
+   "That's why it's called an Ijarah sukuk.",
+   "Ijarah means lease."
+  ]
+ },
+ {
+  "sub": "When the term ends, after one, three, five or ten years, the government buys the asset back,",
+  "say": "When the term ends, after one, three, five, or ten years, the government buys the asset back,",
+  "chunks": [
+   "When the term ends,",
+   "after one, three, five or ten years,",
+   "the government buys the asset back,"
+  ]
+ },
+ {
+  "sub": "and investors get their money back.",
+  "say": "and investors get their money back.",
+  "chunks": [
+   "and investors get their money back."
+  ]
+ },
+ {
+  "sub": "So where does the stock exchange come in?",
+  "say": "So where does the stock exchange come in?",
+  "chunks": [
+   "So where does",
+   "the stock exchange come in?"
+  ]
+ },
+ {
+  "sub": "Since December 2023, Government of Pakistan Ijarah Sukuk have been auctioned through PSX.",
+  "say": "Since December twenty twenty-three, Government of Pakistan Ijarah Sukuk have been auctioned through P S X.",
+  "chunks": [
+   "Since December 2023,",
+   "Government of Pakistan Ijarah Sukuk",
+   "have been auctioned through PSX."
+  ]
+ },
+ {
+  "sub": "They come in units of 5,000 rupees, small enough for a retail investor.",
+  "say": "They come in units of five thousand rupees, small enough for a retail investor.",
+  "chunks": [
+   "They come in units of 5,000 rupees,",
+   "small enough for a retail investor."
+  ]
+ },
+ {
+  "sub": "Open a brokerage account and a CDC sub-account, and you can buy and sell them like shares.",
+  "say": "Open a brokerage account and a C D C sub-account, and you can buy and sell them like shares.",
+  "chunks": [
+   "Open a brokerage account",
+   "and a CDC sub-account,",
+   "and you can buy and sell them",
+   "like shares."
+  ]
+ },
+ {
+  "sub": "By September 2024, these PSX auctions had raised over one trillion rupees.",
+  "say": "By September twenty twenty-four, these P S X auctions had raised over one trillion rupees.",
+  "chunks": [
+   "By September 2024,",
+   "these PSX auctions had raised",
+   "over one trillion rupees."
+  ]
+ },
+ {
+  "sub": "One thing to watch: sell before maturity, and the price may be higher or lower than you paid.",
+  "say": "One thing to watch. Sell before maturity, and the price may be higher, or lower, than you paid.",
+  "chunks": [
+   "One thing to watch:",
+   "sell before maturity,",
+   "and the price may be higher",
+   "or lower than you paid."
+  ]
+ },
+ {
+  "sub": "So a sukuk is simple. You own a slice of a real asset, and it pays you rent.",
+  "say": "So a sukuk is simple. You own a slice of a real asset, and it pays you rent.",
+  "chunks": [
+   "So a sukuk is simple.",
+   "You own a slice of a real asset,",
+   "and it pays you rent."
+  ]
+ }
+]

@@ -1,0 +1,203 @@
+1
+00:00:01,900 --> 00:00:03,483
+You know how shares work.
+
+2
+00:00:03,483 --> 00:00:05,013
+But what is a sukuk,
+
+3
+00:00:05,013 --> 00:00:06,961
+on the Pakistan Stock Exchange?
+
+4
+00:00:09,711 --> 00:00:11,342
+Start with something real.
+
+5
+00:00:11,342 --> 00:00:13,285
+Say, a stretch of motorway.
+
+6
+00:00:14,735 --> 00:00:16,265
+A sukuk is a certificate
+
+7
+00:00:16,265 --> 00:00:17,795
+that gives you a share
+
+8
+00:00:17,795 --> 00:00:19,637
+in owning an asset like this.
+
+9
+00:00:20,987 --> 00:00:23,365
+Every certificate has the same value,
+
+10
+00:00:23,365 --> 00:00:25,542
+so each one is an equal slice.
+
+11
+00:00:27,392 --> 00:00:30,140
+In Pakistan, government sukuk have used
+
+12
+00:00:30,140 --> 00:00:32,112
+assets like the M-1 motorway
+
+13
+00:00:32,112 --> 00:00:34,687
+and Jinnah International Airport.
+
+14
+00:00:37,937 --> 00:00:39,167
+Here's how it works.
+
+15
+00:00:39,167 --> 00:00:40,394
+Investors pay money,
+
+16
+00:00:40,394 --> 00:00:42,176
+and the government sells them
+
+17
+00:00:42,176 --> 00:00:43,717
+a share of the asset.
+
+18
+00:00:47,627 --> 00:00:49,958
+But the government still needs the motorway,
+
+19
+00:00:49,958 --> 00:00:51,488
+so it leases it back.
+
+20
+00:00:52,896 --> 00:00:54,588
+For using it, the government
+
+21
+00:00:54,588 --> 00:00:56,711
+pays rent to the sukuk holders.
+
+22
+00:00:57,761 --> 00:00:59,041
+That's the big idea.
+
+23
+00:00:59,041 --> 00:01:01,218
+Your return is rent from an asset,
+
+24
+00:01:01,218 --> 00:01:02,941
+not interest on a loan.
+
+25
+00:01:05,791 --> 00:01:08,204
+That's why it's called an Ijarah sukuk.
+
+26
+00:01:08,204 --> 00:01:09,630
+Ijarah means lease.
+
+27
+00:01:12,780 --> 00:01:14,013
+When the term ends,
+
+28
+00:01:14,013 --> 00:01:16,350
+after one, three, five or ten years,
+
+29
+00:01:16,350 --> 00:01:18,872
+the government buys the asset back,
+
+30
+00:01:19,222 --> 00:01:21,380
+and investors get their money back.
+
+31
+00:01:24,230 --> 00:01:25,160
+So where does
+
+32
+00:01:25,160 --> 00:01:26,690
+the stock exchange come in?
+
+33
+00:01:28,126 --> 00:01:29,731
+Since December 2023,
+
+34
+00:01:29,731 --> 00:01:32,540
+Government of Pakistan Ijarah Sukuk
+
+35
+00:01:32,540 --> 00:01:35,358
+have been auctioned through PSX.
+
+36
+00:01:36,988 --> 00:01:39,413
+They come in units of 5,000 rupees,
+
+37
+00:01:39,413 --> 00:01:42,089
+small enough for a retail investor.
+
+38
+00:01:43,639 --> 00:01:45,254
+Open a brokerage account
+
+39
+00:01:45,254 --> 00:01:46,735
+and a CDC sub-account,
+
+40
+00:01:46,735 --> 00:01:48,865
+and you can buy and sell them
+
+41
+00:01:48,865 --> 00:01:49,745
+like shares.
+
+42
+00:01:51,495 --> 00:01:53,071
+By September 2024,
+
+43
+00:01:53,071 --> 00:01:55,610
+these PSX auctions had raised
+
+44
+00:01:55,610 --> 00:01:58,049
+over one trillion rupees.
+
+45
+00:01:59,499 --> 00:02:00,751
+One thing to watch:
+
+46
+00:02:00,751 --> 00:02:02,134
+sell before maturity,
+
+47
+00:02:02,134 --> 00:02:03,964
+and the price may be higher
+
+48
+00:02:03,964 --> 00:02:05,678
+or lower than you paid.
+
+49
+00:02:07,728 --> 00:02:09,258
+So a sukuk is simple.
+
+50
+00:02:09,258 --> 00:02:11,688
+You own a slice of a real asset,
+
+51
+00:02:11,688 --> 00:02:13,218
+and it pays you rent.
