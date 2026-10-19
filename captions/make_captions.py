@@ -44,9 +44,30 @@ def probe_size(path):
 def transcribe(path, model_name):
     from faster_whisper import WhisperModel
 
+    import numpy as np
+
+    # decode with ffmpeg (avoids PyAV version issues): 16 kHz mono float32
+    pcm = subprocess.check_output([
+        "ffmpeg", "-loglevel", "error", "-i", path, "-vn", "-ac", "1", "-ar", "16000",
+        "-f", "s16le", "-",
+    ])
+    audio = np.frombuffer(pcm, np.int16).astype(np.float32) / 32768.0
+
     model = WhisperModel(model_name, device="cpu", compute_type="int8")
-    segments, _ = model.transcribe(path, word_timestamps=True, vad_filter=True)
-    return [(w.start, w.end, w.word.strip()) for s in segments for w in s.words if w.word.strip()]
+    segments, _ = model.transcribe(audio, word_timestamps=True, vad_filter=True)
+    words = []
+    for s in segments:
+        for w in s.words:
+            text = w.word.strip()
+            if not text:
+                continue
+            # glue fragments like "self" + "-awareness" back together
+            if words and (text[0] in "-'" or not w.word.startswith(" ")):
+                st, _, prev = words[-1]
+                words[-1] = (st, w.end, prev + text)
+            else:
+                words.append((w.start, w.end, text))
+    return words
 
 
 def group(words):
