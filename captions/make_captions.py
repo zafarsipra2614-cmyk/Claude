@@ -130,12 +130,12 @@ def build_ass(groups, W, H):
     px_per_unit = size / (os2.usWinAscent + os2.usWinDescent)
     font = ImageFont.truetype(str(FONT_FILE), round(upem * px_per_unit))
     outline = max(2, round(size * 0.08))
-    space = font.getlength(" ") * 2.2
-    line_h = size * 1.35
-    pad_x, pad_y = size * 0.28, size * 0.2
+    space = size * 0.3  # just enough room for the red box padding
+    line_h = size * 1.05
+    pad_x, pad_y = size * 0.14, size * 0.12
     radius = size * 0.2
     centre_y = H * 0.70  # lower third, like the reference
-    max_w = W * 0.86
+    max_w = min(W, H * 9 / 16) * 0.92  # stay inside a 9:16 phone crop
     # libass lines start at usWinAscent; Pillow's start at hhea ascent
     cap_h = font.getbbox("H")[3] - font.getbbox("H")[1]
     cap_top = (os2.usWinAscent - os2.sCapHeight) * px_per_unit
