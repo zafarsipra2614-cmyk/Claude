@@ -237,7 +237,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 #intro .stage { background: var(--surface); animation-delay: 2.38s; display: grid; place-items: center; overflow: hidden; }
 @keyframes wipe { to { clip-path: polygon(140% 0, 200% 0, 200% 100%, 100% 100%); } }
 .stage-in { display: flex; flex-direction: column; align-items: center; gap: 22px; }
-.hero-mark { position: relative; width: 180px; height: 180px; margin-block: 40px 30px; }
+.hero-mark { position: relative; width: 180px; height: 180px; }
 .hero-mark svg { width: 100%; height: 100%; overflow: visible; }
 .hero-mark .pc { transform-box: fill-box; transform-origin: center; opacity: 0; animation: fly .78s cubic-bezier(.2, .9, .25, 1.12) forwards; }
 .hero-mark .pc1 { --fx: -900px; --fy: 2100px; animation-delay: .15s; }
@@ -298,7 +298,6 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
     <div class="stage-in">
       <div class="hero-mark">
         <div class="flash"></div>
-        <svg class="halo" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47"/></svg>
         <svg viewBox="390 390 820 820">
           <g stroke-linejoin="round" stroke-width="14">
             <polygon class="pc pc1" points="600,523 832,523 652,950 418,950" style="fill:var(--logo-g);stroke:var(--logo-g)"/>
