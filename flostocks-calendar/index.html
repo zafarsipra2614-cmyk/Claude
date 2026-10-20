@@ -59,7 +59,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .bar-in, .wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .bar-in { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; padding-block: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
-.brand-logo { width: 52px; height: 52px; display: block; }
+.brand-logo { width: 54px; height: 54px; display: grid; place-items: center; background: var(--surface); border: var(--bw) solid var(--edge); border-radius: var(--r); box-shadow: var(--hard); transition: transform .08s, box-shadow .08s; }
+.brand-logo:hover { transform: translate(-1px, -1px) rotate(-3deg); box-shadow: 5px 5px 0 var(--hard-c); }
+.brand-logo svg { width: 40px; height: 40px; overflow: visible; }
 .brand-name { font-family: var(--f-display); font-weight: 900; font-style: italic; font-stretch: 122%; font-size: 22px; letter-spacing: .01em; line-height: 1; }
 .brand-sub { display: inline-block; font-family: var(--f-body); font-style: normal; font-weight: 800; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; margin-top: 5px; background: var(--green-soft); color: var(--on-pill); border: 2px solid var(--edge); padding: 1px 6px; border-radius: 4px; }
 .month-nav { display: flex; align-items: center; gap: 8px; }
@@ -267,6 +269,13 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
         <polygon points="805,763 1036,763 852,1190 620,1190" style="fill:var(--logo-g);stroke:var(--logo-g)"/>
       </g>
     </symbol>
+    <symbol id="logo-nb" viewBox="390 390 820 820">
+      <g stroke-linejoin="round" stroke-width="26" style="stroke:var(--edge)">
+        <polygon points="600,523 832,523 652,950 418,950" style="fill:var(--logo-g)"/>
+        <polygon points="958,410 1182,410 1058,702 832,702" style="fill:var(--logo-k)"/>
+        <polygon points="805,763 1036,763 852,1190 620,1190" style="fill:var(--logo-g)"/>
+      </g>
+    </symbol>
     <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 4.6V8l2.3 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.4" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
@@ -309,7 +318,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 <header class="bar">
   <div class="bar-in">
     <div class="brand">
-      <svg class="brand-logo" role="img" aria-label="Flostocks"><use href="#logo"/></svg>
+      <div class="brand-logo" role="img" aria-label="Flostocks"><svg aria-hidden="true"><use href="#logo-nb"/></svg></div>
     </div>
     <div class="month-nav">
       <button class="icon-btn" id="prev" aria-label="Previous month"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
