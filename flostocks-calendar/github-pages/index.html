@@ -330,8 +330,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
       <button class="icon-btn" id="next" aria-label="Next month"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button class="ghost" id="today">Today</button>
     </div>
-    <button class="primary" id="add-top" hidden><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add content</button>
-    <button class="ghost" id="key-btn">Unlock editing</button>
+    <button class="primary" id="add-top"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add content</button>
   </div>
 </header>
 
@@ -381,40 +380,19 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
   </form>
 </dialog>
 
-<!-- Editing key -->
-<dialog id="key-dlg">
-  <form class="dlg" id="key-form" novalidate>
-    <div class="dlg-head">
-      <h3>Unlock editing</h3>
-      <button type="button" class="x-btn" id="key-close" aria-label="Close">✕</button>
-    </div>
-    <div class="dlg-body">
-      <p style="margin:0">Paste your GitHub access key to add and edit posts on this device. It stays in this browser only. Anyone can view the calendar without a key.</p>
-      <div class="field"><label class="lbl" for="key-input">GitHub access key</label><input type="text" id="key-input" autocomplete="off" spellcheck="false" placeholder="github_pat_..."></div>
-      <div class="err" id="key-err" hidden></div>
-    </div>
-    <div class="dlg-foot">
-      <button type="button" class="ghost" id="key-cancel">Cancel</button>
-      <button type="submit" class="primary">Unlock</button>
-    </div>
-  </form>
-</dialog>
-
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* =====================================================================
-   Where the calendar keeps its posts: a posts.json file in this GitHub
-   repository, on its own branch so saving doesn't rebuild the site.
+   The calendar saves its posts in this Supabase project. The key below
+   is the public "anon" key: it's meant to be in the page.
    ===================================================================== */
-const GITHUB_OWNER = "zafarsipra2614-cmyk";
-const GITHUB_REPO = "Content-Calendar";
-const DATA_BRANCH = "calendar-data";
-const DATA_FILE = "posts.json";
+const SUPABASE_URL = "https://gstdjtjvlncjmyshhelx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzdGRqdGp2bG5jam15c2hoZWx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQ3NzUsImV4cCI6MjEwODE1MDc3NX0.UZTfVQ5OyvWFVVmLmkad0EVrC4CTsKEwxuscYjAkUn8";
 
 (() => {
-  const API = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO;
-  const KEY_STORE = "flostocks-calendar-github-key";
+  const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
   const PLATFORMS = [
     { k: "instagram", label: "Instagram", short: "IG" },
     { k: "facebook", label: "Facebook", short: "FB" },
@@ -443,10 +421,9 @@ const DATA_FILE = "posts.json";
 
   const state = {
     posts: new Map(),
-    sha: null,
     month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
     selected: ymd(new Date()),
-    key: null, canEdit: false, ready: false, introDone: false, detailId: null,
+    canEdit: true, ready: false, introDone: false, detailId: null, channel: null,
   };
 
   /* ---------- Intro ---------- */
@@ -472,60 +449,7 @@ const DATA_FILE = "posts.json";
   function markReady() { if (state.ready) return; state.ready = true; if (state.introDone) hideLoader(); }
   function notice(msg) { const n = $("notice"); n.textContent = msg || ""; n.hidden = !msg; }
 
-  /* ---------- GitHub storage ---------- */
-  function b64ToText(b64) { const bin = atob(b64.replace(/\s/g, "")); const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
-  function textToB64(text) { const bytes = new TextEncoder().encode(text); let bin = ""; bytes.forEach((b) => { bin += String.fromCharCode(b); }); return btoa(bin); }
-  function headers(key) {
-    const h = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
-    if (key) h.Authorization = "Bearer " + key;
-    return h;
-  }
-  class GhError extends Error { constructor(status, message) { super(message); this.status = status; } }
-
-  async function readFile() {
-    const r = await fetch(API + "/contents/" + DATA_FILE + "?ref=" + encodeURIComponent(DATA_BRANCH) + "&t=" + Date.now(), { headers: headers(state.key), cache: "no-store" });
-    if (r.status === 404) return { posts: [], sha: null };
-    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new GhError(r.status, j.message || "GitHub returned " + r.status); }
-    const j = await r.json();
-    let data = {};
-    try { data = JSON.parse(b64ToText(j.content || "")); } catch (_) { data = {}; }
-    return { posts: Array.isArray(data.posts) ? data.posts : [], sha: j.sha };
-  }
-  async function writeFile(posts, sha, message) {
-    const sorted = [...posts].sort((a, b) => a.date.localeCompare(b.date) || (a.time || "99").localeCompare(b.time || "99"));
-    const body = { message, content: textToB64(JSON.stringify({ posts: sorted }, null, 2) + "\n"), branch: DATA_BRANCH };
-    if (sha) body.sha = sha;
-    const r = await fetch(API + "/contents/" + DATA_FILE, { method: "PUT", headers: { ...headers(state.key), "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new GhError(r.status, j.message || "GitHub returned " + r.status); }
-    const j = await r.json();
-    return j.content && j.content.sha;
-  }
-  async function ensureBranch() {
-    const r = await fetch(API + "/branches/" + encodeURIComponent(DATA_BRANCH), { headers: headers(state.key), cache: "no-store" });
-    if (r.ok) return;
-    if (r.status !== 404) throw new GhError(r.status, "Couldn't check the data branch.");
-    const repo = await (await fetch(API, { headers: headers(state.key), cache: "no-store" })).json();
-    const base = await (await fetch(API + "/git/ref/heads/" + repo.default_branch, { headers: headers(state.key), cache: "no-store" })).json();
-    const c = await fetch(API + "/git/refs", { method: "POST", headers: { ...headers(state.key), "Content-Type": "application/json" }, body: JSON.stringify({ ref: "refs/heads/" + DATA_BRANCH, sha: base.object.sha }) });
-    if (!c.ok && c.status !== 422) throw new GhError(c.status, "Couldn't create the data branch.");
-  }
-  // Apply a change on top of the latest saved posts, retrying if someone else saved in between.
-  async function mutate(change, message) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const fresh = await readFile().catch(async (e) => { if (e.status === 404) { await ensureBranch(); return { posts: [], sha: null }; } throw e; });
-      const posts = change(fresh.posts.map((p) => ({ ...p })));
-      try {
-        state.sha = await writeFile(posts, fresh.sha, message);
-        setPosts(posts);
-        return;
-      } catch (e) {
-        if (e.status === 404 && attempt === 0) { await ensureBranch(); continue; }
-        if (e.status === 409 || e.status === 422) continue;
-        throw e;
-      }
-    }
-    throw new GhError(409, "Someone else saved at the same moment. Try again.");
-  }
+  /* ---------- Data ---------- */
   function setPosts(list) {
     const m = new Map();
     list.forEach((r) => { if (r && r.id && r.date) m.set(r.id, { ...r, platforms: Array.isArray(r.platforms) ? r.platforms : [] }); });
@@ -533,64 +457,20 @@ const DATA_FILE = "posts.json";
     renderAll();
   }
   async function load(silent) {
-    try {
-      const { posts, sha } = await readFile();
-      state.sha = sha;
-      setPosts(posts);
-      notice("");
-    } catch (e) {
-      if (!silent) notice(e.status === 403 || e.status === 429 ? "GitHub is limiting requests from this network. Wait a few minutes and reload." : "The calendar couldn't load from GitHub: " + e.message);
-    }
+    if (!sb) { notice("The calendar couldn't connect. Check your internet connection and reload."); return; }
+    const { data, error } = await sb.from("posts").select("id,date,time,title,platforms,status,created_at,updated_at").order("date");
+    if (error) { if (!silent) notice(/status_check|permission|policy|row-level/i.test(error.message) ? "The calendar's database needs its one-time update. See the README." : "The calendar couldn't load: " + error.message); return; }
+    notice("");
+    setPosts(data || []);
   }
-  function errText(e) {
-    if (e.status === 401) return "Your GitHub key isn't valid any more. Lock editing and add a new key.";
-    if (e.status === 403 || e.status === 404) return "Your GitHub key can't save to this repository. Check it has Contents: Read and write access to " + GITHUB_REPO + ".";
-    return "Saving failed: " + e.message;
+  let reloadT;
+  function scheduleReload() { clearTimeout(reloadT); reloadT = setTimeout(() => load(true), 300); }
+  function errText(error) {
+    const msg = (error && error.message) || "";
+    if (/status_check|check constraint/i.test(msg)) return "The Pending status needs the database update in the README.";
+    if (/row-level|policy|permission/i.test(msg)) return "The calendar's database isn't open for editing yet. Run the SQL in the README.";
+    return "Saving failed: " + (msg || "check your connection and try again.");
   }
-
-  /* ---------- Editing key ---------- */
-  function readKey() { try { return localStorage.getItem(KEY_STORE); } catch (_) { return null; } }
-  function storeKey(k) { try { if (k) localStorage.setItem(KEY_STORE, k); else localStorage.removeItem(KEY_STORE); } catch (_) {} }
-  async function checkKey(k) {
-    const r = await fetch(API, { headers: headers(k), cache: "no-store" });
-    if (r.status === 401) return "That key isn't valid. Copy it again from GitHub.";
-    if (!r.ok) return "That key can't see the " + GITHUB_REPO + " repository. Make sure you chose it under Repository access.";
-    const j = await r.json();
-    if (!(j.permissions && j.permissions.push)) return "That key can only read. Give it Contents: Read and write access.";
-    return "";
-  }
-  function applyEditMode() {
-    $("add-top").hidden = !state.canEdit;
-    $("key-btn").textContent = state.canEdit ? "Lock editing" : "Unlock editing";
-    renderAll();
-  }
-  const keyDlg = $("key-dlg");
-  $("key-btn").addEventListener("click", () => {
-    if (state.canEdit) {
-      storeKey(null); state.key = null; state.canEdit = false; applyEditMode();
-      toast("Editing locked on this device");
-      return;
-    }
-    $("key-input").value = ""; $("key-err").hidden = true;
-    keyDlg.showModal();
-  });
-  $("key-close").addEventListener("click", () => keyDlg.close());
-  $("key-cancel").addEventListener("click", () => keyDlg.close());
-  $("key-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const k = $("key-input").value.trim();
-    const err = $("key-err");
-    if (!k) { err.hidden = false; err.textContent = "Paste your GitHub key first."; return; }
-    showLoader("Checking key");
-    let problem = "";
-    try { problem = await checkKey(k); } catch (_) { problem = "Couldn't reach GitHub. Check your connection."; }
-    hideLoader();
-    if (problem) { err.hidden = false; err.textContent = problem; return; }
-    storeKey(k); state.key = k; state.canEdit = true;
-    keyDlg.close();
-    applyEditMode();
-    toast("Editing unlocked on this device");
-  });
 
   /* ---------- Small builders ---------- */
   function pfBadge(k) { const p = PLATFORMS.find((x) => x.k === k); const b = el("span", "pf pf-" + k, p ? p.short : k); b.title = p ? p.label : k; return b; }
@@ -760,12 +640,12 @@ const DATA_FILE = "posts.json";
   async function setStatus(p, k) {
     if (stKey(p.status) === k) return;
     showLoader("Saving");
-    try {
-      await mutate((posts) => posts.map((x) => x.id === p.id ? { ...x, status: k, updated_at: new Date().toISOString() } : x),
-        "Mark \"" + postLabel(p) + "\" (" + shortDate(p.date) + ") as " + STATUS[k].label.toLowerCase());
-      toast("Marked as " + STATUS[k].label.toLowerCase());
-    } catch (e) { toast(errText(e)); }
+    const { error } = await sb.from("posts").update({ status: k, updated_at: new Date().toISOString() }).eq("id", p.id);
     hideLoader();
+    if (error) { toast(errText(error)); return; }
+    const cur = state.posts.get(p.id); if (cur) cur.status = k;
+    renderAll();
+    toast("Marked as " + STATUS[k].label.toLowerCase());
   }
 
   /* ---------- Editor ---------- */
@@ -816,27 +696,27 @@ const DATA_FILE = "posts.json";
     };
     editor.close();
     showLoader("Saving to calendar");
-    try {
-      await mutate((posts) => prev ? posts.map((x) => x.id === row.id ? row : x) : [...posts, row],
-        (prev ? "Edit" : "Add") + " post: " + title + " (" + shortDate(date) + ")");
+    const { error } = await sb.from("posts").upsert(row);
+    if (error) {
       hideLoader();
-      toast(prev ? "Post updated" : "Added to " + shortDate(date));
-      selectDay(date);
-    } catch (ex) {
-      hideLoader();
-      err.hidden = false; err.textContent = errText(ex);
+      err.hidden = false; err.textContent = errText(error);
       editor.showModal();
+      return;
     }
+    state.posts.set(row.id, row);
+    hideLoader();
+    toast(prev ? "Post updated" : "Added to " + shortDate(date));
+    selectDay(date);
   });
 
   async function deletePost(p) {
     detail.close();
     showLoader("Deleting post");
-    try {
-      await mutate((posts) => posts.filter((x) => x.id !== p.id), "Delete post: " + postLabel(p) + " (" + shortDate(p.date) + ")");
-      toast("Post deleted");
-    } catch (e) { toast(errText(e)); }
+    const { error } = await sb.from("posts").delete().eq("id", p.id);
     hideLoader();
+    if (error) { toast(errText(error)); return; }
+    state.posts.delete(p.id); renderAll();
+    toast("Post deleted");
   }
 
   /* ---------- Navigation ---------- */
@@ -846,11 +726,14 @@ const DATA_FILE = "posts.json";
   $("add-top").addEventListener("click", () => openEditor(null, state.selected));
 
   /* ---------- Boot ---------- */
-  renderLegend(); renderDow(); buildPlatformPick();
-  state.key = readKey(); state.canEdit = !!state.key;
-  applyEditMode();
+  renderLegend(); renderDow(); buildPlatformPick(); renderAll();
 
-  // Keep both people's screens current: refresh every 2 minutes and when the tab comes back into view.
+  // Live updates: everyone's screen changes as soon as someone saves.
+  if (sb) {
+    state.channel = sb.channel("posts-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, scheduleReload)
+      .subscribe();
+  }
   setInterval(() => { if (!document.hidden) load(true); }, 120000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && state.ready) load(true); });
 
