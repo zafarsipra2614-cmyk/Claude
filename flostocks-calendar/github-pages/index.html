@@ -147,7 +147,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .post-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .post-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .post-title { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.post-cap { color: var(--muted); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .time { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .empty { border: 2.5px dashed var(--edge); border-radius: var(--r); padding: 18px; font-size: 14px; font-weight: 600; text-align: center; background: var(--faint); }
 
@@ -177,8 +176,6 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 .err { background: var(--danger); color: #fff; font-size: 13px; font-weight: 700; padding: 8px 12px; border: 2px solid var(--edge); border-radius: var(--r); }
 
 /* detail */
-.caption { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--faint); border: var(--bw) solid var(--edge); border-radius: var(--r); padding: 12px 14px; font-size: 14px; max-height: 260px; overflow-y: auto; user-select: text; }
-.cap-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .seg { display: inline-flex; border: var(--bw) solid var(--edge); border-radius: var(--r); overflow: hidden; box-shadow: 3px 3px 0 var(--hard-c); }
 .seg button { border: 0; background: var(--surface); padding: 7px 13px; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; display: inline-flex; gap: 6px; align-items: center; }
 .seg button + button { border-left: var(--bw) solid var(--edge); }
@@ -380,8 +377,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
         <div class="field"><label class="lbl" for="f-date">Post date</label><input type="date" id="f-date" required></div>
         <div class="field"><label class="lbl" for="f-time">Post time (optional)</label><input type="time" id="f-time"></div>
       </div>
-      <div class="field"><label class="lbl" for="f-title">What's being posted</label><input type="text" id="f-title" maxlength="120" placeholder="e.g. Reel: weekly market wrap"></div>
-      <div class="field"><label class="lbl" for="f-caption">Caption</label><textarea id="f-caption" placeholder="Write the caption exactly as it should be posted, hashtags included."></textarea></div>
+      <div class="field"><label class="lbl" for="f-title">What's being posted</label><input type="text" id="f-title" maxlength="160" required placeholder="e.g. Reel: weekly market wrap"></div>
       <div><span class="lbl">Platforms</span><div class="pick" id="f-platforms"></div></div>
       <div><span class="lbl">Status</span>
         <div class="pick" id="f-status">
@@ -550,7 +546,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     box.append(head);
     const list = postsOn(state.selected);
     if (!list.length) {
-      box.append(el("div", "empty", state.signedIn ? "Nothing planned for this day yet. Add the post that goes out, with its caption." : "Sign in to see the posts for this day."));
+      box.append(el("div", "empty", state.signedIn ? "Nothing planned for this day yet. Add what's going out." : "Sign in to see the posts for this day."));
     } else {
       const wrap = el("div", "day-list");
       list.forEach((p) => {
@@ -561,7 +557,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
         if (p.time) top.append(el("span", "time", fmtTime(p.time)));
         top.append(statusPill(p.status));
         body.append(top, el("div", "post-title", postLabel(p)));
-        if (p.caption) body.append(el("div", "post-cap", p.caption));
         b.append(body);
         b.addEventListener("click", () => openDetail(p.id));
         wrap.append(b);
@@ -614,24 +609,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     meta.append(pfBox, stBox);
     body.append(meta);
 
-    const cBox = el("div"); cBox.append(el("span", "lbl", "Caption"));
-    const cap = el("div", "caption", p.caption || "No caption written.");
-    cBox.append(cap);
-    if (p.caption) {
-      const acts = el("div", "cap-actions");
-      const copy = el("button", "ghost", "Copy caption"); copy.type = "button";
-      copy.addEventListener("click", () => {
-        navigator.clipboard.writeText(p.caption).then(() => toast("Caption copied"), () => {
-          const r = document.createRange(); r.selectNodeContents(cap); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-          toast("Caption selected. Press Ctrl+C or Cmd+C to copy.");
-        });
-      });
-      const dlc = el("button", "ghost", "Download caption (.txt)"); dlc.type = "button";
-      dlc.addEventListener("click", () => downloadCaption(p));
-      acts.append(copy, dlc);
-      cBox.append(acts);
-    }
-    body.append(cBox);
     box.append(head, body);
 
     const foot = el("div", "dlg-foot");
@@ -660,19 +637,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     toast(k === "uploaded" ? "Marked as uploaded" : "Marked as scheduled");
   }
 
-  /* ---------- Downloads ---------- */
-  function saveBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  }
-  function downloadCaption(p) {
-    const plats = (p.platforms || []).map((k) => (PLATFORMS.find((x) => x.k === k) || {}).label || k).join(", ");
-    const head = postLabel(p) + "\n" + longDate(p.date) + (p.time ? " at " + fmtTime(p.time) : "") + (plats ? "\nPlatforms: " + plats : "") + "\n\n";
-    saveBlob(new Blob([head + (p.caption || "")], { type: "text/plain;charset=utf-8" }), [p.date, slug(postLabel(p)), "caption"].filter(Boolean).join("-") + ".txt");
-  }
-
   /* ---------- Editor ---------- */
   const editor = $("editor");
   const ed = { post: null };
@@ -691,7 +655,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     $("f-date").value = post ? post.date : (date || state.selected);
     $("f-time").value = post ? (post.time || "") : "";
     $("f-title").value = post ? (post.title || "") : "";
-    $("f-caption").value = post ? (post.caption || "") : "";
     PLATFORMS.forEach((p) => { $("f-pf-" + p.k).checked = !!(post && (post.platforms || []).includes(p.k)); });
     $((post && post.status === "uploaded") ? "f-st-uploaded" : "f-st-scheduled").checked = true;
     $("f-err").hidden = true;
@@ -706,11 +669,10 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const err = $("f-err");
     const date = $("f-date").value;
     const platforms = PLATFORMS.filter((p) => $("f-pf-" + p.k).checked).map((p) => p.k);
-    const caption = $("f-caption").value;
     const title = $("f-title").value.trim();
     if (!date) { err.hidden = false; err.textContent = "Pick the date this post goes out."; return; }
     if (!platforms.length) { err.hidden = false; err.textContent = "Choose at least one platform."; return; }
-    if (!caption.trim() && !title) { err.hidden = false; err.textContent = "Add what's being posted or its caption before saving."; return; }
+    if (!title) { err.hidden = false; err.textContent = "Write what's being posted before saving."; return; }
     err.hidden = true;
 
     const prev = ed.post;
@@ -718,7 +680,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     showLoader("Saving to calendar");
     const row = {
       id: prev ? prev.id : crypto.randomUUID(),
-      date, time: $("f-time").value || "", title, caption, platforms,
+      date, time: $("f-time").value || "", title, platforms,
       status: $("f-st-uploaded").checked ? "uploaded" : "scheduled",
       updated_at: new Date().toISOString(),
     };

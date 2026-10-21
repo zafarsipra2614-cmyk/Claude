@@ -1,6 +1,6 @@
 # Flostocks Content Calendar: setup
 
-The calendar is one file, [index.html](index.html), hosted free on GitHub Pages. Each post's date, platforms, caption and status are stored in a free Supabase project, and only people you create accounts for can sign in.
+The calendar is one file, [index.html](index.html), hosted free on GitHub Pages. Each post's date, time, platforms and status are stored in a free Supabase project, and only people you create accounts for can sign in.
 
 Setup takes about 10 minutes and is done once.
 
@@ -65,7 +65,7 @@ Do this before publishing the site, so strangers can't create accounts.
 2. Enter your email and a password, tick **Auto Confirm User**, and click **Create user**.
 3. Repeat for your social media manager, then send them their email and password.
 
-Both accounts can add, edit and delete posts, copy or download captions, and mark posts as uploaded.
+Both accounts can add, edit and delete posts, and mark posts as uploaded.
 
 ## 5. Connect the page to Supabase
 
