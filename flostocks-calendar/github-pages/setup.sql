@@ -9,10 +9,14 @@ create table if not exists public.posts (
   title       text not null default '',
   caption     text not null default '',
   platforms   text[] not null default '{}',
-  status      text not null default 'scheduled' check (status in ('scheduled', 'uploaded')),
+  status      text not null default 'scheduled',
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- Allowed statuses: Pending, Scheduled, Uploaded.
+alter table public.posts drop constraint if exists posts_status_check;
+alter table public.posts add constraint posts_status_check check (status in ('pending', 'scheduled', 'uploaded'));
 
 -- Only signed-in team members can read or change posts.
 alter table public.posts enable row level security;

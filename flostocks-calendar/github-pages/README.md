@@ -28,10 +28,14 @@ create table if not exists public.posts (
   title       text not null default '',
   caption     text not null default '',
   platforms   text[] not null default '{}',
-  status      text not null default 'scheduled' check (status in ('scheduled', 'uploaded')),
+  status      text not null default 'scheduled',
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- Allowed statuses: Pending, Scheduled, Uploaded.
+alter table public.posts drop constraint if exists posts_status_check;
+alter table public.posts add constraint posts_status_check check (status in ('pending', 'scheduled', 'uploaded'));
 
 -- Only signed-in team members can read or change posts.
 alter table public.posts enable row level security;
@@ -51,6 +55,15 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 ```
 
+### 2b. Already set up before the Pending status was added?
+
+If you ran the SQL before **Pending** existed, run just these two lines once in **SQL Editor → New query**:
+
+```sql
+alter table public.posts drop constraint if exists posts_status_check;
+alter table public.posts add constraint posts_status_check check (status in ('pending', 'scheduled', 'uploaded'));
+```
+
 ## 3. Turn off public sign-ups
 
 Do this before publishing the site, so strangers can't create accounts.
@@ -65,7 +78,7 @@ Do this before publishing the site, so strangers can't create accounts.
 2. Enter your email and a password, tick **Auto Confirm User**, and click **Create user**.
 3. Repeat for your social media manager, then send them their email and password.
 
-Both accounts can add, edit and delete posts, and mark posts as uploaded.
+Both accounts can add, edit and delete posts, and set each post to Pending, Scheduled or Uploaded.
 
 ## 5. Connect the page to Supabase
 

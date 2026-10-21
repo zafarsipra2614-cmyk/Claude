@@ -21,6 +21,7 @@
   --green-ink: #1F6B00;
   --green-soft: #B6EC8F;
   --sched-soft: #FFD84D;
+  --pend-soft: #FF9A8B;
   --on-pill: #0B0D0A;
   --tint: #DDF0CC;
   --logo-g: #2E9C00;
@@ -87,6 +88,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .pf-x { --pf: var(--p-x); --pf-fg: var(--p-x-fg); } .pf-tiktok { --pf: var(--p-tt); --pf-fg: #0B0D0A; } .pf-youtube { --pf: var(--p-yt); }
 .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; border-radius: 4px; border: 2px solid var(--edge); padding: 2px 8px 2px 6px; white-space: nowrap; color: var(--on-pill); }
 .status svg { width: 13px; height: 13px; flex: none; }
+.st-pending { background: var(--pend-soft); }
 .st-scheduled { background: var(--sched-soft); }
 .st-uploaded { background: var(--green-soft); }
 
@@ -121,6 +123,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .more { font-size: 11px; font-weight: 800; padding-left: 4px; text-transform: uppercase; letter-spacing: .04em; }
 .dots { display: none; gap: 3px; flex-wrap: wrap; padding-left: 2px; }
 .dots i { width: 9px; height: 9px; border-radius: 2px; border: 1.5px solid var(--edge); }
+.dots i.st-pending { background: var(--pend-soft); }
 .dots i.st-scheduled { background: var(--sched-soft); }
 .dots i.st-uploaded { background: var(--green-soft); }
 @media (max-width: 720px) {
@@ -181,6 +184,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 .seg button + button { border-left: var(--bw) solid var(--edge); }
 .seg button svg { width: 14px; height: 14px; }
 .seg button[aria-pressed="true"] { color: var(--on-pill); }
+.seg button[aria-pressed="true"].s-pending { background: var(--pend-soft); }
 .seg button[aria-pressed="true"].s-scheduled { background: var(--sched-soft); }
 .seg button[aria-pressed="true"].s-uploaded { background: var(--green-soft); }
 .confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-right: auto; font-size: 14px; font-weight: 800; }
@@ -279,6 +283,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
         <polygon points="805,763 1036,763 852,1190 620,1190" style="fill:var(--logo-g)"/>
       </g>
     </symbol>
+    <symbol id="i-pending" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 4.4v4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1.1" fill="currentColor"/></symbol>
     <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 4.6V8l2.3 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.4" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
@@ -381,6 +386,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
       <div><span class="lbl">Platforms</span><div class="pick" id="f-platforms"></div></div>
       <div><span class="lbl">Status</span>
         <div class="pick" id="f-status">
+          <label><input type="radio" name="f-status" id="f-st-pending" value="pending"><span class="status st-pending"><svg><use href="#i-pending"/></svg>Pending</span></label>
           <label><input type="radio" name="f-status" id="f-st-scheduled" value="scheduled" checked><span class="status st-scheduled"><svg><use href="#i-clock"/></svg>Scheduled</span></label>
           <label><input type="radio" name="f-status" id="f-st-uploaded" value="uploaded"><span class="status st-uploaded"><svg><use href="#i-check"/></svg>Uploaded</span></label>
         </div>
@@ -419,6 +425,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     { k: "youtube", label: "YouTube", short: "YT" },
   ];
   const STATUS = {
+    pending: { label: "Pending", icon: "i-pending" },
     scheduled: { label: "Scheduled", icon: "i-clock" },
     uploaded: { label: "Uploaded", icon: "i-check" },
   };
@@ -482,7 +489,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const a = el("div", "legend-group");
     PLATFORMS.forEach((p) => { const i = el("span", "legend-item"); i.append(pfBadge(p.k), document.createTextNode(p.label)); a.append(i); });
     const b = el("div", "legend-group");
-    b.append(statusPill("scheduled"), statusPill("uploaded"));
+    Object.keys(STATUS).forEach((k) => b.append(statusPill(k)));
     lg.append(a, b);
   }
 
@@ -632,9 +639,9 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   async function setStatus(p, k) {
     if ((p.status || "scheduled") === k) return;
     const { error } = await sb.from("posts").update({ status: k, updated_at: new Date().toISOString() }).eq("id", p.id);
-    if (error) { toast("Couldn't update the status. Try again."); return; }
+    if (error) { toast(/status_check|check constraint/i.test(error.message) ? "Pending needs a one-time database update. See step 2b in the README." : "Couldn't update the status. Try again."); return; }
     p.status = k; renderAll();
-    toast(k === "uploaded" ? "Marked as uploaded" : "Marked as scheduled");
+    toast("Marked as " + STATUS[k].label.toLowerCase());
   }
 
   /* ---------- Editor ---------- */
@@ -656,7 +663,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     $("f-time").value = post ? (post.time || "") : "";
     $("f-title").value = post ? (post.title || "") : "";
     PLATFORMS.forEach((p) => { $("f-pf-" + p.k).checked = !!(post && (post.platforms || []).includes(p.k)); });
-    $((post && post.status === "uploaded") ? "f-st-uploaded" : "f-st-scheduled").checked = true;
+    $("f-st-" + (post && STATUS[post.status] ? post.status : "scheduled")).checked = true;
     $("f-err").hidden = true;
     editor.showModal();
   }
@@ -681,14 +688,14 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const row = {
       id: prev ? prev.id : crypto.randomUUID(),
       date, time: $("f-time").value || "", title, platforms,
-      status: $("f-st-uploaded").checked ? "uploaded" : "scheduled",
+      status: (document.querySelector('input[name="f-status"]:checked') || {}).value || "scheduled",
       updated_at: new Date().toISOString(),
     };
     const { error } = await sb.from("posts").upsert(row);
     if (error) {
       hideLoader();
       err.hidden = false;
-      err.textContent = /jwt|auth|row-level|security|policy/i.test(error.message) ? "You're not allowed to save. Sign out and sign in again." : "Saving failed: " + error.message;
+      err.textContent = /status_check|check constraint/i.test(error.message) ? "Pending needs a one-time database update. See step 2b in the README." : /jwt|auth|row-level|security|policy/i.test(error.message) ? "You're not allowed to save. Sign out and sign in again." : "Saving failed: " + error.message;
       editor.showModal();
       return;
     }
