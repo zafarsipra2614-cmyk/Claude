@@ -1,113 +1,40 @@
-# Flostocks Content Calendar: setup
+# Flostocks Content Calendar
 
-The calendar is one file, [index.html](index.html), hosted free on GitHub Pages. Each post's date, time, platforms and status are stored in a free Supabase project, and only people you create accounts for can sign in.
+A calendar of what goes out on each platform and when, hosted free on GitHub Pages:
+**https://zafarsipra2614-cmyk.github.io/Content-Calendar/**
 
-Setup takes about 10 minutes and is done once.
+- Each post has a date, an optional time, what's being posted, its platforms, and a status: **Pending**, **Scheduled** or **Uploaded**.
+- Anyone with the link can view the calendar. This repository is public, so the plan is public too.
+- To add, edit, delete or change the status of posts, unlock editing with a GitHub access key (below).
+- Posts are saved in [`posts.json`](https://github.com/zafarsipra2614-cmyk/Content-Calendar/blob/calendar-data/posts.json) on the `calendar-data` branch. Every change is a commit there, so you get a full history for free.
 
-## 1. Create the Supabase project
+## Turn on the site (once)
 
-1. Go to <https://supabase.com>, sign up (free) and click **New project**.
-2. Name it `flostocks-calendar`, choose a database password (save it somewhere), and pick the region closest to you. Click **Create new project** and wait about a minute.
+1. In this repository open **Settings → Pages**.
+2. Under **Build and deployment**, set **Source** to *Deploy from a branch*, choose **main** and **/ (root)**, and click **Save**.
+3. After a minute or two the calendar is live at the link above.
 
-## 2. Create the database
+## Unlock editing on a device
 
-1. In the left menu open **SQL Editor** and click **New query**.
-2. Copy all of the SQL below (hover over the box and click the copy icon in its top-right corner), paste it into the query box, and click **Run**. You should see "Success. No rows returned".
+Each person who edits needs their own key. Make it once per person:
 
-   The same SQL is also in the file [setup.sql](setup.sql).
+1. Sign in to GitHub and open <https://github.com/settings/personal-access-tokens/new>.
+   - Your manager needs to be added as a collaborator first: **Settings → Collaborators → Add people** in this repository. Then they create their own key from their own GitHub account.
+2. **Token name**: `Flostocks calendar`. **Expiration**: pick a date (up to a year), or *No expiration*.
+3. **Resource owner**: your account. **Repository access**: *Only select repositories* → choose **Content-Calendar**.
+4. Under **Permissions → Repository permissions**, set **Contents** to **Read and write**. Leave everything else as it is.
+5. Click **Generate token** and copy it (it starts with `github_pat_`).
+6. Open the calendar, click **Unlock editing**, paste the key, and click **Unlock**.
 
-```sql
--- Flostocks Content Calendar: one-time Supabase setup.
--- Paste this whole file into Supabase → SQL Editor → New query, then click Run.
+The key is saved only in that browser. Click **Lock editing** to remove it, for example on a shared computer. Treat it like a password: anyone who has it can change this repository.
 
--- 1. Posts table
-create table if not exists public.posts (
-  id          uuid primary key default gen_random_uuid(),
-  date        text not null,                       -- YYYY-MM-DD
-  time        text not null default '',            -- HH:MM, optional
-  title       text not null default '',
-  caption     text not null default '',
-  platforms   text[] not null default '{}',
-  status      text not null default 'scheduled',
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
-);
-
--- Allowed statuses: Pending, Scheduled, Uploaded.
-alter table public.posts drop constraint if exists posts_status_check;
-alter table public.posts add constraint posts_status_check check (status in ('pending', 'scheduled', 'uploaded'));
-
--- Only signed-in team members can read or change posts.
-alter table public.posts enable row level security;
-
-drop policy if exists "team reads posts" on public.posts;
-drop policy if exists "team adds posts" on public.posts;
-drop policy if exists "team edits posts" on public.posts;
-drop policy if exists "team deletes posts" on public.posts;
-create policy "team reads posts"   on public.posts for select to authenticated using (true);
-create policy "team adds posts"    on public.posts for insert to authenticated with check (true);
-create policy "team edits posts"   on public.posts for update to authenticated using (true) with check (true);
-create policy "team deletes posts" on public.posts for delete to authenticated using (true);
-
--- Live updates: changes appear for everyone without reloading.
-do $$ begin
-  alter publication supabase_realtime add table public.posts;
-exception when duplicate_object then null; end $$;
-```
-
-### 2b. Already set up before the Pending status was added?
-
-If you ran the SQL before **Pending** existed, run just these two lines once in **SQL Editor → New query**:
-
-```sql
-alter table public.posts drop constraint if exists posts_status_check;
-alter table public.posts add constraint posts_status_check check (status in ('pending', 'scheduled', 'uploaded'));
-```
-
-## 3. Turn off public sign-ups
-
-Do this before publishing the site, so strangers can't create accounts.
-
-1. Open **Authentication → Sign In / Providers** (on older dashboards: **Authentication → Providers**, or **Settings**).
-2. Switch **Allow new users to sign up** off and save.
-3. Leave the **Email** provider switched on.
-
-## 4. Create the two accounts
-
-1. Open **Authentication → Users** and click **Add user → Create new user**.
-2. Enter your email and a password, tick **Auto Confirm User**, and click **Create user**.
-3. Repeat for your social media manager, then send them their email and password.
-
-Both accounts can add, edit and delete posts, and set each post to Pending, Scheduled or Uploaded.
-
-## 5. Connect the page to Supabase
-
-1. In Supabase, click **Connect** at the top of the project (or open **Project Settings → API**).
-2. Copy the **Project URL** and the **anon public** key.
-3. Open `index.html`, find these two lines near the bottom (search for `SUPABASE_URL`), and paste your values between the quotes:
-
-   ```js
-   const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
-   const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
-   ```
-
-   The anon key is meant to be public. Without a signed-in account it can't read or change anything. Never paste the **service_role** key.
-
-## 6. Publish on GitHub Pages
-
-1. Upload `index.html` to your repository (in the root, or a `docs` folder).
-2. In the repository open **Settings → Pages**, set **Source** to *Deploy from a branch*, choose your branch and folder, and click **Save**.
-3. After a minute or two the site appears at `https://<your-username>.github.io/<repository-name>/`.
-
-## Limits on the free plan
-
-- The calendar only stores text, so it stays far below the free plan's limits.
-- Supabase pauses free projects after a week with no activity. Opening the calendar regularly prevents this; if it does pause, click **Restore project** in the Supabase dashboard. No data is lost.
+> Collaborator keys: GitHub only lets you pick repositories you own when making a fine-grained key. If your manager's key screen doesn't list **Content-Calendar**, they can create a **classic** key instead at <https://github.com/settings/tokens/new> with the **public_repo** scope.
 
 ## Troubleshooting
 
 | What you see | What to do |
 | --- | --- |
-| "Setup needed" message | The two values in step 5 are still the placeholders. |
-| "That email and password don't match" | Check the account in **Authentication → Users**, or reset its password there. |
-| "The calendar couldn't load: relation … does not exist" | Step 2 didn't run. Run the SQL from step 2 again. |
+| "That key can only read" | Edit the key on GitHub and set **Contents** to **Read and write**. |
+| "That key can't see the Content-Calendar repository" | Edit the key and add **Content-Calendar** under **Repository access**. |
+| "Your GitHub key isn't valid any more" | The key expired or was deleted. Click **Lock editing**, make a new key, and unlock again. |
+| "GitHub is limiting requests from this network" | GitHub allows 60 views an hour per network without a key. Wait a few minutes, or unlock editing (keys get a much higher limit). |

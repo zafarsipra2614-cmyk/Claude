@@ -255,13 +255,6 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 }
 @keyframes fade-out { to { opacity: 0; } }
 
-/* ---------- Sign-in ---------- */
-.login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.login-card { width: min(420px, 100%); background: var(--surface); border: 3px solid var(--edge); border-radius: 10px; box-shadow: var(--hard-lg); padding: 28px; display: flex; flex-direction: column; gap: 16px; }
-.login-card h1 { margin: 0; font-family: var(--f-display); font-weight: 900; font-stretch: 112%; font-size: 26px; text-transform: uppercase; line-height: 1.05; }
-.login-card p { margin: 0; color: var(--muted); font-size: 14px; }
-.login-card .primary { width: 100%; }
-.who { font-size: 12px; font-weight: 700; color: var(--muted); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -324,19 +317,8 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
   </div>
 </div>
 
-<section class="login" id="login" hidden>
-  <form class="login-card" id="login-form" novalidate>
-    <div class="brand-logo" role="img" aria-label="Flostocks"><svg aria-hidden="true"><use href="#logo-nb"/></svg></div>
-    <h1>Content Calendar</h1>
-    <p>Sign in with the account your Flostocks admin created for you.</p>
-    <div class="field"><label class="lbl" for="login-email">Email</label><input type="text" inputmode="email" autocomplete="username" id="login-email"></div>
-    <div class="field"><label class="lbl" for="login-pass">Password</label><input type="password" autocomplete="current-password" id="login-pass" style="width:100%;border:var(--bw) solid var(--edge);border-radius:var(--r);padding:9px 11px;box-shadow:3px 3px 0 var(--hard-c)"></div>
-    <div class="err" id="login-err" hidden></div>
-    <button type="submit" class="primary">Sign in</button>
-  </form>
-</section>
 
-<div id="app" hidden>
+<div id="app">
 <header class="bar">
   <div class="bar-in">
     <div class="brand">
@@ -348,9 +330,8 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
       <button class="icon-btn" id="next" aria-label="Next month"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button class="ghost" id="today">Today</button>
     </div>
-    <button class="primary" id="add-top"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add content</button>
-    <span class="who" id="who"></span>
-    <button class="ghost" id="signout">Sign out</button>
+    <button class="primary" id="add-top" hidden><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add content</button>
+    <button class="ghost" id="key-btn">Unlock editing</button>
   </div>
 </header>
 
@@ -400,22 +381,40 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
   </form>
 </dialog>
 
+<!-- Editing key -->
+<dialog id="key-dlg">
+  <form class="dlg" id="key-form" novalidate>
+    <div class="dlg-head">
+      <h3>Unlock editing</h3>
+      <button type="button" class="x-btn" id="key-close" aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <p style="margin:0">Paste your GitHub access key to add and edit posts on this device. It stays in this browser only. Anyone can view the calendar without a key.</p>
+      <div class="field"><label class="lbl" for="key-input">GitHub access key</label><input type="text" id="key-input" autocomplete="off" spellcheck="false" placeholder="github_pat_..."></div>
+      <div class="err" id="key-err" hidden></div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="ghost" id="key-cancel">Cancel</button>
+      <button type="submit" class="primary">Unlock</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* =====================================================================
-   SETUP: paste your Supabase project's details here.
-   Supabase dashboard → Project Settings → API (or "Connect" button):
-     - Project URL           → SUPABASE_URL
-     - anon / public API key → SUPABASE_ANON_KEY
-   The anon key is safe to publish: the database only lets signed-in
-   team members read or write (see setup.sql).
+   Where the calendar keeps its posts: a posts.json file in this GitHub
+   repository, on its own branch so saving doesn't rebuild the site.
    ===================================================================== */
-const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
+const GITHUB_OWNER = "zafarsipra2614-cmyk";
+const GITHUB_REPO = "Content-Calendar";
+const DATA_BRANCH = "calendar-data";
+const DATA_FILE = "posts.json";
 
 (() => {
+  const API = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO;
+  const KEY_STORE = "flostocks-calendar-github-key";
   const PLATFORMS = [
     { k: "instagram", label: "Instagram", short: "IG" },
     { k: "facebook", label: "Facebook", short: "FB" },
@@ -437,20 +436,17 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
   const fmtTime = (t) => { if (!t) return ""; const [h, m] = t.split(":").map(Number); return ((h % 12) || 12) + ":" + pad(m) + (h < 12 ? " AM" : " PM"); };
-  const fmtSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
   const longDate = (s) => parse(s).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const shortDate = (s) => parse(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   const svgUse = (id, cls) => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); if (cls) s.setAttribute("class", cls); s.setAttribute("aria-hidden", "true"); const u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#" + id); s.appendChild(u); return s; };
-  const slug = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-
-  const configured = !SUPABASE_URL.startsWith("PASTE_") && !SUPABASE_ANON_KEY.startsWith("PASTE_");
-  const sb = configured && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  const newId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
   const state = {
     posts: new Map(),
+    sha: null,
     month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
     selected: ymd(new Date()),
-    signedIn: false, ready: false, introDone: false,
-    detailId: null, channel: null,
+    key: null, canEdit: false, ready: false, introDone: false, detailId: null,
   };
 
   /* ---------- Intro ---------- */
@@ -470,16 +466,137 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   /* ---------- Loader & toast ---------- */
   let loaderCount = 0;
   function showLoader(text) { loaderCount++; $("loader-text").textContent = text || "Loading"; $("loader").hidden = false; }
-  function setLoader(text) { $("loader-text").textContent = text; }
   function hideLoader() { loaderCount = Math.max(0, loaderCount - 1); if (!loaderCount) $("loader").hidden = true; }
   let toastT;
-  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3400); }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3600); }
   function markReady() { if (state.ready) return; state.ready = true; if (state.introDone) hideLoader(); }
+  function notice(msg) { const n = $("notice"); n.textContent = msg || ""; n.hidden = !msg; }
+
+  /* ---------- GitHub storage ---------- */
+  function b64ToText(b64) { const bin = atob(b64.replace(/\s/g, "")); const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(bytes); }
+  function textToB64(text) { const bytes = new TextEncoder().encode(text); let bin = ""; bytes.forEach((b) => { bin += String.fromCharCode(b); }); return btoa(bin); }
+  function headers(key) {
+    const h = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    if (key) h.Authorization = "Bearer " + key;
+    return h;
+  }
+  class GhError extends Error { constructor(status, message) { super(message); this.status = status; } }
+
+  async function readFile() {
+    const r = await fetch(API + "/contents/" + DATA_FILE + "?ref=" + encodeURIComponent(DATA_BRANCH) + "&t=" + Date.now(), { headers: headers(state.key), cache: "no-store" });
+    if (r.status === 404) return { posts: [], sha: null };
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new GhError(r.status, j.message || "GitHub returned " + r.status); }
+    const j = await r.json();
+    let data = {};
+    try { data = JSON.parse(b64ToText(j.content || "")); } catch (_) { data = {}; }
+    return { posts: Array.isArray(data.posts) ? data.posts : [], sha: j.sha };
+  }
+  async function writeFile(posts, sha, message) {
+    const sorted = [...posts].sort((a, b) => a.date.localeCompare(b.date) || (a.time || "99").localeCompare(b.time || "99"));
+    const body = { message, content: textToB64(JSON.stringify({ posts: sorted }, null, 2) + "\n"), branch: DATA_BRANCH };
+    if (sha) body.sha = sha;
+    const r = await fetch(API + "/contents/" + DATA_FILE, { method: "PUT", headers: { ...headers(state.key), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new GhError(r.status, j.message || "GitHub returned " + r.status); }
+    const j = await r.json();
+    return j.content && j.content.sha;
+  }
+  async function ensureBranch() {
+    const r = await fetch(API + "/branches/" + encodeURIComponent(DATA_BRANCH), { headers: headers(state.key), cache: "no-store" });
+    if (r.ok) return;
+    if (r.status !== 404) throw new GhError(r.status, "Couldn't check the data branch.");
+    const repo = await (await fetch(API, { headers: headers(state.key), cache: "no-store" })).json();
+    const base = await (await fetch(API + "/git/ref/heads/" + repo.default_branch, { headers: headers(state.key), cache: "no-store" })).json();
+    const c = await fetch(API + "/git/refs", { method: "POST", headers: { ...headers(state.key), "Content-Type": "application/json" }, body: JSON.stringify({ ref: "refs/heads/" + DATA_BRANCH, sha: base.object.sha }) });
+    if (!c.ok && c.status !== 422) throw new GhError(c.status, "Couldn't create the data branch.");
+  }
+  // Apply a change on top of the latest saved posts, retrying if someone else saved in between.
+  async function mutate(change, message) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const fresh = await readFile().catch(async (e) => { if (e.status === 404) { await ensureBranch(); return { posts: [], sha: null }; } throw e; });
+      const posts = change(fresh.posts.map((p) => ({ ...p })));
+      try {
+        state.sha = await writeFile(posts, fresh.sha, message);
+        setPosts(posts);
+        return;
+      } catch (e) {
+        if (e.status === 404 && attempt === 0) { await ensureBranch(); continue; }
+        if (e.status === 409 || e.status === 422) continue;
+        throw e;
+      }
+    }
+    throw new GhError(409, "Someone else saved at the same moment. Try again.");
+  }
+  function setPosts(list) {
+    const m = new Map();
+    list.forEach((r) => { if (r && r.id && r.date) m.set(r.id, { ...r, platforms: Array.isArray(r.platforms) ? r.platforms : [] }); });
+    state.posts = m;
+    renderAll();
+  }
+  async function load(silent) {
+    try {
+      const { posts, sha } = await readFile();
+      state.sha = sha;
+      setPosts(posts);
+      notice("");
+    } catch (e) {
+      if (!silent) notice(e.status === 403 || e.status === 429 ? "GitHub is limiting requests from this network. Wait a few minutes and reload." : "The calendar couldn't load from GitHub: " + e.message);
+    }
+  }
+  function errText(e) {
+    if (e.status === 401) return "Your GitHub key isn't valid any more. Lock editing and add a new key.";
+    if (e.status === 403 || e.status === 404) return "Your GitHub key can't save to this repository. Check it has Contents: Read and write access to " + GITHUB_REPO + ".";
+    return "Saving failed: " + e.message;
+  }
+
+  /* ---------- Editing key ---------- */
+  function readKey() { try { return localStorage.getItem(KEY_STORE); } catch (_) { return null; } }
+  function storeKey(k) { try { if (k) localStorage.setItem(KEY_STORE, k); else localStorage.removeItem(KEY_STORE); } catch (_) {} }
+  async function checkKey(k) {
+    const r = await fetch(API, { headers: headers(k), cache: "no-store" });
+    if (r.status === 401) return "That key isn't valid. Copy it again from GitHub.";
+    if (!r.ok) return "That key can't see the " + GITHUB_REPO + " repository. Make sure you chose it under Repository access.";
+    const j = await r.json();
+    if (!(j.permissions && j.permissions.push)) return "That key can only read. Give it Contents: Read and write access.";
+    return "";
+  }
+  function applyEditMode() {
+    $("add-top").hidden = !state.canEdit;
+    $("key-btn").textContent = state.canEdit ? "Lock editing" : "Unlock editing";
+    renderAll();
+  }
+  const keyDlg = $("key-dlg");
+  $("key-btn").addEventListener("click", () => {
+    if (state.canEdit) {
+      storeKey(null); state.key = null; state.canEdit = false; applyEditMode();
+      toast("Editing locked on this device");
+      return;
+    }
+    $("key-input").value = ""; $("key-err").hidden = true;
+    keyDlg.showModal();
+  });
+  $("key-close").addEventListener("click", () => keyDlg.close());
+  $("key-cancel").addEventListener("click", () => keyDlg.close());
+  $("key-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const k = $("key-input").value.trim();
+    const err = $("key-err");
+    if (!k) { err.hidden = false; err.textContent = "Paste your GitHub key first."; return; }
+    showLoader("Checking key");
+    let problem = "";
+    try { problem = await checkKey(k); } catch (_) { problem = "Couldn't reach GitHub. Check your connection."; }
+    hideLoader();
+    if (problem) { err.hidden = false; err.textContent = problem; return; }
+    storeKey(k); state.key = k; state.canEdit = true;
+    keyDlg.close();
+    applyEditMode();
+    toast("Editing unlocked on this device");
+  });
 
   /* ---------- Small builders ---------- */
   function pfBadge(k) { const p = PLATFORMS.find((x) => x.k === k); const b = el("span", "pf pf-" + k, p ? p.short : k); b.title = p ? p.label : k; return b; }
-  function statusPill(s) { const st = STATUS[s] || STATUS.scheduled; const p = el("span", "status st-" + (STATUS[s] ? s : "scheduled")); p.append(svgUse(st.icon), document.createTextNode(st.label)); return p; }
-  function postLabel(p) { return p.title || (p.caption || "").split("\n")[0] || "Untitled post"; }
+  function stKey(s) { return STATUS[s] ? s : "scheduled"; }
+  function statusPill(s) { const k = stKey(s); const p = el("span", "status st-" + k); p.append(svgUse(STATUS[k].icon), document.createTextNode(STATUS[k].label)); return p; }
+  function postLabel(p) { return p.title || "Untitled post"; }
   function sortPosts(arr) { return arr.sort((a, b) => (a.time || "99").localeCompare(b.time || "99") || (a.created_at || "").localeCompare(b.created_at || "")); }
   function postsOn(date) { return sortPosts([...state.posts.values()].filter((p) => p.date === date)); }
 
@@ -520,13 +637,14 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
       const list = postsOn(key);
       const dots = el("div", "dots");
       list.forEach((p, idx) => {
-        dots.append(el("i", "st-" + (p.status || "scheduled")));
+        const k = stKey(p.status);
+        dots.append(el("i", "st-" + k));
         if (idx < 3) {
-          const c = el("button", "chip st-" + (p.status || "scheduled"));
+          const c = el("button", "chip st-" + k);
           c.type = "button";
-          const pfs = el("span", "pfs"); (p.platforms || []).forEach((k) => pfs.append(pfBadge(k)));
-          c.append(pfs, el("span", "t", (p.time ? fmtTime(p.time) + " · " : "") + postLabel(p)), svgUse((STATUS[p.status] || STATUS.scheduled).icon));
-          c.title = postLabel(p) + " · " + (STATUS[p.status] || STATUS.scheduled).label;
+          const pfs = el("span", "pfs"); (p.platforms || []).forEach((pk) => pfs.append(pfBadge(pk)));
+          c.append(pfs, el("span", "t", (p.time ? fmtTime(p.time) + " · " : "") + postLabel(p)), svgUse(STATUS[k].icon));
+          c.title = postLabel(p) + " · " + STATUS[k].label;
           c.addEventListener("click", (e) => { e.stopPropagation(); selectDay(key); openDetail(p.id); });
           cell.append(c);
         }
@@ -553,7 +671,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     box.append(head);
     const list = postsOn(state.selected);
     if (!list.length) {
-      box.append(el("div", "empty", state.signedIn ? "Nothing planned for this day yet. Add what's going out." : "Sign in to see the posts for this day."));
+      box.append(el("div", "empty", state.canEdit ? "Nothing planned for this day yet. Add what's going out." : "Nothing planned for this day."));
     } else {
       const wrap = el("div", "day-list");
       list.forEach((p) => {
@@ -570,7 +688,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
       });
       box.append(wrap);
     }
-    if (state.signedIn) {
+    if (state.canEdit) {
       const add = el("button", "primary"); add.type = "button";
       add.textContent = "Add content for this day";
       add.addEventListener("click", () => openEditor(null, state.selected));
@@ -604,44 +722,50 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     else pfl.append(el("span", "time", "No platform set"));
     pfBox.append(pfl);
     const stBox = el("div"); stBox.append(el("span", "lbl", "Status"));
-    const seg = el("div", "seg");
-    Object.entries(STATUS).forEach(([k, v]) => {
-      const b = el("button", "s-" + k); b.type = "button";
-      b.setAttribute("aria-pressed", String((p.status || "scheduled") === k));
-      b.append(svgUse(v.icon), document.createTextNode(v.label));
-      b.addEventListener("click", () => setStatus(p, k));
-      seg.append(b);
-    });
-    stBox.append(seg);
+    if (state.canEdit) {
+      const seg = el("div", "seg");
+      Object.entries(STATUS).forEach(([k, v]) => {
+        const b = el("button", "s-" + k); b.type = "button";
+        b.setAttribute("aria-pressed", String(stKey(p.status) === k));
+        b.append(svgUse(v.icon), document.createTextNode(v.label));
+        b.addEventListener("click", () => setStatus(p, k));
+        seg.append(b);
+      });
+      stBox.append(seg);
+    } else stBox.append(statusPill(p.status));
     meta.append(pfBox, stBox);
     body.append(meta);
-
     box.append(head, body);
 
-    const foot = el("div", "dlg-foot");
-    const del = el("button", "danger-btn", "Delete post"); del.type = "button";
-    del.addEventListener("click", () => {
-      const c = el("div", "confirm");
-      c.append(document.createTextNode("Delete this post?"));
-      const yes = el("button", "danger-btn", "Delete"); yes.type = "button";
-      const no = el("button", "ghost", "Keep"); no.type = "button";
-      yes.addEventListener("click", () => deletePost(p));
-      no.addEventListener("click", () => c.replaceWith(del));
-      c.append(yes, no);
-      del.replaceWith(c);
-    });
-    const edit = el("button", "primary", "Edit post"); edit.type = "button";
-    edit.addEventListener("click", () => { detail.close(); openEditor(p); });
-    foot.append(del, edit);
-    box.append(foot);
+    if (state.canEdit) {
+      const foot = el("div", "dlg-foot");
+      const del = el("button", "danger-btn", "Delete post"); del.type = "button";
+      del.addEventListener("click", () => {
+        const c = el("div", "confirm");
+        c.append(document.createTextNode("Delete this post?"));
+        const yes = el("button", "danger-btn", "Delete"); yes.type = "button";
+        const no = el("button", "ghost", "Keep"); no.type = "button";
+        yes.addEventListener("click", () => deletePost(p));
+        no.addEventListener("click", () => c.replaceWith(del));
+        c.append(yes, no);
+        del.replaceWith(c);
+      });
+      const edit = el("button", "primary", "Edit post"); edit.type = "button";
+      edit.addEventListener("click", () => { detail.close(); openEditor(p); });
+      foot.append(del, edit);
+      box.append(foot);
+    }
   }
 
   async function setStatus(p, k) {
-    if ((p.status || "scheduled") === k) return;
-    const { error } = await sb.from("posts").update({ status: k, updated_at: new Date().toISOString() }).eq("id", p.id);
-    if (error) { toast(/status_check|check constraint/i.test(error.message) ? "Pending needs a one-time database update. See step 2b in the README." : "Couldn't update the status. Try again."); return; }
-    p.status = k; renderAll();
-    toast("Marked as " + STATUS[k].label.toLowerCase());
+    if (stKey(p.status) === k) return;
+    showLoader("Saving");
+    try {
+      await mutate((posts) => posts.map((x) => x.id === p.id ? { ...x, status: k, updated_at: new Date().toISOString() } : x),
+        "Mark \"" + postLabel(p) + "\" (" + shortDate(p.date) + ") as " + STATUS[k].label.toLowerCase());
+      toast("Marked as " + STATUS[k].label.toLowerCase());
+    } catch (e) { toast(errText(e)); }
+    hideLoader();
   }
 
   /* ---------- Editor ---------- */
@@ -663,13 +787,12 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     $("f-time").value = post ? (post.time || "") : "";
     $("f-title").value = post ? (post.title || "") : "";
     PLATFORMS.forEach((p) => { $("f-pf-" + p.k).checked = !!(post && (post.platforms || []).includes(p.k)); });
-    $("f-st-" + (post && STATUS[post.status] ? post.status : "scheduled")).checked = true;
+    $("f-st-" + (post ? stKey(post.status) : "scheduled")).checked = true;
     $("f-err").hidden = true;
     editor.showModal();
   }
-  function closeEditor() { editor.close(); }
-  $("form-close").addEventListener("click", closeEditor);
-  $("form-cancel").addEventListener("click", closeEditor);
+  $("form-close").addEventListener("click", () => editor.close());
+  $("form-cancel").addEventListener("click", () => editor.close());
 
   $("form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -678,96 +801,43 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const platforms = PLATFORMS.filter((p) => $("f-pf-" + p.k).checked).map((p) => p.k);
     const title = $("f-title").value.trim();
     if (!date) { err.hidden = false; err.textContent = "Pick the date this post goes out."; return; }
-    if (!platforms.length) { err.hidden = false; err.textContent = "Choose at least one platform."; return; }
     if (!title) { err.hidden = false; err.textContent = "Write what's being posted before saving."; return; }
+    if (!platforms.length) { err.hidden = false; err.textContent = "Choose at least one platform."; return; }
     err.hidden = true;
 
     const prev = ed.post;
-    editor.close();
-    showLoader("Saving to calendar");
+    const now = new Date().toISOString();
     const row = {
-      id: prev ? prev.id : crypto.randomUUID(),
+      id: prev ? prev.id : newId(),
       date, time: $("f-time").value || "", title, platforms,
       status: (document.querySelector('input[name="f-status"]:checked') || {}).value || "scheduled",
-      updated_at: new Date().toISOString(),
+      created_at: prev ? (prev.created_at || now) : now,
+      updated_at: now,
     };
-    const { error } = await sb.from("posts").upsert(row);
-    if (error) {
+    editor.close();
+    showLoader("Saving to calendar");
+    try {
+      await mutate((posts) => prev ? posts.map((x) => x.id === row.id ? row : x) : [...posts, row],
+        (prev ? "Edit" : "Add") + " post: " + title + " (" + shortDate(date) + ")");
       hideLoader();
-      err.hidden = false;
-      err.textContent = /status_check|check constraint/i.test(error.message) ? "Pending needs a one-time database update. See step 2b in the README." : /jwt|auth|row-level|security|policy/i.test(error.message) ? "You're not allowed to save. Sign out and sign in again." : "Saving failed: " + error.message;
+      toast(prev ? "Post updated" : "Added to " + shortDate(date));
+      selectDay(date);
+    } catch (ex) {
+      hideLoader();
+      err.hidden = false; err.textContent = errText(ex);
       editor.showModal();
-      return;
     }
-    await load();
-    hideLoader();
-    toast(prev ? "Post updated" : "Added to " + parse(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
-    selectDay(date);
   });
 
   async function deletePost(p) {
     detail.close();
     showLoader("Deleting post");
-    const { error } = await sb.from("posts").delete().eq("id", p.id);
-    if (error) toast("Couldn't delete the post. Try again.");
-    else { state.posts.delete(p.id); renderAll(); toast("Post deleted"); }
+    try {
+      await mutate((posts) => posts.filter((x) => x.id !== p.id), "Delete post: " + postLabel(p) + " (" + shortDate(p.date) + ")");
+      toast("Post deleted");
+    } catch (e) { toast(errText(e)); }
     hideLoader();
   }
-
-  /* ---------- Data ---------- */
-  async function load() {
-    const { data, error } = await sb.from("posts").select("*").order("date");
-    if (error) { notice("The calendar couldn't load: " + error.message); return; }
-    const m = new Map();
-    (data || []).forEach((r) => m.set(r.id, { ...r, platforms: Array.isArray(r.platforms) ? r.platforms : [] }));
-    state.posts = m;
-    renderAll();
-  }
-  let reloadT;
-  function scheduleReload() { clearTimeout(reloadT); reloadT = setTimeout(load, 400); }
-
-  function notice(msg) { const n = $("notice"); n.textContent = msg; n.hidden = !msg; }
-
-  /* ---------- Auth ---------- */
-  async function enterApp(session) {
-    state.signedIn = true;
-    $("login").hidden = true; $("app").hidden = false;
-    $("who").textContent = session.user.email || "";
-    notice("");
-    await load();
-    if (!state.channel) {
-      state.channel = sb.channel("posts-live")
-        .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, scheduleReload)
-        .subscribe();
-    }
-  }
-  function leaveApp() {
-    state.signedIn = false; state.posts = new Map();
-    if (state.channel) { sb.removeChannel(state.channel); state.channel = null; }
-    $("app").hidden = true; $("login").hidden = false;
-    renderAll();
-  }
-
-  $("login-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const err = $("login-err");
-    err.hidden = true;
-    const email = $("login-email").value.trim();
-    const password = $("login-pass").value;
-    if (!email || !password) { err.hidden = false; err.textContent = "Enter your email and password."; return; }
-    showLoader("Signing in");
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) {
-      hideLoader();
-      err.hidden = false;
-      err.textContent = /invalid/i.test(error.message) ? "That email and password don't match. Check them and try again." : error.message;
-      return;
-    }
-    $("login-pass").value = "";
-    await enterApp(data.session);
-    hideLoader();
-  });
-  $("signout").addEventListener("click", async () => { await sb.auth.signOut(); leaveApp(); toast("Signed out"); });
 
   /* ---------- Navigation ---------- */
   $("prev").addEventListener("click", () => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1); renderGrid(); });
@@ -776,21 +846,15 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   $("add-top").addEventListener("click", () => openEditor(null, state.selected));
 
   /* ---------- Boot ---------- */
-  renderLegend(); renderDow(); buildPlatformPick(); renderAll();
+  renderLegend(); renderDow(); buildPlatformPick();
+  state.key = readKey(); state.canEdit = !!state.key;
+  applyEditMode();
 
-  async function boot() {
-    if (!sb) {
-      $("app").hidden = false;
-      notice(configured ? "The Supabase library didn't load. Check your internet connection and reload." : "Setup needed: paste your Supabase Project URL and anon key at the top of the script in index.html (see SETUP.md).");
-      markReady(); return;
-    }
-    const { data } = await sb.auth.getSession();
-    if (data && data.session) await enterApp(data.session);
-    else { $("login").hidden = false; }
-    sb.auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT" && state.signedIn) leaveApp(); });
-    markReady();
-  }
-  boot();
+  // Keep both people's screens current: refresh every 2 minutes and when the tab comes back into view.
+  setInterval(() => { if (!document.hidden) load(true); }, 120000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && state.ready) load(true); });
+
+  load().finally(markReady);
 })();
 </script>
 </body>
