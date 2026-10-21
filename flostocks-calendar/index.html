@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Figtree:wght@400;500;600;700&family=Lexend:wght@400;700;800&display=swap">
 <style>
 /* Layout: neubrutalist board. Thick ink outlines, hard offset shadows, flat brand-green and black blocks.
    Brand bar on top, month grid left, the selected day's posts right; stacks on phones. */
@@ -238,10 +238,11 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 @keyframes draw { to { stroke-dashoffset: 180; } }
 .hero-mark .flash { position: absolute; inset: -10%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--green) 30%, transparent), transparent 65%); opacity: 0; animation: flash .7s ease-out .95s; }
 @keyframes flash { 30% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.5); } }
-.word { display: flex; overflow: hidden; font-family: var(--f-display); font-weight: 900; font-style: italic; font-stretch: 125%; font-size: clamp(34px, 8vw, 64px); line-height: 1.05; letter-spacing: .02em; color: var(--ink); padding: 0 .1em; }
-.word span { display: inline-block; transform: translateY(115%) skewX(-12deg); animation: rise .55s cubic-bezier(.2, .9, .2, 1) forwards; animation-delay: calc(1.2s + var(--i) * 45ms); }
+.word { display: flex; overflow: hidden; font-family: "Lexend", "Arial Black", Arial, sans-serif; font-weight: 800; font-size: clamp(40px, 9.5vw, 76px); line-height: 1.12; letter-spacing: -.015em; color: var(--ink); padding: 0 .15em; }
+.word span { display: inline-block; transform: translateY(115%) skewX(-24deg); animation: rise .55s cubic-bezier(.2, .9, .2, 1) forwards; animation-delay: calc(1.2s + var(--i) * 45ms); }
 .word span.g { color: var(--green); }
-@keyframes rise { to { transform: translateY(0) skewX(0); } }
+@keyframes rise { to { transform: translateY(0) skewX(-13deg); } }
+.by { font-family: "Lexend", Arial, sans-serif; font-weight: 400; font-size: clamp(16px, 2.6vw, 22px); color: var(--ink); margin-top: -16px; opacity: 0; animation: fade .5s ease 1.65s forwards; }
 .tag { font-weight: 800; font-size: 12px; letter-spacing: .32em; text-transform: uppercase; color: var(--on-pill); background: var(--green-soft); border: 2.5px solid var(--edge); box-shadow: 3px 3px 0 var(--hard-c); padding: 5px 10px 5px calc(10px + .32em); border-radius: 4px; opacity: 0; animation: fade .5s ease 1.75s forwards; }
 @keyframes fade { to { opacity: 1; } }
 .stage-in { animation: lift .5s cubic-bezier(.6, 0, .4, 1) 2.15s forwards; }
@@ -251,8 +252,9 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 @media (prefers-reduced-motion: reduce) {
   #intro .layer { animation: none; }
   #intro { animation: fade-out .4s ease 1.2s forwards; }
-  .hero-mark .pc, .word span, .tag, .hero-mark .halo circle, .stage-in, .hero-mark .halo, .hero-mark .flash { animation: none; opacity: 1; transform: none; stroke-dashoffset: 180; }
+  .hero-mark .pc, .tag, .by, .hero-mark .halo circle, .stage-in, .hero-mark .halo, .hero-mark .flash { animation: none; opacity: 1; transform: none; stroke-dashoffset: 180; }
   .hero-mark .flash { opacity: 0; }
+  .word span { animation: none; transform: skewX(-13deg); }
   .spin .ring { animation-duration: 2.4s; }
   .spin .mark { animation: none; }
   .icon-btn, .ghost, .primary, .danger-btn, .chip, .post, .pick label { transition: none; }
@@ -298,6 +300,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
         </svg>
       </div>
       <div class="word"><span style="--i:0">F</span><span style="--i:1">L</span><span style="--i:2">O</span><span class="g" style="--i:3">S</span><span class="g" style="--i:4">T</span><span class="g" style="--i:5">O</span><span class="g" style="--i:6">C</span><span class="g" style="--i:7">K</span><span class="g" style="--i:8">S</span></div>
+      <div class="by">By Floret Capitals</div>
       <div class="tag">Content Calendar</div>
     </div>
     <div class="skip">Tap to skip</div>
