@@ -1,6 +1,6 @@
 # Flostocks Content Calendar: setup
 
-The calendar is one file, `index.html`, hosted free on GitHub Pages. Posts, captions and files are stored in a free Supabase project, and only people you create accounts for can sign in.
+The calendar is one file, [index.html](index.html), hosted free on GitHub Pages. Each post's date, platforms, caption and status are stored in a free Supabase project, and only people you create accounts for can sign in.
 
 Setup takes about 10 minutes and is done once.
 
@@ -9,10 +9,47 @@ Setup takes about 10 minutes and is done once.
 1. Go to <https://supabase.com>, sign up (free) and click **New project**.
 2. Name it `flostocks-calendar`, choose a database password (save it somewhere), and pick the region closest to you. Click **Create new project** and wait about a minute.
 
-## 2. Create the database and file storage
+## 2. Create the database
 
 1. In the left menu open **SQL Editor** and click **New query**.
-2. Open `setup.sql` from this folder, copy everything, paste it in, and click **Run**. You should see "Success. No rows returned".
+2. Copy all of the SQL below (hover over the box and click the copy icon in its top-right corner), paste it into the query box, and click **Run**. You should see "Success. No rows returned".
+
+   The same SQL is also in the file [setup.sql](setup.sql).
+
+```sql
+-- Flostocks Content Calendar: one-time Supabase setup.
+-- Paste this whole file into Supabase → SQL Editor → New query, then click Run.
+
+-- 1. Posts table
+create table if not exists public.posts (
+  id          uuid primary key default gen_random_uuid(),
+  date        text not null,                       -- YYYY-MM-DD
+  time        text not null default '',            -- HH:MM, optional
+  title       text not null default '',
+  caption     text not null default '',
+  platforms   text[] not null default '{}',
+  status      text not null default 'scheduled' check (status in ('scheduled', 'uploaded')),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+-- Only signed-in team members can read or change posts.
+alter table public.posts enable row level security;
+
+drop policy if exists "team reads posts" on public.posts;
+drop policy if exists "team adds posts" on public.posts;
+drop policy if exists "team edits posts" on public.posts;
+drop policy if exists "team deletes posts" on public.posts;
+create policy "team reads posts"   on public.posts for select to authenticated using (true);
+create policy "team adds posts"    on public.posts for insert to authenticated with check (true);
+create policy "team edits posts"   on public.posts for update to authenticated using (true) with check (true);
+create policy "team deletes posts" on public.posts for delete to authenticated using (true);
+
+-- Live updates: changes appear for everyone without reloading.
+do $$ begin
+  alter publication supabase_realtime add table public.posts;
+exception when duplicate_object then null; end $$;
+```
 
 ## 3. Turn off public sign-ups
 
@@ -28,7 +65,7 @@ Do this before publishing the site, so strangers can't create accounts.
 2. Enter your email and a password, tick **Auto Confirm User**, and click **Create user**.
 3. Repeat for your social media manager, then send them their email and password.
 
-Both accounts can add, edit, delete, download and change the status of posts.
+Both accounts can add, edit and delete posts, copy or download captions, and mark posts as uploaded.
 
 ## 5. Connect the page to Supabase
 
@@ -51,8 +88,7 @@ Both accounts can add, edit, delete, download and change the status of posts.
 
 ## Limits on the free plan
 
-- Each file can be up to 50 MB. Compress larger videos before uploading.
-- Total file storage is 1 GB. Delete old posts once they're published to free space.
+- The calendar only stores text, so it stays far below the free plan's limits.
 - Supabase pauses free projects after a week with no activity. Opening the calendar regularly prevents this; if it does pause, click **Restore project** in the Supabase dashboard. No data is lost.
 
 ## Troubleshooting
@@ -61,5 +97,4 @@ Both accounts can add, edit, delete, download and change the status of posts.
 | --- | --- |
 | "Setup needed" message | The two values in step 5 are still the placeholders. |
 | "That email and password don't match" | Check the account in **Authentication → Users**, or reset its password there. |
-| "The calendar couldn't load: relation … does not exist" | Step 2 didn't run. Run `setup.sql` again. |
-| Files won't upload | Check the `content` bucket exists under **Storage**, then run `setup.sql` again. |
+| "The calendar couldn't load: relation … does not exist" | Step 2 didn't run. Run the SQL from step 2 again. |

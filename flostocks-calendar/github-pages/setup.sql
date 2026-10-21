@@ -10,7 +10,6 @@ create table if not exists public.posts (
   caption     text not null default '',
   platforms   text[] not null default '{}',
   status      text not null default 'scheduled' check (status in ('scheduled', 'uploaded')),
-  media       jsonb not null default '[]',         -- [{path, name, type, size}]
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -31,17 +30,3 @@ create policy "team deletes posts" on public.posts for delete to authenticated u
 do $$ begin
   alter publication supabase_realtime add table public.posts;
 exception when duplicate_object then null; end $$;
-
--- 2. Private file storage for the content (50 MB per file on the free plan)
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('content', 'content', false, 52428800)
-on conflict (id) do nothing;
-
-drop policy if exists "team reads content" on storage.objects;
-drop policy if exists "team uploads content" on storage.objects;
-drop policy if exists "team updates content" on storage.objects;
-drop policy if exists "team deletes content" on storage.objects;
-create policy "team reads content"   on storage.objects for select to authenticated using (bucket_id = 'content');
-create policy "team uploads content" on storage.objects for insert to authenticated with check (bucket_id = 'content');
-create policy "team updates content" on storage.objects for update to authenticated using (bucket_id = 'content');
-create policy "team deletes content" on storage.objects for delete to authenticated using (bucket_id = 'content');

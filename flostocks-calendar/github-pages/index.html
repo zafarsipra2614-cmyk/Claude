@@ -139,7 +139,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .day h2 { margin: 0; font-family: var(--f-display); font-weight: 900; font-stretch: 112%; font-size: 24px; line-height: 1.05; text-transform: uppercase; text-wrap: balance; }
 .day .eyebrow { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; background: var(--logo-k); color: var(--bg); padding: 2px 7px; border-radius: 3px; margin-bottom: 8px; }
 .day-list { display: flex; flex-direction: column; gap: 12px; }
-.post { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; border: var(--bw) solid var(--edge); border-radius: var(--r); padding: 10px; background: var(--surface); text-align: left; width: 100%; box-shadow: var(--hard); transition: transform .08s, box-shadow .08s; }
+.post { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; border: var(--bw) solid var(--edge); border-radius: var(--r); padding: 10px; background: var(--surface); text-align: left; width: 100%; box-shadow: var(--hard); transition: transform .08s, box-shadow .08s; }
 .post:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--hard-c); }
 .post:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--hard-c); }
 .thumb { width: 64px; height: 64px; border-radius: 4px; border: 2px solid var(--edge); background: var(--tint); overflow: hidden; display: grid; place-items: center; font-family: var(--f-display); font-size: 11px; font-weight: 900; }
@@ -172,26 +172,11 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
 .pick input { position: absolute; opacity: 0; pointer-events: none; }
 .pick label:has(input:checked) { background: var(--green-soft); color: var(--on-pill); transform: translate(3px, 3px); box-shadow: 0 0 0 var(--hard-c); }
 .pick label:has(input:focus-visible) { outline: 3px solid var(--green); outline-offset: 2px; }
-.drop { border: 2.5px dashed var(--edge); border-radius: var(--r); padding: 20px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; display: block; background: var(--faint); }
-.drop.over, .drop:hover { background: var(--green-soft); color: var(--on-pill); border-style: solid; }
-.drop strong { font-weight: 900; text-transform: uppercase; text-decoration: underline; text-decoration-thickness: 2px; }
-.files { display: flex; flex-direction: column; gap: 8px; }
-.file { display: flex; align-items: center; gap: 10px; border: 2px solid var(--edge); border-radius: var(--r); padding: 6px 8px; font-size: 13px; font-weight: 600; background: var(--surface); }
-.file .thumb { width: 40px; height: 40px; }
-.file .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file .s { color: var(--muted); font-variant-numeric: tabular-nums; }
 .x-btn { border: 0; background: none; padding: 4px 6px; border-radius: 4px; font-weight: 800; }
 .x-btn:hover { color: var(--danger); }
 .err { background: var(--danger); color: #fff; font-size: 13px; font-weight: 700; padding: 8px 12px; border: 2px solid var(--edge); border-radius: var(--r); }
 
 /* detail */
-.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-.media { border: var(--bw) solid var(--edge); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; background: var(--faint); box-shadow: var(--hard); }
-.media .pv { aspect-ratio: 4 / 5; max-width: 100%; background: var(--tint); display: grid; place-items: center; font-family: var(--f-display); font-weight: 900; }
-.media .pv img, .media .pv video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.media .meta { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--surface); border-top: var(--bw) solid var(--edge); }
-.media .meta span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--muted); }
-.media .meta .ghost { padding: 5px 9px; font-size: 12px; box-shadow: 2px 2px 0 var(--hard-c); }
 .caption { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--faint); border: var(--bw) solid var(--edge); border-radius: var(--r); padding: 12px 14px; font-size: 14px; max-height: 260px; overflow-y: auto; user-select: text; }
 .cap-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .seg { display: inline-flex; border: var(--bw) solid var(--edge); border-radius: var(--r); overflow: hidden; box-shadow: 3px 3px 0 var(--hard-c); }
@@ -395,7 +380,7 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
         <div class="field"><label class="lbl" for="f-date">Post date</label><input type="date" id="f-date" required></div>
         <div class="field"><label class="lbl" for="f-time">Post time (optional)</label><input type="time" id="f-time"></div>
       </div>
-      <div class="field"><label class="lbl" for="f-title">Title</label><input type="text" id="f-title" maxlength="120" placeholder="e.g. Weekly market wrap"></div>
+      <div class="field"><label class="lbl" for="f-title">What's being posted</label><input type="text" id="f-title" maxlength="120" placeholder="e.g. Reel: weekly market wrap"></div>
       <div class="field"><label class="lbl" for="f-caption">Caption</label><textarea id="f-caption" placeholder="Write the caption exactly as it should be posted, hashtags included."></textarea></div>
       <div><span class="lbl">Platforms</span><div class="pick" id="f-platforms"></div></div>
       <div><span class="lbl">Status</span>
@@ -403,12 +388,6 @@ dialog::backdrop { background: rgba(5, 8, 4, .6); }
           <label><input type="radio" name="f-status" id="f-st-scheduled" value="scheduled" checked><span class="status st-scheduled"><svg><use href="#i-clock"/></svg>Scheduled</span></label>
           <label><input type="radio" name="f-status" id="f-st-uploaded" value="uploaded"><span class="status st-uploaded"><svg><use href="#i-check"/></svg>Uploaded</span></label>
         </div>
-      </div>
-      <div>
-        <span class="lbl">Content files</span>
-        <label class="drop" id="drop" for="f-files"><strong>Choose files</strong> or drop them here<br><span style="font-size:12px">Images, videos (MP4, MOV) or PDFs · up to 50 MB each</span></label>
-        <input type="file" id="f-files" multiple accept="image/*,video/*,application/pdf" class="sr">
-        <div class="files" id="f-list" style="margin-top:8px"></div>
       </div>
       <div class="err" id="f-err" hidden></div>
     </div>
@@ -435,7 +414,6 @@ const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
 const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 
 (() => {
-  const BUCKET = "content";
   const PLATFORMS = [
     { k: "instagram", label: "Instagram", short: "IG" },
     { k: "facebook", label: "Facebook", short: "FB" },
@@ -448,8 +426,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     scheduled: { label: "Scheduled", icon: "i-clock" },
     uploaded: { label: "Uploaded", icon: "i-check" },
   };
-  const MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", heic: "image/heic", mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm", m4v: "video/x-m4v", pdf: "application/pdf" };
-  const MAX = 50 * 1024 * 1024;
   const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   const $ = (id) => document.getElementById(id);
@@ -462,14 +438,12 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   const longDate = (s) => parse(s).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const svgUse = (id, cls) => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); if (cls) s.setAttribute("class", cls); s.setAttribute("aria-hidden", "true"); const u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#" + id); s.appendChild(u); return s; };
   const slug = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-  const extOf = (name) => ((name || "").split(".").pop() || "").toLowerCase();
 
   const configured = !SUPABASE_URL.startsWith("PASTE_") && !SUPABASE_ANON_KEY.startsWith("PASTE_");
   const sb = configured && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const state = {
     posts: new Map(),
-    urls: new Map(),
     month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
     selected: ymd(new Date()),
     signedIn: false, ready: false, introDone: false,
@@ -503,16 +477,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   function pfBadge(k) { const p = PLATFORMS.find((x) => x.k === k); const b = el("span", "pf pf-" + k, p ? p.short : k); b.title = p ? p.label : k; return b; }
   function statusPill(s) { const st = STATUS[s] || STATUS.scheduled; const p = el("span", "status st-" + (STATUS[s] ? s : "scheduled")); p.append(svgUse(st.icon), document.createTextNode(st.label)); return p; }
   function postLabel(p) { return p.title || (p.caption || "").split("\n")[0] || "Untitled post"; }
-  function urlFor(m) { return m.url || state.urls.get(m.path) || ""; }
-  function thumbFor(m, cls) {
-    const t = el("div", cls || "thumb");
-    if (!m) { t.textContent = "TEXT"; return t; }
-    const src = urlFor(m);
-    if (src && m.type && m.type.startsWith("image/")) { const i = new Image(); i.alt = ""; i.loading = "lazy"; i.src = src; i.onerror = () => { i.remove(); t.textContent = "IMG"; }; t.append(i); }
-    else if (src && m.type && m.type.startsWith("video/")) { const v = document.createElement("video"); v.muted = true; v.preload = "metadata"; v.playsInline = true; v.src = src + "#t=0.1"; t.append(v); }
-    else t.textContent = (extOf(m.name) || "FILE").toUpperCase().slice(0, 4);
-    return t;
-  }
   function sortPosts(arr) { return arr.sort((a, b) => (a.time || "99").localeCompare(b.time || "99") || (a.created_at || "").localeCompare(b.created_at || "")); }
   function postsOn(date) { return sortPosts([...state.posts.values()].filter((p) => p.date === date)); }
 
@@ -586,12 +550,11 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     box.append(head);
     const list = postsOn(state.selected);
     if (!list.length) {
-      box.append(el("div", "empty", state.signedIn ? "Nothing planned for this day yet. Add a post with its files and caption." : "Sign in to see the posts for this day."));
+      box.append(el("div", "empty", state.signedIn ? "Nothing planned for this day yet. Add the post that goes out, with its caption." : "Sign in to see the posts for this day."));
     } else {
       const wrap = el("div", "day-list");
       list.forEach((p) => {
         const b = el("button", "post"); b.type = "button";
-        b.append(thumbFor((p.media || [])[0]));
         const body = el("div", "post-body");
         const top = el("div", "post-top");
         (p.platforms || []).forEach((k) => top.append(pfBadge(k)));
@@ -651,30 +614,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     meta.append(pfBox, stBox);
     body.append(meta);
 
-    const mBox = el("div"); mBox.append(el("span", "lbl", "Content files"));
-    if ((p.media || []).length) {
-      const g = el("div", "gallery");
-      p.media.forEach((m, i) => {
-        const card = el("div", "media");
-        const pv = thumbFor(m, "pv");
-        const v = pv.querySelector("video"); if (v) { v.controls = true; v.src = urlFor(m); }
-        const row = el("div", "meta");
-        row.append(el("span", null, m.name || "File " + (i + 1)));
-        const dl = el("button", "ghost", "Download"); dl.type = "button";
-        dl.addEventListener("click", () => downloadMedia(p, m, i));
-        row.append(dl);
-        card.append(pv, row);
-        g.append(card);
-      });
-      mBox.append(g);
-      if (p.media.length > 1) {
-        const all = el("button", "ghost", "Download all " + p.media.length + " files"); all.type = "button"; all.style.marginTop = "12px";
-        all.addEventListener("click", async () => { for (let i = 0; i < p.media.length; i++) await downloadMedia(p, p.media[i], i); });
-        mBox.append(all);
-      }
-    } else mBox.append(el("div", "empty", "No files attached. This is a text-only post."));
-    body.append(mBox);
-
     const cBox = el("div"); cBox.append(el("span", "lbl", "Caption"));
     const cap = el("div", "caption", p.caption || "No caption written.");
     cBox.append(cap);
@@ -699,7 +638,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const del = el("button", "danger-btn", "Delete post"); del.type = "button";
     del.addEventListener("click", () => {
       const c = el("div", "confirm");
-      c.append(document.createTextNode("Delete this post and its files?"));
+      c.append(document.createTextNode("Delete this post?"));
       const yes = el("button", "danger-btn", "Delete"); yes.type = "button";
       const no = el("button", "ghost", "Keep"); no.type = "button";
       yes.addEventListener("click", () => deletePost(p));
@@ -728,18 +667,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
-  function fileName(p, m, i) {
-    const ext = extOf(m.name) || "bin";
-    const base = [p.date, slug(postLabel(p))].filter(Boolean).join("-");
-    return base + (p.media.length > 1 ? "-" + (i + 1) : "") + "." + ext;
-  }
-  async function downloadMedia(p, m, i) {
-    showLoader("Preparing " + (m.name || "file"));
-    const { data, error } = await sb.storage.from(BUCKET).download(m.path);
-    hideLoader();
-    if (error || !data) { toast("This file couldn't be downloaded. It may have been removed."); return; }
-    saveBlob(data, fileName(p, m, i));
-  }
   function downloadCaption(p) {
     const plats = (p.platforms || []).map((k) => (PLATFORMS.find((x) => x.k === k) || {}).label || k).join(", ");
     const head = postLabel(p) + "\n" + longDate(p.date) + (p.time ? " at " + fmtTime(p.time) : "") + (plats ? "\nPlatforms: " + plats : "") + "\n\n";
@@ -748,7 +675,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 
   /* ---------- Editor ---------- */
   const editor = $("editor");
-  const ed = { post: null, keep: [], files: [] };
+  const ed = { post: null };
   function buildPlatformPick() {
     const box = $("f-platforms"); box.textContent = "";
     PLATFORMS.forEach((p) => {
@@ -760,8 +687,6 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
   }
   function openEditor(post, date) {
     ed.post = post || null;
-    ed.keep = post ? [...(post.media || [])] : [];
-    ed.files = [];
     $("form-title").textContent = post ? "Edit post" : "Add content";
     $("f-date").value = post ? post.date : (date || state.selected);
     $("f-time").value = post ? (post.time || "") : "";
@@ -769,53 +694,12 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     $("f-caption").value = post ? (post.caption || "") : "";
     PLATFORMS.forEach((p) => { $("f-pf-" + p.k).checked = !!(post && (post.platforms || []).includes(p.k)); });
     $((post && post.status === "uploaded") ? "f-st-uploaded" : "f-st-scheduled").checked = true;
-    $("f-files").value = "";
     $("f-err").hidden = true;
-    renderFiles();
     editor.showModal();
   }
-  function closeEditor() { ed.files.forEach((f) => f.url && URL.revokeObjectURL(f.url)); editor.close(); }
+  function closeEditor() { editor.close(); }
   $("form-close").addEventListener("click", closeEditor);
   $("form-cancel").addEventListener("click", closeEditor);
-
-  function typeOf(file) {
-    if (file.type && /^(image|video)\/|^application\/pdf$/.test(file.type)) return file.type;
-    return MIME[extOf(file.name)] || "";
-  }
-  function addFiles(list) {
-    const errs = [];
-    [...list].forEach((f) => {
-      const t = typeOf(f);
-      if (!t) errs.push(f.name + " isn't an image, video or PDF.");
-      else if (f.size > MAX) errs.push(f.name + " is " + fmtSize(f.size) + ". Files must be 50 MB or smaller; compress it and try again.");
-      else ed.files.push({ file: f, type: t, url: URL.createObjectURL(f) });
-    });
-    const err = $("f-err");
-    err.hidden = !errs.length; err.textContent = errs.join(" ");
-    renderFiles();
-  }
-  function renderFiles() {
-    const box = $("f-list"); box.textContent = "";
-    ed.keep.forEach((m, i) => {
-      const r = el("div", "file");
-      r.append(thumbFor(m), el("span", "n", m.name || "File"), el("span", "s", m.size ? fmtSize(m.size) : ""));
-      const x = el("button", "x-btn", "Remove"); x.type = "button";
-      x.addEventListener("click", () => { ed.keep.splice(i, 1); renderFiles(); });
-      r.append(x); box.append(r);
-    });
-    ed.files.forEach((f, i) => {
-      const r = el("div", "file");
-      r.append(thumbFor({ type: f.type, url: f.url, name: f.file.name }), el("span", "n", f.file.name), el("span", "s", fmtSize(f.file.size)));
-      const x = el("button", "x-btn", "Remove"); x.type = "button";
-      x.addEventListener("click", () => { URL.revokeObjectURL(f.url); ed.files.splice(i, 1); renderFiles(); });
-      r.append(x); box.append(r);
-    });
-  }
-  $("f-files").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
-  const drop = $("drop");
-  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
-  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
 
   $("form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -826,61 +710,36 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const title = $("f-title").value.trim();
     if (!date) { err.hidden = false; err.textContent = "Pick the date this post goes out."; return; }
     if (!platforms.length) { err.hidden = false; err.textContent = "Choose at least one platform."; return; }
-    if (!caption.trim() && !title && !ed.keep.length && !ed.files.length) { err.hidden = false; err.textContent = "Add a caption, a title or a file before saving."; return; }
+    if (!caption.trim() && !title) { err.hidden = false; err.textContent = "Add what's being posted or its caption before saving."; return; }
     err.hidden = true;
 
     const prev = ed.post;
-    const id = prev ? prev.id : crypto.randomUUID();
-    const uploaded = [];
     editor.close();
-    showLoader(ed.files.length ? "Uploading 1 of " + ed.files.length : "Saving");
-    try {
-      for (let i = 0; i < ed.files.length; i++) {
-        setLoader("Uploading " + (i + 1) + " of " + ed.files.length);
-        const f = ed.files[i];
-        const safe = f.file.name.replace(/[^A-Za-z0-9._-]+/g, "-").slice(-80);
-        const path = id + "/" + Date.now() + "-" + i + "-" + safe;
-        const { error } = await sb.storage.from(BUCKET).upload(path, f.file, { contentType: f.type, upsert: false });
-        if (error) throw error;
-        uploaded.push({ path, name: f.file.name, type: f.type, size: f.file.size });
-      }
-      setLoader("Saving to calendar");
-      const now = new Date().toISOString();
-      const row = {
-        id, date, time: $("f-time").value || "", title, caption, platforms,
-        status: $("f-st-uploaded").checked ? "uploaded" : "scheduled",
-        media: [...ed.keep.map(({ path, name, type, size }) => ({ path, name, type, size })), ...uploaded],
-        updated_at: now,
-      };
-      const { error } = await sb.from("posts").upsert(row);
-      if (error) throw error;
-      if (prev) {
-        const keep = new Set(ed.keep.map((m) => m.path));
-        const gone = (prev.media || []).map((m) => m.path).filter((p) => !keep.has(p));
-        if (gone.length) await sb.storage.from(BUCKET).remove(gone);
-      }
-      ed.files.forEach((f) => URL.revokeObjectURL(f.url));
-      await load();
+    showLoader("Saving to calendar");
+    const row = {
+      id: prev ? prev.id : crypto.randomUUID(),
+      date, time: $("f-time").value || "", title, caption, platforms,
+      status: $("f-st-uploaded").checked ? "uploaded" : "scheduled",
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await sb.from("posts").upsert(row);
+    if (error) {
       hideLoader();
-      toast(prev ? "Post updated" : "Added to " + parse(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
-      selectDay(date);
-    } catch (ex) {
-      if (uploaded.length) await sb.storage.from(BUCKET).remove(uploaded.map((m) => m.path));
-      hideLoader();
-      const msg = String((ex && (ex.message || ex.error)) || "");
       err.hidden = false;
-      err.textContent = /size|too large|exceeded/i.test(msg) ? "One of the files is too large. Files must be 50 MB or smaller."
-        : /jwt|auth|row-level|security|policy/i.test(msg) ? "You're not allowed to save. Sign out and sign in again."
-        : "Saving failed: " + (msg || "check your connection and try again.");
+      err.textContent = /jwt|auth|row-level|security|policy/i.test(error.message) ? "You're not allowed to save. Sign out and sign in again." : "Saving failed: " + error.message;
       editor.showModal();
+      return;
     }
+    await load();
+    hideLoader();
+    toast(prev ? "Post updated" : "Added to " + parse(date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
+    selectDay(date);
   });
 
   async function deletePost(p) {
     detail.close();
     showLoader("Deleting post");
     const { error } = await sb.from("posts").delete().eq("id", p.id);
-    if (!error && (p.media || []).length) await sb.storage.from(BUCKET).remove(p.media.map((m) => m.path));
     if (error) toast("Couldn't delete the post. Try again.");
     else { state.posts.delete(p.id); renderAll(); toast("Post deleted"); }
     hideLoader();
@@ -891,12 +750,7 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
     const { data, error } = await sb.from("posts").select("*").order("date");
     if (error) { notice("The calendar couldn't load: " + error.message); return; }
     const m = new Map();
-    (data || []).forEach((r) => m.set(r.id, { ...r, media: Array.isArray(r.media) ? r.media : [], platforms: Array.isArray(r.platforms) ? r.platforms : [] }));
-    const paths = [...m.values()].flatMap((p) => p.media.map((x) => x.path)).filter((p) => p && !state.urls.has(p));
-    for (let i = 0; i < paths.length; i += 100) {
-      const { data: signed } = await sb.storage.from(BUCKET).createSignedUrls(paths.slice(i, i + 100), 60 * 60 * 6);
-      (signed || []).forEach((s) => { if (s.signedUrl) state.urls.set(s.path, s.signedUrl); });
-    }
+    (data || []).forEach((r) => m.set(r.id, { ...r, platforms: Array.isArray(r.platforms) ? r.platforms : [] }));
     state.posts = m;
     renderAll();
   }
@@ -917,14 +771,10 @@ const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
         .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, scheduleReload)
         .subscribe();
     }
-    // signed links expire after 6 hours; refresh them well before
-    clearInterval(state.refreshT);
-    state.refreshT = setInterval(() => { state.urls.clear(); load(); }, 1000 * 60 * 60 * 5);
   }
   function leaveApp() {
-    state.signedIn = false; state.posts = new Map(); state.urls.clear();
+    state.signedIn = false; state.posts = new Map();
     if (state.channel) { sb.removeChannel(state.channel); state.channel = null; }
-    clearInterval(state.refreshT);
     $("app").hidden = true; $("login").hidden = false;
     renderAll();
   }
