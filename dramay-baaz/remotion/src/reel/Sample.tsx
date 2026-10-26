@@ -1,12 +1,9 @@
 import React from 'react';
-import {AbsoluteFill, Audio, HtmlInCanvas, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame} from 'remotion';
 import {Starburst} from '@remotion/starburst';
 import {ThreeCanvas} from '@remotion/three';
 import {TransitionSeries, linearTiming} from '@remotion/transitions';
-import {crossZoom} from '@remotion/transitions/cross-zoom';
-import {chromaticAberration} from '@remotion/effects/chromatic-aberration';
-import {zoomBlur} from '@remotion/effects/zoom-blur';
-import {glow} from '@remotion/effects/glow';
+import {pushCut} from '@remotion/transitions/push-cut';
 import {Chip} from './Chip';
 import {D, FPS, GREEN, INK, WHITE, beatHit, clamp, expoOut, hit, lastIndex} from './lib';
 
@@ -64,19 +61,24 @@ const Drop: React.FC<{from: number}> = ({from}) => {
       <AbsoluteFill style={{transform: `scale(${1.2 + e * 0.3})`}}>
         <Starburst rays={18} colors={[bg, k % 2 ? '#122a08' : '#2fb400']} rotation={t * 40 + k * 20} />
       </AbsoluteFill>
-      <HtmlInCanvas width={1920} height={1080}
-        effects={[zoomBlur({amount: e * 0.35, samples: 24}), chromaticAberration({amount: 4 + e * 36, angle: k * 45}), glow({radius: 26, intensity: 0.35 + e, threshold: 0.4})]}>
-        <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center'}}>
-          <div style={{fontFamily: 'Manrope', fontWeight: 800, fontSize: 330, letterSpacing: -8, color: fg,
-            transform: `scale(${interpolate(s, [0, 1], [2.6, 1])}) rotate(${(1 - s) * (k % 2 ? 8 : -8)}deg)`, opacity: clamp(s * 4)}}>{word}</div>
-          {[0, 1, 2].map((r) => (
-            <div key={r} style={{position: 'absolute', fontFamily: 'Manrope', fontWeight: 800, fontSize: 330, letterSpacing: -8, color: 'transparent',
-              WebkitTextStroke: `4px ${fg}`, opacity: clamp(1 - (t - h) * 2.2 - r * 0.15), transform: `scale(${1 + (t - h) * (1.2 + r * 0.6)})`}}>{word}</div>
-          ))}
-        </AbsoluteFill>
-      </HtmlInCanvas>
+      <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', filter: `blur(${e * 3}px)`}}>
+        {/* RGB split: red + cyan copies pushed apart on each hit */}
+        {([['#ff2a2a', 1], ['#00e5ff', -1]] as const).map(([c, d]) => (
+          <div key={c} style={{position: 'absolute', fontFamily: 'Manrope', fontWeight: 800, fontSize: 330, letterSpacing: -8, color: c,
+            mixBlendMode: k % 2 ? 'screen' : 'multiply', opacity: 0.85 * clamp(s * 4),
+            transform: `translate(${d * (4 + e * 34)}px, ${d * e * 6}px) scale(${interpolate(s, [0, 1], [2.6, 1])}) rotate(${(1 - s) * (k % 2 ? 8 : -8)}deg)`}}>{word}</div>
+        ))}
+        <div style={{position: 'absolute', fontFamily: 'Manrope', fontWeight: 800, fontSize: 330, letterSpacing: -8, color: fg,
+          textShadow: k % 2 ? `0 0 ${30 + e * 60}px rgba(56,209,0,${0.5 + e * 0.5})` : 'none',
+          transform: `scale(${interpolate(s, [0, 1], [2.6, 1])}) rotate(${(1 - s) * (k % 2 ? 8 : -8)}deg)`, opacity: clamp(s * 4)}}>{word}</div>
+        {/* zoom ghosts */}
+        {[0, 1, 2].map((r) => (
+          <div key={r} style={{position: 'absolute', fontFamily: 'Manrope', fontWeight: 800, fontSize: 330, letterSpacing: -8, color: 'transparent',
+            WebkitTextStroke: `4px ${fg}`, opacity: clamp(1 - (t - h) * 2.2 - r * 0.15), transform: `scale(${1 + (t - h) * (1.2 + r * 0.6)})`}}>{word}</div>
+        ))}
+      </AbsoluteFill>
       <Img src={staticFile(k % 2 ? 'wordmark_dark.png' : 'wordmark_light.png')} style={{position: 'absolute', left: 64, top: 48, width: 230}} />
-      <Chip text="<HtmlInCanvas effects={[zoomBlur(), chromaticAberration(), glow()]}>" dark={k % 2 === 1} />
+      <Chip text="spring() per hit · <Starburst /> · beat data from JSON" dark={k % 2 === 1} />
     </AbsoluteFill>
   );
 };
@@ -143,7 +145,7 @@ export const Sample: React.FC = () => {
       <Sequence from={dropF} durationInFrames={SAMPLE_FRAMES - dropF}>
         <TransitionSeries>
           <TransitionSeries.Sequence durationInFrames={greenF - dropF + XF / 2}><Drop from={DROP} /></TransitionSeries.Sequence>
-          <TransitionSeries.Transition presentation={crossZoom({strength: 0.6})} timing={linearTiming({durationInFrames: XF})} />
+          <TransitionSeries.Transition presentation={pushCut({flashColor: '#FFFFFF'})} timing={linearTiming({durationInFrames: XF})} />
           <TransitionSeries.Sequence durationInFrames={SAMPLE_FRAMES - greenF + XF / 2}><Green from={T_GREEN - XF / 2 / FPS} /></TransitionSeries.Sequence>
         </TransitionSeries>
       </Sequence>
