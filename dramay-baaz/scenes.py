@@ -305,8 +305,9 @@ def index_widget(cr, t, a=1.0):
 
 def brand_bug(cr, t, a=0.9):
     dark = STYLE.get('dark', False)
-    rrect(cr, 36, 36, 330, 84, 14); rgb(cr, (0.06, 0.06, 0.08) if dark else (1, 1, 1), 0.9 * a); cr.fill()
-    brand_img(cr, 'wordmark', 36 + 165, 36 + 42, 290, a)
+    x0 = STYLE.get('bug_x', 36)
+    rrect(cr, x0, 36, 330, 84, 14); rgb(cr, (0.06, 0.06, 0.08) if dark else (1, 1, 1), 0.9 * a); cr.fill()
+    brand_img(cr, 'wordmark', x0 + 165, 36 + 42, 290, a)
 
 
 # ---------------- captions ----------------

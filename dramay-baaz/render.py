@@ -162,6 +162,48 @@ def draw(t):
     return (np.clip(out, 0, 1) * 255).astype(np.uint8)
 
 
+BLACK = np.zeros((H, W, 3), np.float32)
+
+
+def glow(out, arr, k):
+    im = Image.fromarray(arr[..., 2::-1].copy()).resize((W // 4, H // 4), Image.BILINEAR).filter(ImageFilter.GaussianBlur(6))
+    return out + np.asarray(im.resize((W, H), Image.BILINEAR), np.float32) / 255 * k
+
+
+def glitch(out, amt, t):
+    if amt < 0.02: return out
+    rng = np.random.default_rng(int(t * 30))
+    sh = int(6 + amt * 40)
+    o = out.copy()
+    o[..., 0] = np.roll(out[..., 0], sh, 1); o[..., 2] = np.roll(out[..., 2], -sh, 1)
+    for _ in range(int(amt * 8)):   # horizontal tear bands
+        y = rng.integers(0, H - 60); hh = rng.integers(8, 60)
+        o[y:y + hh] = np.roll(o[y:y + hh], rng.integers(-120, 120), 1)
+    o += (rng.random((H, W, 1), np.float32) - 0.5) * 0.12 * amt
+    return o
+
+
+SCAN = (1 - 0.08 * ((np.arange(H) % 4) < 2)).astype(np.float32)[:, None, None]
+
+
+def draw_concept(key, t):
+    import concepts
+    cfg = concepts.CONCEPTS[key]
+    lib.BOIL[0] = int(t * 8)
+    lib.STYLE.clear(); lib.STYLE.update(BASE_STYLE); lib.STYLE.update(concepts.CRISP); lib.STYLE['dark'] = True
+    lib.C['ink'] = BASE_INK
+    if key.startswith('C_'): lib.STYLE['bug_x'] = W - 366
+    sl = layer(cfg['fn'], t)
+    out = comp(BLACK, sl, ONES)
+    post = cfg.get('post')
+    if post == 'glow': out = glow(out, sl, 0.9)
+    if post == 'glow_soft': out = glow(out, sl, 0.35)
+    if post == 'glitch': out = glitch(out, concepts.glitch_amount(t), t) * SCAN
+    out = comp(out, layer(scenes.render_brand, t), ONES)
+    out *= scenes.fade(t)
+    return (np.clip(out, 0, 1) * 255).astype(np.uint8)
+
+
 def worker(w, f0, f1, fps):
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}',
                            '-r', str(fps), '-i', '-', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-tune', 'grain',
@@ -176,6 +218,24 @@ def worker(w, f0, f1, fps):
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
+    if sys.argv[1:2] == ['conceptboard']:
+        from PIL import ImageDraw, ImageFont
+        import concepts
+        times = [19.0, 46.5, 80.2]
+        fb = ImageFont.truetype(os.path.expanduser('~/.fonts/CabinSketch-Bold.ttf'), 64)
+        fs = ImageFont.truetype(os.path.expanduser('~/.fonts/PatrickHand-Regular.ttf'), 40)
+        rows = []
+        for key, st in concepts.CONCEPTS.items():
+            frames = [Image.fromarray(draw_concept(key, t)) for t in times]
+            strip = Image.new('RGB', (2880, 640), (250, 248, 240))
+            for i, f in enumerate(frames): strip.paste(f.resize((960, 540), Image.LANCZOS), (i * 960, 100))
+            d = ImageDraw.Draw(strip)
+            d.text((30, 14), st['title'], font=fb, fill=(20, 20, 20)); d.text((1150, 34), st['sub'], font=fs, fill=(90, 90, 90))
+            strip.save(f'{OUT}/concept_{key}_strip.jpg', quality=88); rows.append(strip); print('concept', key, flush=True)
+        board = Image.new('RGB', (2880, 640 * len(rows)))
+        for i, r in enumerate(rows): board.paste(r, (0, i * 640))
+        board.resize((1920, 640 * len(rows) * 2 // 3), Image.LANCZOS).save(f'{OUT}/concept_board.jpg', quality=85)
+        sys.exit()
     if sys.argv[1:2] in (['styleboard'], ['charboard']):
         SET = STYLES if sys.argv[1] == 'styleboard' else CHAR_STYLES
         prefix = 'style' if sys.argv[1] == 'styleboard' else 'char'
