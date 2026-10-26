@@ -148,7 +148,7 @@ class Runner:
 
     def draw(self, cr, i, t):
         _, key, ref = self.tl[i]
-        self.shots[key](cr, t, ref)
+        self.shots.get(key, self.shots['end'])(cr, t, ref)
 
     def frame(self, cr, t):
         i = max(0, bisect.bisect_right(self.starts, t) - 1)
