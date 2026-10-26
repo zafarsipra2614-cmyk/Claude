@@ -1,0 +1,63 @@
+[
+ {
+  "id": "q",
+  "text": "Tell me about a time you worked in a team.",
+  "voice": "af_heart",
+  "speed": 0.95
+ },
+ {
+  "id": "weak",
+  "text": "Most people say: we did a group project, and it went pretty well.",
+  "voice": "af_heart",
+  "speed": 1.0
+ },
+ {
+  "id": "nothing",
+  "text": "That tells them nothing.",
+  "voice": "af_heart",
+  "speed": 0.95
+ },
+ {
+  "id": "turn",
+  "text": "Use the STAR method instead.",
+  "voice": "af_heart",
+  "speed": 0.92
+ },
+ {
+  "id": "s",
+  "text": "S is for Situation. Set the scene in one sentence.",
+  "voice": "af_heart",
+  "speed": 0.97
+ },
+ {
+  "id": "t",
+  "text": "T is for Task. What were you responsible for?",
+  "voice": "af_heart",
+  "speed": 0.97
+ },
+ {
+  "id": "a",
+  "text": "A, is for Action. What did you do? This is the longest part.",
+  "voice": "af_heart",
+  "speed": 0.97,
+  "asr": "A is for Action. What did you do? This is the longest part."
+ },
+ {
+  "id": "r",
+  "text": "R is for Result. End on a number, or a lesson.",
+  "voice": "af_heart",
+  "speed": 0.97
+ },
+ {
+  "id": "time",
+  "text": "Keep it under a minute. Spend half of it on action.",
+  "voice": "af_heart",
+  "speed": 0.97
+ },
+ {
+  "id": "cta",
+  "text": "Every common question, broken down. Get the Offer. Link in bio.",
+  "voice": "af_heart",
+  "speed": 0.95
+ }
+]

@@ -1,0 +1,19 @@
+STAR in Four Stamps — third-party assets
+
+Content: "Get the Offer" by Candidate Co. (the user's own ebook; title, brand and the STAR example are theirs).
+
+Drawing engine: engine/toon.js, engine/icons.js, engine/chars_base.js from the Lemo-Opuscar library
+  (github.com/lemomo-ai/lemo-opuscar), MIT License, Copyright (c) 2026 LemoLab.
+
+Fonts (SIL Open Font License 1.1, licence files in fonts/):
+  Oleo Script (c) 2012 Soytutype; Alfa Slab One (c) 2016 The Alfa Slab One Project Authors (JM Solé);
+  Jost (c) 2020 The Jost Project Authors (indestructible type*).
+
+Voice: Kokoro-82M text-to-speech (Apache-2.0), voice af_heart, via kokoro-onnx (MIT).
+
+Music samples (CC0 1.0, no attribution required; credited with thanks):
+  Versilian Community Sample Library and VS Chamber Orchestra: Community Edition (Versilian Studios / Sam Gossner):
+    vibraphone, flute, muted trumpet, hi-hat, conga, suspended cymbal.
+  Karoryfer Samples (sfzinstruments): jazz double bass "Sneakybass".
+
+All other sound (foley, brushes, snaps, room tone) is synthesised in mix.py and music/score.py.

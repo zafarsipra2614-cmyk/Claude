@@ -1,0 +1,54 @@
+[
+ {
+  "t": 0.25,
+  "label": "question card pop: Dmaj9 stab"
+ },
+ {
+  "t": 8.5,
+  "label": "X stamp: trumpet droop"
+ },
+ {
+  "t": 13.0,
+  "label": "stamp S: Dmaj9"
+ },
+ {
+  "t": 19.0,
+  "label": "stamp T: Bm9"
+ },
+ {
+  "t": 25.0,
+  "label": "stamp A: Em9"
+ },
+ {
+  "t": 31.0,
+  "label": "stamp R: A13"
+ },
+ {
+  "t": 37.5,
+  "label": "medallion S lands: Dmaj9"
+ },
+ {
+  "t": 38.0,
+  "label": "medallion T lands: Bm9"
+ },
+ {
+  "t": 38.5,
+  "label": "medallion A lands: Em9"
+ },
+ {
+  "t": 39.0,
+  "label": "medallion R lands: A13"
+ },
+ {
+  "t": 41.0,
+  "label": "star: up to E, gliss"
+ },
+ {
+  "t": 43.3,
+  "label": "book thump: C#m9"
+ },
+ {
+  "t": 46.0,
+  "label": "final Emaj9"
+ }
+]
