@@ -182,9 +182,30 @@ def chant_green(t):
     return False
 
 
+def chant_age(t):
+    best = 9.0
+    for t0, t1, ph in CHANTS:
+        a_ = t - snap(t0)
+        if 0 <= a_ < best and t < t1: best = a_
+    if section(t)[1] == 'outro': best = min(best, t - snap(146.4)) if t >= snap(146.4) else best
+    return best
+
+
 def backdrop_green(L, t):
     c = L.bg; bp = beat_pulse(t, 8)
-    c.rectangle(-300, -300, W + 600, H + 600); col(c, hexc('#38D100')); c.fill()
+    age = chant_age(t)
+    if age < 0.3:   # green iris opens from the centre on the beat
+        c.rectangle(-300, -300, W + 600, H + 600); col(c, (0.985, 0.99, 0.985)); c.fill()
+        c.arc(W / 2, H / 2, 40 + ease_out(age / 0.3) * 1300, 0, TAU); col(c, hexc('#38D100')); c.fill()
+    else:
+        c.rectangle(-300, -300, W + 600, H + 600); col(c, hexc('#38D100')); c.fill()
+    # beat ripples
+    bi = beat_index(t)
+    if bi >= 0:
+        ra = t - BEATS[bi]
+        for k in range(2):
+            r = (ra + k * 0.24) * 1500
+            c.arc(W / 2, H / 2, r, 0, TAU); c.set_line_width(4); c.set_source_rgba(1, 1, 1, max(0, 0.22 - (ra + k * 0.24) * 0.4)); c.stroke()
     for i, (fx, fy, r, cc, al) in enumerate(((0.2, 0.25, 700, GD, 0.35), (0.85, 0.8, 760, GD, 0.3), (0.7, 0.2, 520, (0.75, 1, 0.45), 0.45),
                                             (0.25, 0.85, 560, (0.7, 1, 0.4), 0.35))):
         x = W * (fx + 0.05 * math.sin(t * 0.4 + i)); y = H * (fy + 0.05 * math.cos(t * 0.33 + i))
@@ -208,6 +229,12 @@ def backdrop(L, t):
         oa = 0.13 if LIGHT else 0.62
         g.add_color_stop_rgba(0, *orbs[i], oa); g.add_color_stop_rgba(0.55, *orbs[i], oa * 0.35); g.add_color_stop_rgba(1, *orbs[i], 0)
         c.set_source(g); c.arc(x, y, rad, 0, TAU); c.fill()
+    if LIGHT:
+        bi = beat_index(t)
+        if bi >= 0:
+            ra = t - BEATS[bi]
+            c.arc(W / 2, H / 2, 200 + ra * 1700, 0, TAU); c.set_line_width(3)
+            c.set_source_rgba(*GT, max(0, 0.14 - ra * 0.3) * clamp(bass * 1.5)); c.stroke()
     # faint grid
     c.set_line_width(1)
     for x in range(0, W + 1, 120): c.move_to(x, 0); c.line_to(x, H)
@@ -329,6 +356,57 @@ def _draw_word(cr, u, box, t, wt, style, c, a, p, bp):
         cr.save(); cr.rectangle(x - wd, y - sz * 0.62, wd * 2, sz * 1.24); cr.clip()
         tx(cr, u, x, y + (1 - q) * sz * 0.9, sz, 'xb', c, a); cr.restore()
         return
+    if style == 'blurzoom':   # flies in from huge + ghosted, settles sharp
+        q = ease_out(clamp((t - wt) / 0.3))
+        sc = lerp(2.6, 1.0, q)
+        for g_ in range(4, 0, -1):
+            gs = sc * (1 + (1 - q) * 0.08 * g_)
+            cr.save(); cr.translate(x, y); cr.scale(gs, gs); tx(cr, u, 0, 0, sz, 'xb', c, a * q * 0.12); cr.restore()
+        cr.save(); cr.translate(x, y); cr.scale(sc, sc); tx(cr, u, 0, 0, sz, 'xb', c, a * q); cr.restore()
+        return
+    if style == 'slice':      # word cut into strips that slide in from alternating sides
+        n = 5; top = y - sz * 0.42; hh = sz * 0.84 / n
+        for k in range(n):
+            q = ease_out(clamp((t - wt - k * 0.03) / 0.3))
+            cr.save(); cr.rectangle(x - wd, top + k * hh, wd * 2, hh + 1); cr.clip()
+            tx(cr, u, x + (1 - q) * (1 if k % 2 else -1) * (wd + 200), y, sz, 'xb', c, a * clamp(q * 3)); cr.restore()
+        return
+    if style == 'outline':    # outline first, colour floods in on the next beat
+        font(cr, 'xb', sz); adv = cr.text_extents(u).x_advance
+        q = ease_out(clamp((t - wt) / 0.25))
+        cr.move_to(x - adv / 2, y + sz * 0.36); cr.text_path(u); cr.set_line_width(max(2, sz * 0.022)); col(cr, c, a * q); cr.stroke()
+        fb = snap(wt + 0.47, 0.3); f = clamp((t - fb) / 0.18)
+        if f > 0:
+            cr.save(); cr.rectangle(x - adv / 2 - 4, y + sz * 0.5 - sz * f, adv + 8, sz * f); cr.clip()
+            tx(cr, u, x, y, sz, 'xb', c, a); cr.restore()
+        return
+    if style == 'scramble':   # ticker-style decode: random glyphs lock in left to right
+        rnd = random.Random(int(t * 30) + int(x))
+        pool = 'ABCDEFGHKLMNPRSTUVXYZ0123456789#%$+'
+        font(cr, 'xb', sz)
+        advs = [cr.text_extents(ch).x_advance for ch in u]; lx = x - sum(advs) / 2
+        for k, ch in enumerate(u):
+            lock = wt + 0.08 + k * 0.045
+            g_ = ch if t >= lock or not ch.isalnum() else rnd.choice(pool)
+            cc = c if t >= lock else GT
+            tx(cr, g_, lx + sum(advs[:k]) + advs[k] / 2, y, sz, 'xb', cc, a * (1 if t >= lock else 0.7))
+        return
+    if style == 'slot':       # rolls in vertically like a counter
+        q = ease_out(clamp((t - wt) / 0.4))
+        cr.save(); cr.rectangle(x - wd, y - sz * 0.6, wd * 2, sz * 1.2); cr.clip()
+        roll = (1 - q) * 3
+        for k in range(4):
+            yy = y + (k - roll) * sz * 1.1
+            tx(cr, u if k == 0 else ''.join(random.Random(k + int(x)).choice('ABDEGKMNRSTUY') for _ in u), x, yy, sz, 'xb', c, a * (1 if k == 0 else 0.35))
+        cr.restore()
+        return
+    if style == 'rgb':        # RGB split ghosting
+        q = clamp(p * 2); off = 6 + 14 * beat_pulse(t, 10)
+        tx(cr, u, x - off, y, sz, 'xb', (0.95, 0.2, 0.3), a * q * 0.55)
+        tx(cr, u, x + off, y, sz, 'xb', (0.2, 0.55, 1.0), a * q * 0.55)
+        jx = math.sin(t * 71 + x) * 5
+        tx(cr, u, x + jx, y, sz, 'xb', c, a * q)
+        return
     # letter-level styles
     font(cr, 'xb', sz)
     advs = [cr.text_extents(ch).x_advance for ch in u]
@@ -338,6 +416,8 @@ def _draw_word(cr, u, box, t, wt, style, c, a, p, bp):
         dx = dy = rot = 0; aa = a * clamp(p * 2); scl = 1
         if style == 'type':
             aa = a * clamp((t - wt - k * 0.035) / 0.05)
+            if k == len(u) - 1 and t < wt + 0.6 + len(u) * 0.035 and int(t * 4) % 2 == 0:
+                cr.rectangle(cx + advs[k] / 2 + 6, y - sz * 0.42, sz * 0.07, sz * 0.84); col(cr, GT, a); cr.fill()
         elif style == 'bounce':
             ph = beat_phase(t); side = 1 if (beat_index(t) + k) % 2 else -1
             dy = -abs(math.sin(ph * math.pi)) * sz * 0.16 * (1 if k % 2 else 0.5); rot = side * 0.08
@@ -353,6 +433,15 @@ def _draw_word(cr, u, box, t, wt, style, c, a, p, bp):
         elif style == 'fall':
             fall = clamp((t - wt - 0.25) / 1.2)
             dy = ease_in(fall) * (H * 0.9) * (0.6 + 0.4 * ((k * 53) % 7) / 7); rot = fall * (1.2 if k % 2 else -1.0)
+        elif style == 'cascade':
+            q = clamp((t - wt - k * 0.04) / 0.38)
+            dy = -(1 - back_out(q, 2.6)) * sz * 1.4; aa = a * clamp(q * 3); rot = (1 - q) * (0.5 if k % 2 else -0.5)
+        elif style == 'wave':
+            dy = math.sin(beat_phase(t) * TAU + k * 0.7) * sz * 0.09; aa = a * clamp((t - wt - k * 0.03) / 0.12)
+        elif style == 'stretch':
+            scl_y = 1 + 0.35 * beat_pulse(t, 8) * (1 if k % 2 == beat_index(t) % 2 else 0.4)
+            cr.save(); cr.translate(cx, y + sz * 0.36); cr.scale(1 / math.sqrt(scl_y), scl_y); cr.translate(-cx, -(y + sz * 0.36))
+            tx(cr, ch, cx, y, sz, 'xb', c, aa); cr.restore(); continue
         elif style == 'tremble':
             dx = math.sin(t * 90 + k) * 3; dy = math.cos(t * 80 + k * 2) * 3
         elif style == 'flip':
@@ -364,16 +453,66 @@ def _draw_word(cr, u, box, t, wt, style, c, a, p, bp):
         tx(cr, ch, 0, 0, sz, 'xb', c, aa); cr.restore()
 
 
+def highlight(cr, box, t, start, c=G, a=1.0):
+    x, y, sz, wd, ri = box
+    q = ease_io(clamp((t - start) / 0.28))
+    if q <= 0: return
+    rr(cr, x - wd / 2 - sz * 0.12, y - sz * 0.5, (wd + sz * 0.24) * q, sz * 1.0, sz * 0.16); col(cr, c, 0.32 * a); cr.fill()
+
+
+def underline(cr, box, t, start, c=G, a=1.0):
+    x, y, sz, wd, ri = box
+    q = ease_out(clamp((t - start) / 0.3))
+    if q <= 0: return
+    line(cr, [(x - wd / 2, y + sz * 0.56), (x - wd / 2 + wd * q, y + sz * 0.56)], max(5, sz * 0.06), c, a)
+
+
+def burst_lines(cr, cx, cy, t, start, c=G, r0=160, a=1.0, n=14):
+    age = t - start
+    if age < 0 or age > 0.6: return
+    q = ease_out(age / 0.6)
+    for k in range(n):
+        ang = k * TAU / n + 0.2
+        r1 = r0 + q * 220; r2 = r1 + 90 * (1 - q)
+        line(cr, [(cx + math.cos(ang) * r1, cy + math.sin(ang) * r1), (cx + math.cos(ang) * r2, cy + math.sin(ang) * r2)], 8 * (1 - q) + 1, c, a * (1 - q))
+
+
+# per-line motion design: (main style, {word: style}, [(fx, word index)])
+LINE_FX = {
+    16.2: ('rise', {}, [('hl', 2)]), 18.1: ('type', {3: 'slam'}, [('burst', 3)]), 20.4: ('cascade', {2: 'stretch', 3: 'stretch'}, []),
+    23.0: ('scramble', {}, [('ul', 2)]), 25.5: ('slice', {}, [('hl', 2)]), 27.3: ('outline', {1: 'slam'}, [('ul', 1)]),
+    31.1: ('wave', {}, []), 34.8: ('fall', {0: 'rgb', 1: 'rgb'}, []), 36.6: ('type', {5: 'drip'}, [('ul', 0)]),
+    45.5: ('bounce', {0: 'blurzoom'}, [('hl', 3)]), 85.7: ('stretch', {0: 'blurzoom'}, [('hl', 3)]),
+    49.3: ('run', {0: 'slam', 1: 'slam', 2: 'slam'}, []), 89.7: ('run', {0: 'slice', 1: 'slice', 2: 'slice'}, []),
+    52.0: ('rgb', {}, []), 92.4: ('shake', {2: 'rgb'}, []), 57.7: ('blurzoom', {2: 'slam'}, [('burst', 2)]),
+    59.8: ('tremble', {3: 'rgb'}, []), 61.5: ('drip', {}, []), 69.5: ('slam', {3: 'rgb', 4: 'rgb'}, []),
+    71.6: ('cascade', {0: 'blurzoom'}, [('ul', 5)]), 73.9: ('flip', {}, []), 76.5: ('slice', {3: 'shake'}, [('hl', 3)]),
+    79.0: ('cascade', {}, []), 99.2: ('blurzoom', {}, []), 100.9: ('rise', {}, []), 102.5: ('slot', {1: 'outline'}, [('hl', 1)]),
+    104.6: ('rise', {3: 'slot'}, [('ul', 3)]), 109.8: ('outline', {0: 'slam'}, [('hl', 0)]), 120.7: ('scramble', {}, [('ul', 3)]),
+    122.6: ('slot', {3: 'stretch'}, [('hl', 3)]), 124.4: ('wave', {0: 'outline'}, [('ul', 0)]), 130.2: ('cascade', {4: 'blurzoom'}, [('hl', 4)]),
+}
+
+
 def kinetic(L, t, t0, region, style='slam', maxch=12, max_size=220, styles=None, colors=None, a=1.0, words=None):
     ro = [l for l in LYRICS if l[0] == t0][0][1]
     words = words or ro.replace('"', '').split(' ')
     wts = word_times(t0, len(words))
     boxes = layout(L.fg, words, region, maxch, max_size)
     end_a = a * clamp((LYR_END[t0] + 0.35 - t) / 0.3)
+    fx = []
+    if t0 in LINE_FX:
+        st_, ss_, fx = LINE_FX[t0]
+        style = st_; styles = dict(styles or {}); styles.update(ss_)
+    for kind, i in fx:
+        if i < len(words) and kind == 'hl': highlight(L.fg, boxes[i], t, wts[i] + 0.12, G if word_col(words[i]) != RED else RED, end_a)
     for i, w_ in enumerate(words):
         st = (styles or {}).get(i, style)
         c_ = (colors or {}).get(i, word_col(w_))
         draw_word(L.fg, w_, boxes[i], t, wts[i], st, c_, end_a)
+    for kind, i in fx:
+        if i >= len(words): continue
+        if kind == 'ul': underline(L.fg, boxes[i], t, wts[i] + 0.15, GT, end_a)
+        if kind == 'burst': burst_lines(L.fg, boxes[i][0], boxes[i][1], t, wts[i], GT, boxes[i][3] * 0.5 + 40, end_a)
     return boxes, wts
 
 
@@ -670,11 +809,14 @@ def scr_web(stage_times):
 def chant_db(L, t, c_):
     t0, t1, _ = c_
     echo_words(L, t, 'DRAMAY BAAZ!', 240, 0.08, 160)
+    for b_ in BEATS:
+        if t0 <= b_ <= t and t - b_ < 0.5: burst_lines(L.fg, W / 2, H / 2, t, b_, WHITE, 520, 0.8, 18)
     bi0 = beat_index(t0 - 0.06) + 1
     nb = max(0, beat_index(t) - bi0); cyc = nb // 4
     b0 = BEATS[min(len(BEATS) - 1, bi0 + cyc * 4)] if cyc else snap(t0)
     b1 = BEATS[min(len(BEATS) - 1, bi0 + cyc * 4 + 1)]
-    lay = cyc % 3
+    ci = [c[0] for c in CHANTS].index(t0)
+    lay = (cyc + ci) % 5
     a = clamp((t1 + 0.25 - t) / 0.25)
     kick = 1 + 0.035 * beat_pulse(t, 10)
     fg = L.fg
@@ -694,6 +836,25 @@ def chant_db(L, t, c_):
         tx(fg, 'DRAMAY', -full / 2 + tw(fg, 'DRAMAY', 'xb', 200) / 2 - (1 - ease_out(p0)) * 300, 0, 200, 'xb', FOREST, a * p0)
         tx(fg, 'BAAZ!', -full / 2 + wd + tw(fg, 'BAAZ!', 'xb', 200) / 2 + (1 - ease_out(p1)) * 300, 0, 200, 'xb', WHITE, a * p1)
         fg.restore()
+    elif lay == 3:   # diagonal marquee strips
+        fg.save(); fg.translate(W / 2, H / 2); fg.rotate(-0.2)
+        for r in range(-3, 4):
+            y = r * 175; dirn = 1 if r % 2 else -1
+            off = ((t - b0) * 700 * dirn) % 1500
+            rr(fg, -1600, y - 70, 3200, 140, 0); col(fg, FOREST if (r % 2 or r == 0) else WHITE, 0.92 * a if r == 0 else 0.18 * a); fg.fill()
+            if r == 0: continue
+            for k in range(-2, 3):
+                tx(fg, 'DRAMAY BAAZ!', k * 1500 - off, y, 110, 'xb', WHITE if r % 2 else FOREST, 0.35 * a)
+        p0 = clamp((t - b0) / 0.14); p1 = clamp((t - b1) / 0.14)
+        tx(fg, 'DRAMAY', -260 - (1 - ease_out(p0)) * 900, 0, 120, 'xb', WHITE, a * p0)
+        tx(fg, 'BAAZ!', 330 + (1 - ease_out(p1)) * 900, 0, 120, 'xb', hexc('#38D100'), a * p1)
+        fg.restore()
+    elif lay == 4:   # giant crop: BAAZ! bleeds off the frame
+        p0 = clamp((t - b0) / 0.14); p1 = clamp((t - b1) / 0.16)
+        fg.save(); fg.translate(W / 2, H / 2 + 60); s_ = lerp(1.5, 1, ease_out(p1)) * kick; fg.scale(s_, s_)
+        tx(fg, 'BAAZ!', 0, 0, 640, 'xb', WHITE, a * p1); fg.restore()
+        glass(L, W / 2 - 420, 120, 840, 180, 90, a * p0)
+        tx(fg, 'DRAMAY', W / 2, 210, 130, 'xb', FOREST, a * p0)
     else:
         for i, (s_, wt, cc) in enumerate((('DRAMAY', b0, FOREST), ('BAAZ!', b1, WHITE))):
             p = clamp((t - wt) / 0.16)
@@ -817,6 +978,12 @@ def shot(L, t, t0):
                 rr(fg, 160 + i * 66, 1000 - 260 * v * k, 44, 260 * v * k, 10); col(fg, RED if i % 3 else FGC, 0.6 * k); fg.fill()
     elif t0 in (45.5, 85.7):
         echo_words(L, t, 'GREEN GREEN', 260, 0.08, 160)
+        rnd = random.Random(9)
+        for k in range(46):
+            ph = ((t - t0) * (0.35 + rnd.random() * 0.5) + rnd.random()) % 1
+            x = rnd.random() * W + math.sin(t * 2 + k) * 30; y = -40 + ph * (H + 80)
+            fg.save(); fg.translate(x, y); fg.rotate(t * 3 + k); rr(fg, -9, -4, 18, 8, 2)
+            col(fg, (G, GOLD, GD)[k % 3], 0.85); fg.fill(); fg.restore()
         kinetic(L, t, t0, LEFT, 'bounce', maxch=11, styles={0: 'slam'})
         glass(L, 1260, 220, 560, 640, 44, pop(t, t0) and 1, tint=GT, ta=0.1)
         candles(fg, 1310, 800, 460, 480, t, True, 9)
@@ -1095,6 +1262,54 @@ def subtitle(L, t):
     glass_pill(L, W / 2, H - 70, SUBS[l], 30, 'm', MUTED, a, pad=36)
 
 
+# ------------------------------------------------------------------ camera, transitions, light leaks
+TRANS = ('push', 'zoom', 'drop', 'tilt', 'iris', 'pushl', 'spin')
+
+
+def shot_camera(t, c_, sec):
+    """Slow push-in + drift per shot, and an entrance transition that rotates through TRANS."""
+    cam = dict(dx=0.0, dy=0.0, sc=1.0, rot=0.0, iris=None)
+    if c_ or sec in ('final', 'outro'):
+        return cam
+    l = cur_line(t)
+    if l is None: return cam
+    li = [x[0] for x in LYRICS].index(l)
+    t0 = snap(l); dur = max(1.0, LYR_END[l] - l)
+    lt = t - t0
+    cam['sc'] = 1 + 0.045 * clamp(lt / dur)
+    cam['rot'] = (0.006 if li % 2 else -0.006) * clamp(lt / dur)
+    cam['dx'] = (14 if li % 2 else -14) * clamp(lt / dur)
+    q = ease_out(clamp(lt / 0.34)); kind = TRANS[li % len(TRANS)]
+    if q < 1:
+        if kind == 'push': cam['dx'] += (1 - q) * 360
+        elif kind == 'pushl': cam['dx'] -= (1 - q) * 360
+        elif kind == 'zoom': cam['sc'] *= lerp(1.22, 1.0, q)
+        elif kind == 'drop': cam['dy'] -= (1 - q) * 240
+        elif kind == 'tilt': cam['rot'] += (1 - q) * -0.08; cam['dy'] += (1 - q) * 120
+        elif kind == 'spin': cam['rot'] += (1 - q) * 0.25; cam['sc'] *= lerp(0.8, 1.0, q)
+        elif kind == 'iris': cam['iris'] = 60 + q * 1400
+    return cam
+
+
+def apply_cam(cr, cam, k):
+    cr.translate(W / 2 + cam['dx'] * k, H / 2 + cam['dy'] * k)
+    cr.rotate(cam['rot'] * k); s_ = 1 + (cam['sc'] - 1) * k; cr.scale(s_, s_)
+    cr.translate(-W / 2, -H / 2)
+
+
+def leak(L, t):
+    """Soft diagonal light sweep when a chant hits."""
+    for t0, t1, ph in CHANTS:
+        age = t - snap(t0)
+        if 0 <= age < 0.55:
+            q = age / 0.55; x = lerp(-700, W + 700, ease_io(q))
+            c = L.fg; c.save(); c.identity_matrix()
+            g = cairo.LinearGradient(x - 400, 0, x + 400, 0)
+            g.add_color_stop_rgba(0, 1, 1, 1, 0); g.add_color_stop_rgba(0.5, 1, 1, 0.9, 0.35 * (1 - q)); g.add_color_stop_rgba(1, 1, 1, 1, 0)
+            c.move_to(x - 300, -50); c.line_to(x + 500, -50); c.line_to(x + 300, H + 50); c.line_to(x - 500, H + 50); c.close_path()
+            c.set_source(g); c.fill(); c.restore()
+
+
 # ------------------------------------------------------------------ frame
 def render(L, t):
     sec = section(t)[1]
@@ -1110,7 +1325,14 @@ def render(L, t):
     CHANT_GREEN[0] = chant_green(t); BEAT_T[0] = t
     for cr in L.all():
         cr.translate(W / 2 + sx, H / 2 + sy); cr.scale(zoom, zoom); cr.translate(-W / 2, -H / 2)
+    cam = shot_camera(t, c_, sec)
+    L.bg.save(); apply_cam(L.bg, cam, 0.45)
     backdrop(L, t)
+    L.bg.restore()
+    for cr in (L.fg, L.mask, L.ui): apply_cam(cr, cam, 1.0)
+    if cam.get('iris') is not None:
+        for cr in (L.fg, L.mask): cr.arc(W / 2, H / 2, cam['iris'], 0, TAU); cr.clip()
+    leak(L, t)
     if sec in ('final',) and t >= 114.0:
         final_section(L, t)
     elif sec == 'outro':
@@ -1123,7 +1345,7 @@ def render(L, t):
             shot(L, t, l)
         elif sec == 'intro':
             intro_idle(L, t)
-    for cr in L.all(): cr.identity_matrix()
+    for cr in L.all(): cr.reset_clip(); cr.identity_matrix()
     hud(L, t)
     if not c_ or sec in ('final',):
         subtitle(L, t)
