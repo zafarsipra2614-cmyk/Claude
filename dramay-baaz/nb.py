@@ -96,7 +96,7 @@ def candle_sticker(cr, x, y, w, h, fill, a=1.0):
 
 # ------------------------------------------------------------------ shots
 def s_lowerlock(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE); p = press(t)
     q = pop(t, w[0])
     if q > 0:
         cr.save(); cr.translate(110 + 560, 380); cr.scale(q, q); cr.translate(-(110 + 560), -380)
@@ -123,7 +123,7 @@ def toggle(cr, x, y, off, p=0.0):
 
 
 def s_stoploss(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK); p = press(t)
     q = pop(t, w[0])
     if q > 0:
         cr.save(); cr.translate(950, 330); cr.scale(q, q); cr.translate(-950, -330)
@@ -149,10 +149,10 @@ KEYS = 'DRAMAYBAAZ'
 
 
 def s_buildup(cr, t, t0):
-    t0, t_drop = 39.4, snap(43.4)
-    if t < 41.45:   # keyboard: one key presses per half-beat
+    t0, t_drop = BUILD_T, DROP
+    if t < PH_B:   # keyboard: one key presses per half-beat
         bgfill(cr, WHITE)
-        hb = half_beats(39.3, 41.5)
+        hb = half_beats(BUILD_T - 0.1, PH_B)
         n = len([h for h in hb if h <= t])
         ks = 150; gap = 22; total = 6 * ks + 5 * gap
         for row, word in enumerate(('DRAMAY', 'BAAZ')):
@@ -168,13 +168,13 @@ def s_buildup(cr, t, t0):
         box(cr, W / 2 - 400, 920, 800, 34, WHITE, 17, 0, 1, 8); rr(cr, W / 2 - 400, 920, 800 * bar, 34, 17); col(cr, GREEN); cr.fill_preserve(); cr.set_line_width(OL); col(cr, INK); cr.stroke()
         return
     marks = []
-    for b in beats_between(41.4, t_drop):
+    for b in beats_between(PH_B - 0.05, t_drop):
         bi = BEATS.index(b); nb = BEATS[bi + 1] if bi + 1 < len(BEATS) else b + 0.47
-        sub = 1 if b < 42.3 else 2 if b < 42.9 else 4
+        sub = 1 if b < t_drop - 1.1 else 2 if b < t_drop - 0.5 else 4
         marks += [b + (nb - b) * k / sub for k in range(sub)]
-    marks = [m for m in marks if m < t_drop - 0.1] or [41.45]
+    marks = [m for m in marks if m < t_drop - 0.1] or [PH_B]
     i = max(0, bisect.bisect_right(marks, t) - 1)
-    push = 1 + 0.25 * ein((t - 41.45) / (t_drop - 41.45))
+    push = 1 + 0.25 * ein((t - PH_B) / (t_drop - PH_B))
     bgfill(cr, INK if i % 2 else WHITE)
     cr.save(); cr.translate(W / 2, H / 2); cr.scale(push, push); cr.translate(-W / 2, -H / 2)
     for k, (lab, c) in enumerate((('BUY', GREEN), ('SELL', RED))):
@@ -188,8 +188,8 @@ def s_buildup(cr, t, t0):
 
 
 def s_chant(cr, t, t0):
-    c_ = C(t0); t1 = c_[1]
-    bs = [snap(t0)] + [b for b in BEATS if snap(t0) + 0.1 < b < t1]
+    ev = t0; t1 = ev['end']
+    bs = list(ev['hits'])
     k = max(0, bisect.bisect_right(bs, t) - 1)
     bgfill(cr, GREEN); p = press(t)
     star(cr, W / 2, H / 2, 460 + 30 * beat_pulse(t), WHITE, t * 0.3, 14)
@@ -210,7 +210,7 @@ def s_chant(cr, t, t0):
 
 
 def s_green(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK); p = press(t)
     rnd = random.Random(3)
     for k in range(7):
         h = 140 + k * 60
@@ -236,7 +236,7 @@ def s_green(cr, t, t0):
 
 
 def s_red(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE); p = press(t)
     for k in range(6):
         f = ein(clamp((t - t0 - k * 0.12) / 1.0))
         candle_sticker(cr, 1300 + k * 90, -500 + f * 1300 + (k * 97) % 160, 56, 180 + (k * 53) % 120, RED)
@@ -258,7 +258,7 @@ def s_red(cr, t, t0):
 
 
 def s_gussa(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK); p = press(t)
     if t >= w[0]: tag(cr, 'screen pe', W / 2, 230, 60, WHITE, INK, 1, 'c', p, -0.03)
     q = pop(t, w[2])
     if q > 0:
@@ -285,7 +285,7 @@ def big_button(cr, t, lab, c, x, y, tap_from, p):
 
 
 def s_buy(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE); p = press(t)
     if t >= w[0]: tag(cr, 'bina soche', 160, 230, 64, INK, WHITE, 1, 'l', p, -0.04)
     q = pop(t, w[2])
     if q > 0:
@@ -295,7 +295,7 @@ def s_buy(cr, t, t0):
 
 
 def s_sell(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK); p = press(t)
     if t >= w[0]: tag(cr, 'dar ke phir', W - 160, 230, 64, WHITE, INK, 1, 'r', p, 0.04)
     q = pop(t, w[3])
     if q > 0:
@@ -305,7 +305,7 @@ def s_sell(cr, t, t0):
 
 
 def s_cry(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE); p = press(t)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE); p = press(t)
     for k in range(12):   # outlined tear drops falling
         rnd = random.Random(k); ph = ((t - t0) * (0.5 + rnd.random() * 0.4) + rnd.random()) % 1
         x = rnd.random() * W; y = -60 + ph * (H + 120)
@@ -369,7 +369,7 @@ def render(L, t):
     c.translate(W / 2, H / 2); c.scale(z, z); c.translate(-W / 2, -H / 2)
     L.bg.rectangle(0, 0, W, H); col(L.bg, WHITE); L.bg.fill()
     # the drop into the first chant is a white flash rather than a stamp
-    RUN.trans['chant'] = t_flash if abs(t - snap(43.4)) < 0.3 else t_stamp
+    RUN.trans['chant'] = t_flash if abs(t - DROP) < 0.4 else t_stamp
     RUN.frame(c, t)
     c.identity_matrix()
     if CUR[0] != GREEN:

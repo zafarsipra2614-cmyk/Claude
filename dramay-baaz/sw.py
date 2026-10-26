@@ -58,7 +58,7 @@ def big(cr, s_, x, y, size, c, t, t_on, align='l', fam='blk', a=1.0, dur=0.34):
     font(cr, fam, size); adv = cr.text_extents(s_).x_advance
     xx = x if align == 'l' else x - adv if align == 'r' else x - adv / 2
     q = eio((t - t_on) / dur)
-    cr.save(); cr.rectangle(xx - 20, y - size * 0.85, adv + 40, size * 1.35); cr.clip()
+    cr.save(); cr.rectangle(xx - 20, y - size * 0.85, adv + 40, size * 1.55); cr.clip()
     tx(cr, s_, xx, y + (1 - q) * size * 1.05, size, fam, c, a, 'l'); cr.restore()
     return adv
 
@@ -80,7 +80,7 @@ def frame_meta(cr, t, label, t0):
 
 # ------------------------------------------------------------------ shots
 def s_lowerlock(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE)
     frame_meta(cr, t, 'KSE-100  /  Circuit breaker', t0 - 0.1)
     big(cr, 'Lower', cx(0) - 8, 470, 300, RED, t, w[0])
     big(cr, 'lock', cx(0) - 8, 760, 300, RED, t, w[1])
@@ -96,7 +96,7 @@ def s_lowerlock(cr, t, t0):
 
 
 def s_stoploss(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK)
     frame_meta(cr, t, 'Order settings', t0)
     big(cr, 'Stop', cx(0) - 8, 420, 260, WHITE, t, w[0])
     big(cr, 'loss', cx(0) - 8, 670, 260, WHITE, t, w[1])
@@ -112,11 +112,11 @@ def s_stoploss(cr, t, t0):
 
 
 def s_buildup(cr, t, t0):
-    t0, t_drop = 39.4, snap(43.4)
-    if t < 41.45:   # modular grid fills one cell per half-beat; numerals count the build
+    t0, t_drop = BUILD_T, DROP
+    if t < PH_B:   # modular grid fills one cell per half-beat; numerals count the build
         bgfill(cr, WHITE)
-        frame_meta(cr, t, 'Build', 39.4)
-        hb = half_beats(39.3, 41.5); n = len([h for h in hb if h <= t])
+        frame_meta(cr, t, 'Build', BUILD_T)
+        hb = half_beats(BUILD_T - 0.1, PH_B); n = len([h for h in hb if h <= t])
         for k in range(12):
             r, c_ = divmod(k, 6)
             x = cx(c_ * 2); y = 300 + r * (CW * 2 + GU)
@@ -125,29 +125,29 @@ def s_buildup(cr, t, t0):
             cr.rectangle(x, y, CW * 2 + GU, CW * 2); col(cr, INK if k % 3 else GREEN, q); cr.fill()
             cr.rectangle(x, y, CW * 2 + GU, CW * 2); cr.set_line_width(2); col(cr, INK, 0.25); cr.stroke()
         tracked(cr, f"{n:02d}", W - M, 860, 200, INK, 1, -0.02, 'blk', 'r')
-        cap(cr, 'Dramay baaz in', W - M, 960, t, 39.4, align='r', size=24)
+        cap(cr, 'Dramay baaz in', W - M, 960, t, BUILD_T, align='r', size=24)
         return
     marks = []
-    for b in beats_between(41.4, t_drop):
+    for b in beats_between(PH_B - 0.05, t_drop):
         bi = BEATS.index(b); nb = BEATS[bi + 1] if bi + 1 < len(BEATS) else b + 0.47
-        sub = 1 if b < 42.3 else 2 if b < 42.9 else 4
+        sub = 1 if b < t_drop - 1.1 else 2 if b < t_drop - 0.5 else 4
         marks += [b + (nb - b) * k / sub for k in range(sub)]
-    marks = [m for m in marks if m < t_drop - 0.1] or [41.45]
+    marks = [m for m in marks if m < t_drop - 0.1] or [PH_B]
     i = max(0, bisect.bisect_right(marks, t) - 1)
     inv = i % 2
     bgfill(cr, INK if inv else WHITE)
     word = ('Buy', 'Sell')[inv]; c = (GREEN, RED)[inv]
     q = eio((t - marks[i]) / 0.06)
     tracked(cr, word, cx(0) - 8, 600, 420, c, q, -0.03, 'blk')
-    rule(cr, M, 760, W - M, clamp((t - 41.45) / (t_drop - 41.45)), 8, c)
-    cap(cr, f"{len(marks[:i + 1]):02d} / {len(marks):02d}", W - M, 820, t, 41.45, align='r', size=30)
+    rule(cr, M, 760, W - M, clamp((t - PH_B) / (t_drop - PH_B)), 8, c)
+    cap(cr, f"{len(marks[:i + 1]):02d} / {len(marks):02d}", W - M, 820, t, PH_B, align='r', size=30)
     fl = clamp((t - (t_drop - 0.1)) / 0.1)
     if fl > 0: cr.rectangle(0, 0, W, H); col(cr, WHITE, fl); cr.fill()
 
 
 def s_chant(cr, t, t0):
-    c_ = C(t0); t1 = c_[1]
-    bs = [snap(t0)] + [b for b in BEATS if snap(t0) + 0.1 < b < t1]
+    ev = t0; t1 = ev['end']
+    bs = list(ev['hits'])
     k = max(0, bisect.bisect_right(bs, t) - 1)
     bgfill(cr, GREEN)
     side = (k // 2) % 2   # composition alternates left / right every bar half
@@ -166,7 +166,7 @@ def s_chant(cr, t, t0):
 
 
 def s_green(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE)
     frame_meta(cr, t, 'Market  /  Up', t0)
     big(cr, 'Green', cx(0) - 8, 440, 360, GREEN, t, w[0])
     cap(cr, 'dekha toh', cx(0), 660, t, w[1], size=34)
@@ -181,7 +181,7 @@ def s_green(cr, t, t0):
 
 
 def s_red(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK)
     frame_meta(cr, t, 'Market  /  Down', t0)
     big(cr, 'Red', cx(0) - 8, 460, 420, RED, t, w[0])
     cap(cr, 'dekha toh', cx(0), 720, t, w[1], WHITE, size=34)
@@ -198,7 +198,7 @@ def s_red(cr, t, t0):
 
 
 def s_gussa(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE)
     frame_meta(cr, t, 'Screen', t0)
     cap(cr, 'screen pe', cx(0), 260, t, w[0], size=34)
     sc = 1 + 0.05 * dhol(t)
@@ -214,7 +214,7 @@ def s_gussa(cr, t, t0):
 
 
 def s_buy(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK)
     frame_meta(cr, t, 'Order  /  Buy', t0)
     cap(cr, 'bina soche', cx(0), 300, t, w[0], WHITE, size=34)
     big(cr, 'Buy', cx(0) - 12, 760, 520, GREEN, t, w[2], dur=0.22)
@@ -224,7 +224,7 @@ def s_buy(cr, t, t0):
 
 
 def s_sell(cr, t, t0):
-    w = wt(t0); bgfill(cr, WHITE)
+    w = wt(t0); t0 = w[0]; bgfill(cr, WHITE)
     frame_meta(cr, t, 'Order  /  Sell', t0)
     cap(cr, 'dar ke phir', W - M, 300, t, w[0], align='r', size=34)
     big(cr, 'Sell', W - M + 12, 760, 520, RED, t, w[3], 'r', dur=0.22)
@@ -234,7 +234,7 @@ def s_sell(cr, t, t0):
 
 
 def s_cry(cr, t, t0):
-    w = wt(t0); bgfill(cr, INK)
+    w = wt(t0); t0 = w[0]; bgfill(cr, INK)
     frame_meta(cr, t, 'Portfolio', t0)
     cap(cr, 'baith ke phir', cx(0), 300, t, w[0], WHITE, size=34)
     steps = len(beats_between(w[3] + 0.4, t + 0.001))   # sinks one baseline step per beat
@@ -287,7 +287,7 @@ def render(L, t):
     kt.BEAT_T[0] = t
     c = L.fg
     L.bg.rectangle(0, 0, W, H); col(L.bg, WHITE); L.bg.fill()
-    RUN.trans['chant'] = t_flash if abs(t - snap(43.4)) < 0.3 else t_cut
+    RUN.trans['chant'] = t_flash if abs(t - DROP) < 0.4 else t_cut
     RUN.frame(c, t)
     c.identity_matrix()
     if CUR[0] != GREEN:

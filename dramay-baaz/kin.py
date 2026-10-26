@@ -78,16 +78,64 @@ def beat_no(t):
 def C(t0): return [c for c in CHANTS if c[0] == t0][0]
 
 
-# sample section: 0:34 - 1:09 (lower lock, build-up, drop, chorus 1)
-def line_start(t0): return snap(wt(t0)[0] - 0.12, 0.1)
+# ------------------------------------------------------------------ data-driven timeline
+ONS = json.load(open('audio/vocal_onsets.json'))['onsets']
 
 
-SECTION = [
-    (line_start(34.8), 'lowerlock', 34.8), (line_start(36.6), 'stoploss', 36.6), (39.4, 'buildup', None),
-    (snap(43.4), 'chant', 43.4), (line_start(45.5), 'green', 45.5), (snap(47.2), 'chant', 47.2), (line_start(49.3), 'red', 49.3),
-    (snap(51.0), 'chant', 51.0), (line_start(52.0), 'gussa', 52.0), (snap(54.6), 'chant', 54.6), (line_start(57.7), 'buy', 57.7),
-    (line_start(59.8), 'sell', 59.8), (line_start(61.5), 'cry', 61.5), (snap(65.7), 'chant', 65.7), (69.45, 'end', None),
-]
+def _near_beat(x):
+    i = bisect.bisect_left(BEATS, x)
+    return min(abs(BEATS[j] - x) for j in (i - 1, i) if 0 <= j < len(BEATS))
+
+
+def _chants():
+    """Group shouts = strong vocal onsets that land on the beat, in the gaps between aligned lyric lines."""
+    spans = sorted((VT[l[0]][0] - 0.12, VT[l[0]][-1] + 0.4) for l in LYRICS)
+    gaps, cur = [], 0.0
+    for a, b in spans:
+        if a - cur > 0.5: gaps.append((cur, a))
+        cur = max(cur, b)
+    gaps.append((cur, 159.4))
+    out = []
+    for a, b in gaps:
+        hits = [o[0] for o in ONS if a <= o[0] < b and o[1] > 0.45 and _near_beat(o[0]) < 0.09]
+        hits = [snap(h, 0.09) for h in hits]
+        if not hits: continue
+        kind = 'NO' if 113 < a < 143 else 'DB'
+        # split a gap into separate shouts when hits are far apart (> 3 beats)
+        grp = [[hits[0]]]
+        for h in hits[1:]:
+            (grp[-1].append(h) if h - grp[-1][-1] < 1.5 else grp.append([h]))
+        for g in grp:
+            out.append(dict(start=g[0] - 0.05, end=min(b, g[-1] + 0.5), hits=g, kind=kind))
+    return out
+
+
+CHANT_EV = _chants()
+
+
+def chant_at(t):
+    for c in CHANT_EV:
+        if c['start'] <= t < c['end']: return c
+    return None
+
+
+def line_start(t0): return wt(t0)[0] - 0.1
+
+
+def build_section(t_from, t_to, buildups=()):
+    ev = [(line_start(l[0]), 'line', l[0]) for l in LYRICS if t_from <= line_start(l[0]) < t_to]
+    ev += [(c['start'], 'chant', c) for c in CHANT_EV if t_from <= c['start'] < t_to]
+    ev += [(a, 'buildup', None) for a in buildups if t_from <= a < t_to]
+    ev.sort(key=lambda e: e[0])
+    return ev + [(t_to, 'end', None)]
+
+
+LINE_KEYS = {34.8: 'lowerlock', 36.6: 'stoploss', 45.5: 'green', 85.7: 'green', 49.3: 'red', 89.7: 'red', 52.0: 'gussa',
+             92.4: 'gussa', 57.7: 'buy', 59.8: 'sell', 61.5: 'cry'}
+BUILD_T = wt(36.6)[-1] + 0.55            # after "bechara" the instrumental build begins
+DROP = [c for c in CHANT_EV if c['start'] > BUILD_T][0]['hits'][0]   # the drop = first shout after the build
+PH_B = BUILD_T + (DROP - BUILD_T) * 0.5                                   # build phase B (acceleration) start
+SECTION = [(t, LINE_KEYS.get(r, 'line') if k == 'line' else k, r) for t, k, r in build_section(34.4, 69.7, (BUILD_T,))]
 
 
 class Runner:
@@ -95,7 +143,7 @@ class Runner:
 
     def __init__(self, shots, transitions, td=0.3, start=34.4):
         self.shots, self.trans, self.td = shots, transitions, td
-        self.tl = [s for s in SECTION if s[0] >= start - 0.5]
+        self.tl = SECTION
         self.starts = [s[0] for s in self.tl]
 
     def draw(self, cr, i, t):
