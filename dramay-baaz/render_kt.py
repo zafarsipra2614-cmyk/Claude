@@ -10,10 +10,30 @@ from lib import W, H
 import kt
 
 OUT = 'build'
-yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-VIG = (1 - 0.05 * (((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) ** 1.2).clip(0.55, 1)[..., None].astype(np.float32)
-del yy, xx
-GRAIN = [(np.random.default_rng(s).random((H, W, 1), np.float32) - 0.5) * 0.028 for s in range(4)]
+SHUTTER = 1 / 120    # motion blur: each output frame blends two moments this far apart
+
+
+def _bgra_surface(arr4):
+    s = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
+    np.frombuffer(s.get_data(), np.uint8).reshape(H, W, 4)[:] = arr4
+    s.mark_dirty(); return s
+
+
+def _make_static():
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    v = (0.05 * (((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) ** 1.2).clip(0, 0.45)
+    vig = np.zeros((H, W, 4), np.uint8); vig[..., 3] = (v * 255).astype(np.uint8)          # black, premultiplied
+    grains = []
+    for s in range(4):
+        rng = np.random.default_rng(s)
+        al = (rng.random((H, W)) * 9).astype(np.uint8); white = rng.random((H, W)) > 0.5
+        g = np.zeros((H, W, 4), np.uint8); g[..., 3] = al
+        for ch in range(3): g[..., ch] = np.where(white, al, 0)
+        grains.append(_bgra_surface(g))
+    return _bgra_surface(vig), grains
+
+
+VIG_S, GRAIN_S = _make_static()
 
 
 class Ctx(cairo.Context):
@@ -26,22 +46,7 @@ def surf():
     return s, Ctx(s)
 
 
-def arr(s):
-    s.flush()
-    return np.frombuffer(s.get_data(), np.uint8).reshape(H, W, 4)
-
-
-def blur(rgb, k=4, radius=7):
-    im = Image.fromarray(rgb).resize((W // k, H // k), Image.BILINEAR).filter(ImageFilter.GaussianBlur(radius))
-    return np.asarray(im.resize((W, H), Image.BILINEAR), np.float32) / 255
-
-
-def over(dst, a8):
-    a = a8[..., 3:4].astype(np.float32) / 255
-    return dst * (1 - a) + a8[..., 2::-1].astype(np.float32) / 255
-
-
-def draw(t):
+def layers(t):
     try:
         (sb, bg), (sf, fg), (sm, mk), (su, ui) = surf(), surf(), surf(), surf()
         kt.render(kt.Layers(bg, fg, mk, ui), t)
@@ -52,33 +57,58 @@ def draw(t):
             kt.render(kt.Layers(bg, fg, mk, ui), t)
         finally:
             kt.FORCE_PATH[0] = False
-    b = arr(sb)
-    brgb = b[..., 2::-1].copy()
-    out = brgb.astype(np.float32) / 255
-    m = arr(sm)[..., 3:4].astype(np.float32) / 255
-    if m.max() > 0:
-        frost = blur(brgb, 4, 9) * 0.86 + 0.13 if kt.LIGHT else blur(brgb, 4, 9) * 0.92 + 0.03
-        out = out * (1 - m) + frost * m
-    f = arr(sf)
-    out = over(out, f)
-    # bloom from bright foreground (glowing type and UI)
-    fa = f[..., 3:4].astype(np.float32) / 255
-    bright = (f[..., 2::-1].astype(np.float32) / 255) * fa
-    bright = np.clip(bright - 0.35, 0, 1) * 1.5
-    if bright.max() > 0 and not kt.LIGHT:
-        out = out + blur((bright * 255).astype(np.uint8), 4, 8) * 0.55
-    out = out * VIG + GRAIN[int(t * 24) % 4]
-    out = over(np.clip(out, 0, 1), arr(su))
-    fd = min(1.0, t / 0.5, (kt.DUR - t) / 1.2) if t < 0.5 or t > kt.DUR - 1.2 else 1.0
-    return (np.clip(out * max(0.0, fd), 0, 1) * 255).astype(np.uint8)
+    return sb, sf, sm, su
+
+
+def frost_pattern(sb):
+    """Quarter-size Gaussian blur of the backdrop, scaled back up: the frosted glass."""
+    sw, sh = W // 4, H // 4
+    small = cairo.ImageSurface(cairo.FORMAT_ARGB32, sw, sh)
+    c = cairo.Context(small); c.scale(0.25, 0.25); c.set_source_surface(sb); c.get_source().set_filter(cairo.FILTER_GOOD); c.paint()
+    small.flush()
+    buf = np.frombuffer(small.get_data(), np.uint8).reshape(sh, small.get_stride() // 4, 4)[:, :sw]
+    blurred = np.asarray(Image.fromarray(np.ascontiguousarray(buf), 'RGBA').filter(ImageFilter.GaussianBlur(9)))
+    np.frombuffer(small.get_data(), np.uint8).reshape(sh, small.get_stride() // 4, 4)[:, :sw] = blurred
+    small.mark_dirty()
+    pat = cairo.SurfacePattern(small); pat.set_matrix(cairo.Matrix(xx=0.25, yy=0.25)); pat.set_filter(cairo.FILTER_BILINEAR)
+    return pat
+
+
+def frame_surface(t):
+    sb, sf, sm, su = layers(t)
+    out = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H); c = cairo.Context(out)
+    c.set_source_surface(sb); c.paint()
+    c.set_source(frost_pattern(sb)); c.mask_surface(sm, 0, 0)
+    if kt.LIGHT:
+        c.set_source_rgba(1, 1, 1, 0.13); c.mask_surface(sm, 0, 0)
+    c.set_source_surface(sf); c.paint()
+    c.set_source_surface(VIG_S); c.paint()
+    c.set_source_surface(GRAIN_S[int(t * 60) % 4]); c.paint()
+    c.set_source_surface(su); c.paint()
+    fd = min(1.0, t / 0.5, (kt.DUR - t) / 1.2)
+    if fd < 1: c.set_source_rgba(0, 0, 0, 1 - max(0.0, fd)); c.paint()
+    return out
+
+
+def draw_surface(t, blur=True):
+    if not blur: return frame_surface(t)
+    a = frame_surface(t - SHUTTER / 2); b = frame_surface(t + SHUTTER / 2)
+    c = cairo.Context(a); c.set_source_surface(b); c.paint_with_alpha(0.5)
+    a.flush(); return a
+
+
+def draw(t, blur=True):
+    """RGB uint8 frame (used for stills)."""
+    s = draw_surface(t, blur)
+    return np.asarray(Image.frombuffer('RGBA', (W, H), bytes(s.get_data()), 'raw', 'BGRA', 0, 1).convert('RGB'))
 
 
 def encode(path, frames_iter, fps, audio=None, crf=18):
-    cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(fps), '-i', '-']
+    cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'bgra', '-s', f'{W}x{H}', '-r', str(fps), '-i', '-']
     if audio: cmd += ['-ss', str(audio[0]), '-t', str(audio[1]), '-i', 'audio/song.mp3', '-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '192k', '-shortest']
     cmd += ['-c:v', 'libx264', '-preset', 'medium', '-crf', str(crf), '-pix_fmt', 'yuv420p', '-movflags', '+faststart', path]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    for fr in frames_iter: ff.stdin.write(fr.tobytes())
+    for fr in frames_iter: ff.stdin.write(fr)
     ff.stdin.close(); ff.wait()
 
 
@@ -88,7 +118,7 @@ def worker(w, f0, f1, fps):
     def gen():
         for f in range(f0, f1):
             if w == 0 and (f - f0) % 240 == 0: print(f'w0 {f - f0}/{f1 - f0} {time.time() - t0:.0f}s', flush=True)
-            yield draw(f / fps)
+            yield bytes(draw_surface(f / fps).get_data())
     encode(f'{OUT}/kt_seg{w:02d}.mp4', gen(), fps)
 
 
@@ -100,9 +130,10 @@ if __name__ == '__main__':
         sys.exit()
     if sys.argv[1:2] == ['clip']:
         t0, dur, fps = float(sys.argv[2]), float(sys.argv[3]), 24
-        encode(f'{OUT}/kt_clip_{t0:g}.mp4', (draw(t0 + i / fps) for i in range(int(dur * fps))), fps, (t0, dur), 22)
+        fps = 60
+        encode(f'{OUT}/kt_clip_{t0:g}.mp4', (bytes(draw_surface(t0 + i / fps).get_data()) for i in range(int(dur * fps))), fps, (t0, dur), 20)
         sys.exit()
-    fps = int(sys.argv[1]) if len(sys.argv) > 1 else 24
+    fps = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     nw = int(sys.argv[2]) if len(sys.argv) > 2 else os.cpu_count()
     total = int(kt.DUR * fps); per = -(-total // nw)
     ps = [Process(target=worker, args=(w, w * per, min(total, (w + 1) * per), fps)) for w in range(nw)]

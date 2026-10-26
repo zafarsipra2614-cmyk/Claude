@@ -1087,7 +1087,7 @@ def shot(L, t, t0):
             if i:
                 q = clamp((t - st + 0.3) / 0.3)
                 line(fg, [(x - 70, y + 50), (lerp(x - 70, x, q), lerp(y + 50, y, q))], 5, GT, 0.8)
-            glass(L, x, y - 70, 340, 140, 70, clamp(p), tint=GT if i == 3 else FGC, ta=0.1)
+            glass(L, x, y - 70, 340, 140, 70, clamp(p), tint=GT if i == 3 else WHITE, ta=0.1)
             tx(fg, s_, x + 170, y, 46, 'xb', GT if i == 3 else FGC, clamp(p))
 
 
@@ -1137,7 +1137,7 @@ def final_section(L, t):
             bt = BEATS[beat_index(115.7) + 1 + i * 2]
             p = ease_out(clamp((t - bt) / 0.35))
             x = 130 + i * 570; y = 380 + (1 - p) * 80
-            glass(L, x, y, 520, 360, 40, a * p, tint=GT if i == 1 else FGC, ta=0.1)
+            glass(L, x, y, 520, 360, 40, a * p, tint=GT if i == 1 else WHITE, ta=0.1)
             tx(fg, n, x + 50, y + 80, 64, 'xb', GT, a * p, 'l')
             tx(fg, h, x + 50, y + 200, 50, 'xb', FGC, a * p, 'l')
             tx(fg, s_, x + 50, y + 270, 30, 'm', MUTED, a * p, 'l')
@@ -1278,7 +1278,14 @@ def shot_camera(t, c_, sec):
     if c_ or sec in ('final', 'outro'):
         return cam
     l = cur_line(t)
-    if l is None: return cam
+    if l is None:   # ease the push-in back out instead of snapping
+        prev = [x[0] for x in LYRICS if x[0] <= t]
+        if not prev: return cam
+        p_ = prev[-1]; age = t - (LYR_END[p_] + 0.35)
+        if age >= 0.6: return cam
+        k = 1 - ease_io(clamp(age / 0.6)); li = [x[0] for x in LYRICS].index(p_)
+        cam['sc'] = 1 + 0.045 * k; cam['rot'] = (0.006 if li % 2 else -0.006) * k; cam['dx'] = (14 if li % 2 else -14) * k
+        return cam
     li = [x[0] for x in LYRICS].index(l)
     t0 = snap(l); dur = max(1.0, LYR_END[l] - l)
     lt = t - t0
