@@ -7,9 +7,11 @@ from multiprocessing import Process
 import numpy as np, cairo
 from PIL import Image, ImageFilter
 from lib import W, H
-import kt
+import importlib
+kt = importlib.import_module(os.environ.get('VIDEO', 'kt'))
 
 OUT = 'build'
+PFX = os.environ.get('VIDEO', 'kt')
 SHUTTER = 1 / 120    # motion blur: each output frame blends two moments this far apart
 
 
@@ -119,14 +121,14 @@ def worker(w, f0, f1, fps):
         for f in range(f0, f1):
             if w == 0 and (f - f0) % 240 == 0: print(f'w0 {f - f0}/{f1 - f0} {time.time() - t0:.0f}s', flush=True)
             yield bytes(draw_surface(f / fps).get_data())
-    encode(f'{OUT}/kt_seg{w:02d}.mp4', gen(), fps)
+    encode(f'{OUT}/{PFX}_seg{w:02d}.mp4', gen(), fps)
 
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     if sys.argv[1:2] == ['stills']:
         for a in sys.argv[2:]:
-            Image.fromarray(draw(float(a))).save(f'{OUT}/kt_{float(a):07.2f}.png')
+            Image.fromarray(draw(float(a))).save(f'{OUT}/{PFX}_{float(a):07.2f}.png')
         sys.exit()
     if sys.argv[1:2] == ['clip']:
         t0, dur, fps = float(sys.argv[2]), float(sys.argv[3]), 24
@@ -138,9 +140,9 @@ if __name__ == '__main__':
     total = int(kt.DUR * fps); per = -(-total // nw)
     ps = [Process(target=worker, args=(w, w * per, min(total, (w + 1) * per), fps)) for w in range(nw)]
     [p.start() for p in ps]; [p.join() for p in ps]
-    with open(f'{OUT}/kt_list.txt', 'w') as fh:
-        fh.write('\n'.join(f"file 'kt_seg{w:02d}.mp4'" for w in range(nw)))
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', f'{OUT}/kt_list.txt', '-i', 'audio/song.mp3',
+    with open(f'{OUT}/{PFX}_list.txt', 'w') as fh:
+        fh.write('\n'.join(f"file '{PFX}_seg{w:02d}.mp4'" for w in range(nw)))
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', f'{OUT}/{PFX}_list.txt', '-i', 'audio/song.mp3',
                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart',
-                    'DramayBaaz_KineticType.mp4'], check=True)
+                    os.environ.get('OUTFILE', 'DramayBaaz_KineticType.mp4')], check=True)
     print('done', total, 'frames')
