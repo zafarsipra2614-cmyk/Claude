@@ -76,7 +76,12 @@ def tx(cr, s, x, y, size, fam='xb', c=WHITE, a=1.0, align='c'):
     if a <= 0.003: return 0
     font(cr, fam, size); adv = cr.text_extents(s).x_advance
     xx = x - adv / 2 if align == 'c' else x if align == 'l' else x - adv
-    cr.move_to(xx, y + size * 0.36); col(cr, c, a); cr.show_text(s)
+    cr.move_to(xx, y + size * 0.36); col(cr, c, a)
+    m = cr.get_matrix(); dev = size * math.sqrt(abs(m.xx * m.yy - m.xy * m.yx))
+    if dev > 300 or FORCE_PATH[0]:   # FreeType refuses very large glyph bitmaps; big type is drawn as vector paths
+        cr.text_path(s); cr.fill()
+    else:
+        cr.show_text(s)
     return adv
 
 
@@ -169,6 +174,7 @@ def palette(t):
 
 
 CHANT_GREEN = [False]
+FORCE_PATH = [False]
 BEAT_T = [0.0]
 
 

@@ -42,8 +42,16 @@ def over(dst, a8):
 
 
 def draw(t):
-    (sb, bg), (sf, fg), (sm, mk), (su, ui) = surf(), surf(), surf(), surf()
-    kt.render(kt.Layers(bg, fg, mk, ui), t)
+    try:
+        (sb, bg), (sf, fg), (sm, mk), (su, ui) = surf(), surf(), surf(), surf()
+        kt.render(kt.Layers(bg, fg, mk, ui), t)
+    except cairo.Error:   # font rasteriser hiccup: redraw this frame with all type as vector paths
+        kt.FORCE_PATH[0] = True
+        try:
+            (sb, bg), (sf, fg), (sm, mk), (su, ui) = surf(), surf(), surf(), surf()
+            kt.render(kt.Layers(bg, fg, mk, ui), t)
+        finally:
+            kt.FORCE_PATH[0] = False
     b = arr(sb)
     brgb = b[..., 2::-1].copy()
     out = brgb.astype(np.float32) / 255
