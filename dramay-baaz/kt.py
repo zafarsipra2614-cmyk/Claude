@@ -22,7 +22,10 @@ def hexc(h): return tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
 
 # FloStocks site tokens
 G = hexc('#38D100'); GD = hexc('#1F7A00'); FOREST = hexc('#062600'); INK = hexc('#0A0E0A'); INK2 = hexc('#0B0F14')
-RED = hexc('#E5484D'); GOLD = hexc('#E6A817'); GOLDL = hexc('#FFE79A'); WASH = hexc('#EAF9E4'); WHITE = (1, 1, 1)
+RED = hexc('#E5484D')
+LIGHT = True
+FGC = INK_ = hexc('#0A0E0A') if LIGHT else (1, 1, 1)
+GT = hexc('#2E9D00') if LIGHT else hexc('#38D100'); MUTED = (0.32, 0.36, 0.33) if LIGHT else (0.82, 0.86, 0.84); GOLD = hexc('#E6A817'); GOLDL = hexc('#FFE79A'); WASH = hexc('#EAF9E4'); WHITE = (1, 1, 1)
 
 FONTS = {'xb': 'Manrope XB', 'b': 'Manrope B', 'm': 'Manrope M', 'inter': 'Inter', 'mono': 'IBM Plex Mono'}
 
@@ -91,6 +94,10 @@ def fade(t, t0, t1, fi=0.2, fo=0.25): return clamp((t - t0) / fi) * clamp((t1 - 
 
 
 def glass(L, x, y, w, h, r=30, a=1.0, tint=WHITE, ta=0.075, border=0.32, shadow=True):
+    if LIGHT:
+        ta = ta * 4.0 if tint == WHITE else ta * 1.6
+    k = 1 + 0.008 * beat_pulse(BEAT_T[0], 9); cx_, cy_ = x + w / 2, y + h / 2
+    x, y, w, h = cx_ - w * k / 2, cy_ - h * k / 2, w * k, h * k
     """Frosted glass panel: the compositor blurs the backdrop under the mask; here we add tint, sheen and edge."""
     if a <= 0.01: return
     m = L.mask; m.save(); m.set_matrix(L.fg.get_matrix()); rr(m, x, y, w, h, r); m.set_source_rgba(1, 1, 1, a); m.fill(); m.restore()
@@ -99,7 +106,7 @@ def glass(L, x, y, w, h, r=30, a=1.0, tint=WHITE, ta=0.075, border=0.32, shadow=
         c.save(); c.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
         c.rectangle(x - 200, y - 200, w + 400, h + 400); rr(c, x, y, w, h, r); c.clip()
         for k in range(4):
-            rr(c, x - k * 6, y - k * 6 + 16, w + k * 12, h + k * 12, r + k * 6); c.set_source_rgba(0, 0, 0, 0.06 * a); c.fill()
+            rr(c, x - k * 6, y - k * 6 + 16, w + k * 12, h + k * 12, r + k * 6); c.set_source_rgba(0.05, 0.12, 0.05, (0.035 if LIGHT else 0.06) * a); c.fill()
         c.restore()
     g = cairo.LinearGradient(x, y, x + w * 0.4, y + h)
     g.add_color_stop_rgba(0, *tint, ta * 1.9 * a); g.add_color_stop_rgba(1, *tint, ta * 0.6 * a)
@@ -107,6 +114,8 @@ def glass(L, x, y, w, h, r=30, a=1.0, tint=WHITE, ta=0.075, border=0.32, shadow=
     g2 = cairo.LinearGradient(x, y, x, y + h)
     g2.add_color_stop_rgba(0, 1, 1, 1, border * a); g2.add_color_stop_rgba(0.5, 1, 1, 1, border * 0.25 * a); g2.add_color_stop_rgba(1, 1, 1, 1, border * 0.55 * a)
     rr(c, x + 0.75, y + 0.75, w - 1.5, h - 1.5, r); c.set_line_width(1.8); c.set_source(g2); c.stroke()
+    if LIGHT:
+        rr(c, x, y, w, h, r); c.set_line_width(1.2); c.set_source_rgba(0.04, 0.1, 0.04, 0.10 * a); c.stroke()
 
 
 def glass_pill(L, cx, cy, text_, size=30, fam='b', c=WHITE, a=1.0, pad=34, tint=WHITE, ta=0.08):
@@ -118,11 +127,11 @@ def glass_pill(L, cx, cy, text_, size=30, fam='b', c=WHITE, a=1.0, pad=34, tint=
 
 # ------------------------------------------------------------------ backdrop
 PALS = {
-    'brand': ((0.015, 0.03, 0.02), [G, GD, FOREST, (0.1, 0.35, 0.12)]),
+    'brand': ((0.015, 0.03, 0.02), [GT, GD, FOREST, (0.1, 0.35, 0.12)]),
     'morning': ((0.05, 0.035, 0.03), [GOLD, (0.95, 0.42, 0.12), GD, (0.55, 0.22, 0.35)]),
-    'gold': ((0.045, 0.035, 0.01), [GOLD, GOLDL, (0.65, 0.38, 0.0), GD]),
+    'gold': ((0.045, 0.035, 0.01), [GOLD, GOLD, (0.65, 0.38, 0.0), GD]),
     'red': ((0.055, 0.01, 0.015), [RED, (0.6, 0.05, 0.1), (0.35, 0.0, 0.06), (0.9, 0.35, 0.2)]),
-    'green': ((0.01, 0.05, 0.012), [G, GD, (0.6, 1.0, 0.3), FOREST]),
+    'green': ((0.01, 0.05, 0.012), [GT, GD, (0.6, 1.0, 0.3), FOREST]),
     'blue': ((0.02, 0.03, 0.06), [(0.2, 0.36, 0.75), (0.1, 0.2, 0.45), (0.35, 0.55, 0.85), INK2]),
     'calm': ((0.015, 0.045, 0.04), [(0.1, 0.55, 0.45), (0.15, 0.42, 0.2), GD, (0.3, 0.6, 0.5)]),
 }
@@ -159,9 +168,36 @@ def palette(t):
     return base, orbs
 
 
+CHANT_GREEN = [False]
+BEAT_T = [0.0]
+
+
+def chant_green(t):
+    sec = section(t)[1]
+    if sec == 'outro': return snap(146.4) <= t < 149.0
+    for t0, t1, ph in CHANTS:
+        if snap(t0) - 0.02 <= t < t1:
+            if ph == DB: return True
+            return t < t0 + (1.6 if t0 in (114.0, 126.4) else 0.0) or t0 >= 134.9
+    return False
+
+
+def backdrop_green(L, t):
+    c = L.bg; bp = beat_pulse(t, 8)
+    c.rectangle(-300, -300, W + 600, H + 600); col(c, hexc('#38D100')); c.fill()
+    for i, (fx, fy, r, cc, al) in enumerate(((0.2, 0.25, 700, GD, 0.35), (0.85, 0.8, 760, GD, 0.3), (0.7, 0.2, 520, (0.75, 1, 0.45), 0.45),
+                                            (0.25, 0.85, 560, (0.7, 1, 0.4), 0.35))):
+        x = W * (fx + 0.05 * math.sin(t * 0.4 + i)); y = H * (fy + 0.05 * math.cos(t * 0.33 + i))
+        rad = r * (1 + 0.1 * bp)
+        g = cairo.RadialGradient(x, y, 0, x, y, rad); g.add_color_stop_rgba(0, *cc, al); g.add_color_stop_rgba(1, *cc, 0)
+        c.set_source(g); c.arc(x, y, rad, 0, TAU); c.fill()
+
+
 def backdrop(L, t):
+    if CHANT_GREEN[0]: return backdrop_green(L, t)
     c = L.bg
     base, orbs = palette(t)
+    if LIGHT: base = mix(base, (1, 1, 1), 0.97); base = mix(base, orbs[0], 0.02)
     c.rectangle(-300, -300, W + 600, H + 600); col(c, base); c.fill()
     bass = env('bass', t); bp = beat_pulse(t)
     spots = [(0.22, 0.30, 0.13, 0.31, 620), (0.78, 0.25, 0.11, 0.23, 560), (0.65, 0.82, 0.09, 0.17, 700), (0.18, 0.85, 0.15, 0.27, 520)]
@@ -169,18 +205,20 @@ def backdrop(L, t):
         x = W * (fx + 0.07 * math.sin(t * sx + i)); y = H * (fy + 0.07 * math.cos(t * sy + i * 2))
         rad = r * (1 + 0.12 * bp * bass)
         g = cairo.RadialGradient(x, y, 0, x, y, rad)
-        g.add_color_stop_rgba(0, *orbs[i], 0.62); g.add_color_stop_rgba(0.55, *orbs[i], 0.22); g.add_color_stop_rgba(1, *orbs[i], 0)
+        oa = 0.13 if LIGHT else 0.62
+        g.add_color_stop_rgba(0, *orbs[i], oa); g.add_color_stop_rgba(0.55, *orbs[i], oa * 0.35); g.add_color_stop_rgba(1, *orbs[i], 0)
         c.set_source(g); c.arc(x, y, rad, 0, TAU); c.fill()
     # faint grid
     c.set_line_width(1)
     for x in range(0, W + 1, 120): c.move_to(x, 0); c.line_to(x, H)
     for y in range(0, H + 1, 120): c.move_to(0, y); c.line_to(W, y)
-    c.set_source_rgba(1, 1, 1, 0.025 + 0.02 * bp * bass); c.stroke()
+    gk = (0, 0, 0) if LIGHT else (1, 1, 1)
+    c.set_source_rgba(*gk, 0.035 + 0.02 * bp * bass); c.stroke()
     # drifting dust
     rnd = random.Random(5)
     for k in range(40):
         x = (rnd.random() * W + t * (8 + rnd.random() * 20)) % W; y = (rnd.random() * H - t * (6 + rnd.random() * 14)) % H
-        c.arc(x, y, 1 + rnd.random() * 2.2, 0, TAU); c.set_source_rgba(1, 1, 1, 0.08 + 0.1 * rnd.random()); c.fill()
+        c.arc(x, y, 1 + rnd.random() * 2.2, 0, TAU); c.set_source_rgba(*gk, 0.05 + 0.07 * rnd.random()); c.fill()
 
 
 def echo_words(L, t, s, size=260, a=0.07, speed=120, rows=4):
@@ -193,15 +231,38 @@ def echo_words(L, t, s, size=260, a=0.07, speed=120, rows=4):
         x = -off - adv
         while x < W + adv:
             c.move_to(x, y + size * 0.36); c.text_path(s); x += adv
-        c.set_line_width(2.5); c.set_source_rgba(1, 1, 1, a); c.stroke()
+        if CHANT_GREEN[0]: c.set_line_width(3); c.set_source_rgba(*FOREST, 0.16); c.stroke(); return
+    c.set_line_width(2.5); c.set_source_rgba(*((0.04, 0.06, 0.04) if LIGHT else (1, 1, 1)), a * (0.8 if LIGHT else 1)); c.stroke()
 
 
 # ------------------------------------------------------------------ kinetic type
+GRID = sorted(BEATS + [(a + b) / 2 for a, b in zip(BEATS, BEATS[1:])])
+
+
+def snap(x, tol=0.13):
+    """Move a time onto the nearest beat / half-beat so animation hits land on the rhythm."""
+    import bisect
+    i = bisect.bisect_left(GRID, x)
+    best = min((GRID[j] for j in (i - 1, i) if 0 <= j < len(GRID)), key=lambda g: abs(g - x), default=x)
+    return best if abs(best - x) <= tol else x
+
+
+_WTC = {}
+
+
 def word_times(t0, n):
+    if (t0, n) in _WTC: return _WTC[(t0, n)]
     v = WT.get(t0)
-    if v and len(v) == n: return v
-    span = max(0.6, (LYR_END[t0] - t0) * 0.6)
-    return [t0 + span * i / max(1, n) for i in range(n)]
+    if not (v and len(v) == n):
+        span = max(0.6, (LYR_END[t0] - t0) * 0.6)
+        v = [t0 + span * i / max(1, n) for i in range(n)]
+    out = []
+    for x in v:
+        y = snap(x)
+        if out and y <= out[-1]: y = out[-1] + 0.06
+        out.append(y)
+    _WTC[(t0, n)] = out
+    return out
 
 
 GOOD = ('BUY', 'GREEN', 'UPPER', 'NAACH', 'RALLY', 'RAJA', 'RESEARCH', 'STRATEGY', 'SOCH', 'PLAN', 'HOLD', 'SABAR', 'DIRECTION', 'KAL')
@@ -211,8 +272,8 @@ BAD = ('RED', 'LOWER', 'SELL', 'PANIC', 'GUSSA', 'BHAAG', 'RO', 'RIGGED', 'DAR',
 def word_col(u):
     u = u.upper().strip(',.!"')
     if u in ('RO',) or any(u.startswith(b) for b in BAD if b != 'RO'): return RED
-    if any(u.startswith(g) for g in GOOD): return G
-    return WHITE
+    if any(u.startswith(g) for g in GOOD): return GT
+    return FGC
 
 
 def layout(cr, words, region, maxch=12, max_size=230, lh=1.02, fam='xb'):
@@ -247,8 +308,16 @@ def draw_word(cr, s, box, t, wt, style, c, a=1.0):
     if p <= 0 or a <= 0: return
     u = s.upper()
     bp = beat_pulse(t, 9)
+    pump = 1 + 0.045 * bp
+    cr.save(); cr.translate(x, y); cr.scale(pump, pump); cr.translate(-x, -y)
+    _draw_word(cr, u, box, t, wt, style, c, a, p, bp)
+    cr.restore()
+
+
+def _draw_word(cr, u, box, t, wt, style, c, a, p, bp):
+    x, y, sz, wd, ri = box
     if style in ('slam', 'shake', 'shout'):
-        sc = lerp(1.7, 1.0, ease_out(p)) * (1 + 0.025 * bp)
+        sc = lerp(1.7, 1.0, ease_out(p))
         jx = jy = 0
         if style in ('shake', 'shout'):
             k = 7 if style == 'shake' else 4
@@ -312,7 +381,7 @@ def kinetic(L, t, t0, region, style='slam', maxch=12, max_size=220, styles=None,
 def sun(L, x, y, r, a=1.0):
     c = L.bg
     for rad, al in ((r * 3.2, 0.12), (r * 2.0, 0.22), (r * 1.35, 0.35)):
-        g = cairo.RadialGradient(x, y, 0, x, y, rad); g.add_color_stop_rgba(0, *GOLDL, al * a); g.add_color_stop_rgba(1, *GOLD, 0)
+        g = cairo.RadialGradient(x, y, 0, x, y, rad); g.add_color_stop_rgba(0, *GOLD, al * a); g.add_color_stop_rgba(1, *GOLD, 0)
         c.set_source(g); c.arc(x, y, rad, 0, TAU); c.fill()
     g = cairo.RadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.add_color_stop_rgba(0, 1, 0.97, 0.8, a); g.add_color_stop_rgba(1, *GOLD, a)
     c.set_source(g); c.arc(x, y, r, 0, TAU); c.fill()
@@ -324,7 +393,7 @@ def chai_icon(cr, x, y, s, t, a=1.0):
         ph = (t * 0.6 + k / 3) % 1
         cr.move_to(-30 + k * 30, -70 - ph * 110)
         cr.curve_to(-48 + k * 30, -95 - ph * 110, -12 + k * 30, -125 - ph * 110, -30 + k * 30, -150 - ph * 110)
-        cr.set_line_width(6); cr.set_source_rgba(1, 1, 1, a * (1 - ph) * 0.55); cr.stroke()
+        cr.set_line_width(6); cr.set_source_rgba(*((0.4, 0.42, 0.4) if LIGHT else (1, 1, 1)), a * (1 - ph) * 0.55); cr.stroke()
     cr.move_to(-70, -60); cr.line_to(70, -60); cr.line_to(56, 60); cr.line_to(-56, 60); cr.close_path()
     col(cr, (0.98, 0.97, 0.94), a); cr.fill_preserve(); cr.set_line_width(5); col(cr, GOLD, a); cr.stroke()
     cr.rectangle(-66, -54, 132, 26); col(cr, (0.76, 0.52, 0.3), a); cr.fill()
@@ -337,19 +406,19 @@ def candles(cr, x, y, w, h, t, up=True, n=9, a=1.0, seed=3):
     for k in range(n):
         v = 0.25 + 0.7 * ((k / (n - 1)) if up else (1 - k / (n - 1))) + 0.12 * math.sin(k * 2.1 + t * 2)
         hh = h * clamp(v) * (0.85 + 0.15 * beat_pulse(t))
-        cc = G if (up and rnd.random() > 0.2) or (not up and rnd.random() < 0.2) else RED
+        cc = GT if (up and rnd.random() > 0.2) or (not up and rnd.random() < 0.2) else RED
         bx = x + k * bw + bw * 0.2
         line(cr, [(bx + bw * 0.3, y - hh - 18), (bx + bw * 0.3, y + 12)], 3, cc, a * 0.9)
         rr(cr, bx, y - hh, bw * 0.6, hh * 0.75, 4); col(cr, cc, a * 0.9); cr.fill()
 
 
-def arrow_up(cr, x, y, s, c=G, a=1.0):
+def arrow_up(cr, x, y, s, c=GT, a=1.0):
     cr.save(); cr.translate(x, y); cr.scale(s, s)
     cr.move_to(0, -60); cr.line_to(46, -8); cr.line_to(16, -8); cr.line_to(16, 60); cr.line_to(-16, 60); cr.line_to(-16, -8); cr.line_to(-46, -8)
     cr.close_path(); col(cr, c, a); cr.fill(); cr.restore()
 
 
-def check(cr, x, y, s, c=G, a=1.0, p=1.0):
+def check(cr, x, y, s, c=GT, a=1.0, p=1.0):
     pts = [(x - s * .45, y), (x - s * .12, y + s * .32), (x + s * .5, y - s * .38)]
     if p < 1:
         q = p * 2
@@ -557,7 +626,7 @@ def scr_web(stage_times):
         c.rectangle(0, 0, PW, PH); col(c, (0.03, 0.05, 0.035)); c.fill()
         status_bar(c)
         rr(c, 20, 58, 360, 46, 23); c.set_source_rgba(1, 1, 1, 0.1); c.fill()
-        tx(c, 'flostocks.com', 200, 81, 20, 'm', (0.85, 0.88, 0.86))
+        tx(c, 'flostocks.com', 200, 81, 20, 'm', (0.8, 0.85, 0.82))
         if t < t_tap + 0.35:
             # official logo, painted on the untouched UI layer with the phone's transform
             u = L.ui; u.save(); u.set_matrix(c.get_matrix()); brand_img(u, 'wordmark', 200, 190, 300, 1.0, dark=True); u.restore()
@@ -573,11 +642,11 @@ def scr_web(stage_times):
             return
         if t < t_done:
             tx(c, 'Open your', 32, 160, 34, 'xb', WHITE, 1, 'l'); tx(c, 'PSX account', 32, 204, 34, 'xb', G, 1, 'l')
-            tx(c, 'Fully guided, all online', 32, 248, 20, 'm', (0.7, 0.75, 0.72), 1, 'l')
+            tx(c, 'Fully guided, all online', 32, 248, 20, 'm', (0.8, 0.85, 0.82), 1, 'l')
             fields = (('Full name', 'Ali Raza', t_f1), ('CNIC', '35202-•••••••-•', t_f2), ('Mobile', '+92 3•• •••••••', t_f3))
             for i, (lab, val, ft) in enumerate(fields):
                 y = 300 + i * 112
-                tx(c, lab, 32, y, 18, 'm', (0.6, 0.65, 0.62), 1, 'l')
+                tx(c, lab, 32, y, 18, 'm', (0.8, 0.85, 0.82), 1, 'l')
                 rr(c, 24, y + 18, 352, 62, 16); c.set_source_rgba(1, 1, 1, 0.07); c.fill()
                 act = ft - 0.3 <= t
                 if act:
@@ -603,7 +672,7 @@ def chant_db(L, t, c_):
     echo_words(L, t, 'DRAMAY BAAZ!', 240, 0.08, 160)
     bi0 = beat_index(t0 - 0.06) + 1
     nb = max(0, beat_index(t) - bi0); cyc = nb // 4
-    b0 = BEATS[min(len(BEATS) - 1, bi0 + cyc * 4)] if cyc else t0
+    b0 = BEATS[min(len(BEATS) - 1, bi0 + cyc * 4)] if cyc else snap(t0)
     b1 = BEATS[min(len(BEATS) - 1, bi0 + cyc * 4 + 1)]
     lay = cyc % 3
     a = clamp((t1 + 0.25 - t) / 0.25)
@@ -611,7 +680,7 @@ def chant_db(L, t, c_):
     fg = L.fg
     if lay == 0:
         glass(L, 260, 250, 1400, 560, 48, a)
-        for s_, y, wt, cc in (('DRAMAY', 430, b0, WHITE), ('BAAZ!', 640, b1, G)):
+        for s_, y, wt, cc in (('DRAMAY', 430, b0, FOREST), ('BAAZ!', 640, b1, WHITE)):
             p = clamp((t - wt) / 0.14)
             if p > 0:
                 fg.save(); fg.translate(W / 2, y); sc = lerp(1.9, 1, ease_out(p)) * kick; fg.scale(sc, sc)
@@ -622,11 +691,11 @@ def chant_db(L, t, c_):
         fg.save(); fg.translate(W / 2, 530); fg.scale(kick, kick)
         wd = tw(fg, 'DRAMAY ', 'xb', 200)
         full = tw(fg, 'DRAMAY BAAZ!', 'xb', 200)
-        tx(fg, 'DRAMAY', -full / 2 + tw(fg, 'DRAMAY', 'xb', 200) / 2 - (1 - ease_out(p0)) * 300, 0, 200, 'xb', WHITE, a * p0)
-        tx(fg, 'BAAZ!', -full / 2 + wd + tw(fg, 'BAAZ!', 'xb', 200) / 2 + (1 - ease_out(p1)) * 300, 0, 200, 'xb', G, a * p1)
+        tx(fg, 'DRAMAY', -full / 2 + tw(fg, 'DRAMAY', 'xb', 200) / 2 - (1 - ease_out(p0)) * 300, 0, 200, 'xb', FOREST, a * p0)
+        tx(fg, 'BAAZ!', -full / 2 + wd + tw(fg, 'BAAZ!', 'xb', 200) / 2 + (1 - ease_out(p1)) * 300, 0, 200, 'xb', WHITE, a * p1)
         fg.restore()
     else:
-        for i, (s_, wt, cc) in enumerate((('DRAMAY', b0, WHITE), ('BAAZ!', b1, G))):
+        for i, (s_, wt, cc) in enumerate((('DRAMAY', b0, FOREST), ('BAAZ!', b1, WHITE))):
             p = clamp((t - wt) / 0.16)
             x = 140 + i * 860
             glass(L, x, 300 + i * 80, 780, 400, 44, a * ease_out(p))
@@ -639,18 +708,19 @@ def chant_no(L, t, t0, t1, cx=W / 2, cy=H / 2 - 20, s=1.0, a=1.0, with_glass=Tru
     fg = L.fg
     bi0 = beat_index(t0 - 0.06) + 1
     b = [BEATS[min(len(BEATS) - 1, bi0 + k)] for k in range(3)]
-    b[0] = t0
+    b[0] = snap(t0)
     kick = 1 + 0.03 * beat_pulse(t, 10)
     if with_glass:
         glass(L, cx - 760 * s, cy - 300 * s, 1520 * s, 600 * s, 50 * s, a)
     fg.save(); fg.translate(cx, cy); fg.scale(s * kick, s * kick)
     p0 = clamp((t - b[0]) / 0.14); p1 = clamp((t - b[1]) / 0.14); p2 = clamp((t - b[2]) / 0.3)
-    tx(fg, 'AB NO', 0, -160, 150, 'xb', G, a * p0)
+    gr = CHANT_GREEN[0]
+    tx(fg, 'AB NO', 0, -160, 150, 'xb', WHITE if gr else GT, a * p0)
     w = tw(fg, 'DRAMAY BAAZI!', 'xb', 170)
     fg.save(); sc = lerp(1.6, 1, ease_out(p1)); fg.scale(sc, sc)
-    tx(fg, 'DRAMAY BAAZI!', 0, 70, 170, 'xb', WHITE, a * clamp(p1 * 2) * (1 - 0.45 * ease_out(p2)))
+    tx(fg, 'DRAMAY BAAZI!', 0, 70, 170, 'xb', FOREST if gr else FGC, a * clamp(p1 * 2) * (1 - 0.45 * ease_out(p2)))
     fg.restore()
-    strike(fg, -w / 2 - 20, 92, w / 2 + 20, 48, ease_out(p2), G, 22, a)
+    strike(fg, -w / 2 - 20, 92, w / 2 + 20, 48, ease_out(p2), WHITE if gr else GT, 22, a)
     fg.restore()
 
 
@@ -682,9 +752,9 @@ def shot(L, t, t0):
         echo_words(L, t, 'UPPER LOCK', 260, 0.08, 220)
         kinetic(L, t, t0, (110, 260, 1180, 560), 'shout', maxch=10, styles={0: 'rise', 1: 'rise'})
         p = pop(t, word_times(t0, 6)[2])
-        glass(L, 1340, 360, 470, 340, 40, clamp(p), tint=G, ta=0.12)
-        for k in range(3): arrow_up(fg, 1440 + k * 120, 470 - (T() * 300 + k * 90) % 160 + 60, 0.7 * p, G, clamp(p))
-        tx(fg, 'UPPER LOCK', 1575, 640, 56, 'xb', G, clamp(p))
+        glass(L, 1340, 360, 470, 340, 40, clamp(p), tint=GT, ta=0.12)
+        for k in range(3): arrow_up(fg, 1440 + k * 120, 470 - (T() * 300 + k * 90) % 160 + 60, 0.7 * p, GT, clamp(p))
+        tx(fg, 'UPPER LOCK', 1575, 640, 56, 'xb', GT, clamp(p))
     elif t0 == 23.0:
         kinetic(L, t, t0, LEFT, 'type', maxch=11)
         wts = word_times(t0, 6)
@@ -696,8 +766,8 @@ def shot(L, t, t0):
         fg.save(); fg.translate(1470, 540); fg.rotate(0.05 - (1 - clamp(p)) * 0.4)
         glass(L, -330, -230, 660, 460, 30, clamp(p), tint=(1, 0.97, 0.9), ta=0.12)
         tx(fg, 'DAILY KHABAR', 0, -170, 34, 'mono', (0.85, 0.85, 0.8), clamp(p))
-        line(fg, [(-290, -130), (290, -130)], 2, WHITE, 0.4 * clamp(p))
-        tx(fg, 'MARKET MEIN', 0, -60, 78, 'xb', WHITE, clamp(p)); tx(fg, 'TEZI!', 0, 30, 96, 'xb', G, clamp(p))
+        line(fg, [(-290, -130), (290, -130)], 2, FGC, 0.4 * clamp(p))
+        tx(fg, 'MARKET MEIN', 0, -60, 78, 'xb', FGC, clamp(p)); tx(fg, 'TEZI!', 0, 30, 96, 'xb', GT, clamp(p))
         candles(fg, -260, 190, 520, 110, t, True, 12, clamp(p))
         fg.restore()
     elif t0 == 27.3:
@@ -706,11 +776,11 @@ def shot(L, t, t0):
         p = pop(t, t0)
         glass(L, 1260, 330, 560, 420, 40, clamp(p), tint=GOLD, ta=0.1)
         drain = ease_io(clamp(T(0.8) / 1.6))
-        tx(fg, 'YOUR SAVINGS', 1540, 410, 30, 'mono', GOLDL, clamp(p))
-        tx(fg, f"Rs {1000000 * (1 - drain):,.0f}", 1540, 490, 58, 'xb', WHITE, clamp(p))
+        tx(fg, 'YOUR SAVINGS', 1540, 410, 30, 'mono', GOLD, clamp(p))
+        tx(fg, f"Rs {1000000 * (1 - drain):,.0f}", 1540, 490, 58, 'xb', FGC, clamp(p))
         rr(fg, 1310, 560, 460, 26, 13); fg.set_source_rgba(1, 1, 1, 0.12 * p); fg.fill()
         rr(fg, 1310, 560, 460 * (1 - drain), 26, 13); col(fg, GOLD, clamp(p)); fg.fill()
-        tx(fg, 'ALL IN  →  TIPWALA LTD', 1540, 660, 28, 'b', G, clamp(T(0.9) / 0.3))
+        tx(fg, 'ALL IN  →  TIPWALA LTD', 1540, 660, 28, 'b', GT, clamp(T(0.9) / 0.3))
     elif t0 == 31.1:
         echo_words(L, t, 'RAJA', 320, 0.07, 100)
         kinetic(L, t, t0, (110, 380, 1700, 520), 'rise', colors={3: GOLD, 4: GOLD})
@@ -722,33 +792,33 @@ def shot(L, t, t0):
             p = pop(t, wts[i])
             x = 250 + i * 520
             glass(L, x, 260, 440, 420, 40, clamp(p), tint=GOLD, ta=0.09)
-            icon(fg, k, x + 220, 420, 1.4 * p, GOLDL, clamp(p))
-            tx(fg, lab, x + 220, 600, 70, 'xb', WHITE, clamp(p))
+            icon(fg, k, x + 220, 420, 1.4 * p, GOLD, clamp(p))
+            tx(fg, lab, x + 220, 600, 70, 'xb', FGC, clamp(p))
         tx(fg, 'LUNGA!', W / 2, 820, 120, 'xb', GOLD, clamp((t - wts[3]) / 0.15) * fade(t, t0, LYR_END[t0] + 0.3))
     elif t0 == 34.8:
         echo_words(L, t, 'LOWER LOCK', 260, 0.09, 300)
         kinetic(L, t, t0, (110, 230, 1700, 520), 'fall', maxch=12, styles={0: 'shake', 1: 'shake'})
         p = pop(t, t0 + 0.05, 0.2)
         glass(L, W / 2 - 330, 780, 660, 130, 65, clamp(p), tint=RED, ta=0.18)
-        tx(fg, '▼  LOWER LOCK  −7.5%', W / 2, 845, 44, 'xb', WHITE, clamp(p))
+        tx(fg, '▼  LOWER LOCK  −7.5%', W / 2, 845, 44, 'xb', FGC, clamp(p))
     elif t0 == 36.6:
         kinetic(L, t, t0, (110, 200, 1100, 520), 'rise', maxch=10, styles={5: 'drip'})
         p = pop(t, t0 + 0.2)
         glass(L, 1290, 330, 520, 300, 40, clamp(p))
-        tx(fg, 'Stop loss', 1360, 420, 44, 'b', WHITE, clamp(p), 'l')
+        tx(fg, 'Stop loss', 1360, 420, 44, 'b', FGC, clamp(p), 'l')
         off = ease_io(clamp(T(0.9) / 0.35))
-        rr(fg, 1360, 490, 180, 90, 45); col(fg, mix(G, (0.35, 0.35, 0.38), off), clamp(p)); fg.fill()
-        fg.arc(lerp(1495, 1405, off), 535, 36, 0, TAU); col(fg, WHITE, clamp(p)); fg.fill()
-        tx(fg, 'OFF' if off > 0.5 else 'ON', 1600, 535, 40, 'xb', RED if off > 0.5 else G, clamp(p), 'l')
+        rr(fg, 1360, 490, 180, 90, 45); col(fg, mix(GT, (0.35, 0.35, 0.38), off), clamp(p)); fg.fill()
+        fg.arc(lerp(1495, 1405, off), 535, 36, 0, TAU); col(fg, FGC, clamp(p)); fg.fill()
+        tx(fg, 'OFF' if off > 0.5 else 'ON', 1600, 535, 40, 'xb', RED if off > 0.5 else GT, clamp(p), 'l')
         if t > 39.4:   # build into the chorus
             k = clamp((t - 39.4) / 4.0)
             for i in range(24):
                 v = env('mid', t - i * 0.01) * (0.4 + 0.6 * k)
-                rr(fg, 160 + i * 66, 1000 - 260 * v * k, 44, 260 * v * k, 10); col(fg, RED if i % 3 else WHITE, 0.6 * k); fg.fill()
+                rr(fg, 160 + i * 66, 1000 - 260 * v * k, 44, 260 * v * k, 10); col(fg, RED if i % 3 else FGC, 0.6 * k); fg.fill()
     elif t0 in (45.5, 85.7):
         echo_words(L, t, 'GREEN GREEN', 260, 0.08, 160)
         kinetic(L, t, t0, LEFT, 'bounce', maxch=11, styles={0: 'slam'})
-        glass(L, 1260, 220, 560, 640, 44, pop(t, t0) and 1, tint=G, ta=0.1)
+        glass(L, 1260, 220, 560, 640, 44, pop(t, t0) and 1, tint=GT, ta=0.1)
         candles(fg, 1310, 800, 460, 480, t, True, 9)
     elif t0 in (49.3, 89.7):
         echo_words(L, t, 'RED RED RED', 260, 0.09, 420)
@@ -756,13 +826,13 @@ def shot(L, t, t0):
         for k in range(14):
             yy = 120 + k * 64
             x = (T() * 2600 + k * 337) % (W + 600) - 300
-            line(fg, [(x, yy), (x + 200 + (k * 53) % 160, yy)], 3, WHITE, 0.18)
+            line(fg, [(x, yy), (x + 200 + (k * 53) % 160, yy)], 3, FGC, 0.18)
     elif t0 in (52.0, 92.4):
         kinetic(L, t, t0, LEFT, 'shake', maxch=10)
         phone(L, 1400, 560, 0.82 * pop(t, t0, 0.35), t, scr_crack(t0), rot=-0.05 + math.sin(t * 40) * 0.01, glow=RED)
     elif t0 == 57.7:
         kinetic(L, t, t0, LEFT, 'slam', maxch=10)
-        phone(L, 1400, 560, 0.82 * pop(t, t0, 0.3), t, scr_button('BUY', G), rot=0.05)
+        phone(L, 1400, 560, 0.82 * pop(t, t0, 0.3), t, scr_button('BUY', GT), rot=0.05)
     elif t0 == 59.8:
         kinetic(L, t, t0, LEFT, 'tremble', maxch=10)
         phone(L, 1400, 560, 0.82, t, scr_button('SELL', RED), rot=0.05 + math.sin(t * 60) * 0.006, glow=RED)
@@ -770,7 +840,7 @@ def shot(L, t, t0):
         rnd = random.Random(int(t * 30))
         for k in range(60):
             x = rnd.random() * W; y = rnd.random() * H
-            line(L.bg, [(x, y), (x - 8, y + 50)], 2, (0.7, 0.8, 1), 0.25)
+            line(L.bg, [(x, y), (x - 8, y + 50)], 2, (0.3, 0.45, 0.75) if LIGHT else (0.7, 0.8, 1), 0.25)
         kinetic(L, t, t0, (110, 220, 1700, 560), 'drip', maxch=13)
     elif t0 == 69.5:
         chart_scene(L, t, 'dip')
@@ -795,9 +865,9 @@ def shot(L, t, t0):
             if t < et: continue
             boxes = layout(fg, words, (140 + e * 40, 170 + e * 200, 1640 - e * 80, 240), 30, 150)
             for i, w_ in enumerate(words):
-                draw_word(fg, w_, boxes[i], t, et + (wts[i] - t0) * 0.6, 'slam', RED if w_ == 'RIGGED' else WHITE,
+                draw_word(fg, w_, boxes[i], t, et + (wts[i] - t0) * 0.6, 'slam', RED if w_ == 'RIGGED' else FGC,
                           (1 - e * 0.28) * fade(t, et, 83.9))
-        tx(fg, 'kehta rehta hai...', W / 2, 900, 56, 'b', (0.8, 0.8, 0.82), clamp((t - wts[4]) / 0.3) * fade(t, t0, 83.9))
+        tx(fg, 'kehta rehta hai...', W / 2, 900, 56, 'b', MUTED, clamp((t - wts[4]) / 0.3) * fade(t, t0, 83.9))
     elif t0 == 99.2:
         kinetic(L, t, t0, (110, 300, 1700, 420), 'rise', maxch=20)
     elif t0 == 100.9:
@@ -807,33 +877,33 @@ def shot(L, t, t0):
             x = 230 + i * 520
             fg.save(); fg.translate(x + 230, 360); fg.rotate(ang)
             glass(L, -230, -80, 460, 160, 40, clamp(p))
-            tx(fg, m, 0, 0, 46, 'b', WHITE, clamp(p))
+            tx(fg, m, 0, 0, 46, 'b', FGC, clamp(p))
             strike(fg, -200, 20, 200, -20, ease_out(clamp((t - word_times(t0, 4)[2]) / 0.3 - i * 0.3)), RED, 12)
             fg.restore()
     elif t0 == 102.5:
         kinetic(L, t, t0, LEFT, 'rise', maxch=10)
         glass(L, 1260, 220, 560, 640, 40, clamp(pop(t, t0)))
-        tx(fg, 'BEFORE YOU INVEST', 1540, 290, 28, 'mono', (0.8, 0.9, 0.85))
+        tx(fg, 'BEFORE YOU INVEST', 1540, 290, 28, 'mono', MUTED)
         for i, lab in enumerate(('Earnings', 'Debt', 'Valuation', 'Risk')):
             it = t0 + 0.5 + i * 0.4
             a = clamp((t - it) / 0.2)
-            rr(fg, 1320, 360 + i * 120, 70, 70, 18); fg.set_source_rgba(*G, 0.18 * a); fg.fill()
-            check(fg, 1355, 395 + i * 120, 46, G, a, clamp((t - it) / 0.3))
-            tx(fg, lab, 1420, 395 + i * 120, 48, 'b', WHITE, a, 'l')
+            rr(fg, 1320, 360 + i * 120, 70, 70, 18); fg.set_source_rgba(*GT, 0.18 * a); fg.fill()
+            check(fg, 1355, 395 + i * 120, 46, GT, a, clamp((t - it) / 0.3))
+            tx(fg, lab, 1420, 395 + i * 120, 48, 'b', FGC, a, 'l')
     elif t0 == 104.6:
         kinetic(L, t, t0, LEFT, 'rise', maxch=10)
         fl = clamp((t - word_times(t0, 4)[3] + 0.2) / 0.4)
         glass(L, 1300, 260, 480, 520, 40, clamp(pop(t, t0)))
-        rr(fg, 1300, 260, 480, 110, 40); col(fg, G, 0.85); fg.fill()
+        rr(fg, 1300, 260, 480, 110, 40); col(fg, GT, 0.85); fg.fill()
         fg.save(); fg.translate(1540, 560); fg.scale(1, max(0.02, abs(math.cos(fl * math.pi))))
-        tx(fg, 'AAJ' if fl < 0.5 else 'KAL', 0, 0, 170, 'xb', WHITE if fl < 0.5 else G); fg.restore()
+        tx(fg, 'AAJ' if fl < 0.5 else 'KAL', 0, 0, 170, 'xb', FGC if fl < 0.5 else GT); fg.restore()
     elif t0 == 106.1:
         wts = word_times(t0, 6)
-        tx(fg, 'NA', W / 2 - 520, 380, 120, 'xb', WHITE, clamp((t - wts[0]) / 0.15))
-        tx(fg, 'JAADU', W / 2 + 60, 380, 200, 'xb', WHITE, clamp((t - wts[1]) / 0.15))
+        tx(fg, 'NA', W / 2 - 520, 380, 120, 'xb', FGC, clamp((t - wts[0]) / 0.15))
+        tx(fg, 'JAADU', W / 2 + 60, 380, 200, 'xb', FGC, clamp((t - wts[1]) / 0.15))
         strike(fg, W / 2 - 230, 400, W / 2 + 350, 360, ease_out(clamp((t - wts[2]) / 0.3)), RED, 20)
-        tx(fg, 'NA', W / 2 - 600, 660, 120, 'xb', WHITE, clamp((t - wts[3]) / 0.15))
-        tx(fg, 'KISMAT', W / 2 + 40, 660, 200, 'xb', WHITE, clamp((t - wts[4]) / 0.15))
+        tx(fg, 'NA', W / 2 - 600, 660, 120, 'xb', FGC, clamp((t - wts[3]) / 0.15))
+        tx(fg, 'KISMAT', W / 2 + 40, 660, 200, 'xb', FGC, clamp((t - wts[4]) / 0.15))
         strike(fg, W / 2 - 300, 680, W / 2 + 380, 640, ease_out(clamp((t - wts[5]) / 0.3)), RED, 20)
     elif t0 == 109.8:
         kinetic(L, t, t0, (110, 160, 1700, 300), 'rise', maxch=30, max_size=170)
@@ -843,9 +913,9 @@ def shot(L, t, t0):
             x = 150 + i * 420; y = 640 - i * 50
             if i:
                 q = clamp((t - st + 0.3) / 0.3)
-                line(fg, [(x - 70, y + 50), (lerp(x - 70, x, q), lerp(y + 50, y, q))], 5, G, 0.8)
-            glass(L, x, y - 70, 340, 140, 70, clamp(p), tint=G if i == 3 else WHITE, ta=0.1)
-            tx(fg, s_, x + 170, y, 46, 'xb', G if i == 3 else WHITE, clamp(p))
+                line(fg, [(x - 70, y + 50), (lerp(x - 70, x, q), lerp(y + 50, y, q))], 5, GT, 0.8)
+            glass(L, x, y - 70, 340, 140, 70, clamp(p), tint=GT if i == 3 else FGC, ta=0.1)
+            tx(fg, s_, x + 170, y, 46, 'xb', GT if i == 3 else FGC, clamp(p))
 
 
 def chart_scene(L, t, mode):
@@ -860,14 +930,14 @@ def chart_scene(L, t, mode):
         hits = sum(1 for b in BEATS if 73.9 <= b <= t)
         fg.rotate(math.pi * (hits % 2) if beat_phase(t) > 0.25 else math.pi * ((hits - 1) % 2) + math.pi * ease_out(beat_phase(t) / 0.25) if hits else 0)
         fg.translate(-W / 2, -660)
-    line(fg, pts, 6, WHITE, 0.95)
-    for (mx, lab, cc, sub, mt) in ((560, 'SELL', RED, 'sold low', 70.3), (1050, 'BUY', G, 'bought high', 72.6), (1450, 'SELL', RED, 'sold low again', 73.4)):
+    line(fg, pts, 6, FGC, 0.95)
+    for (mx, lab, cc, sub, mt) in ((560, 'SELL', RED, 'sold low', 70.3), (1050, 'BUY', GT, 'bought high', 72.6), (1450, 'SELL', RED, 'sold low again', 73.4)):
         if t < mt or mx > pts[-1][0] + 5: continue
         p = pop(t, mt); my = yv(mx)
         fg.arc(mx, my, 16 * p, 0, TAU); col(fg, cc); fg.fill()
         dy = 80 if lab == 'SELL' else -80
         glass_pill(L, mx, my + dy, lab, 30, 'xb', cc, clamp(p))
-        tx(fg, sub, mx, my + dy * 1.75, 26, 'm', (0.85, 0.85, 0.88), clamp(p))
+        tx(fg, sub, mx, my + dy * 1.75, 26, 'm', MUTED, clamp(p))
     if mode == 'flip': fg.restore()
 
 
@@ -894,10 +964,10 @@ def final_section(L, t):
             bt = BEATS[beat_index(115.7) + 1 + i * 2]
             p = ease_out(clamp((t - bt) / 0.35))
             x = 130 + i * 570; y = 380 + (1 - p) * 80
-            glass(L, x, y, 520, 360, 40, a * p, tint=G if i == 1 else WHITE, ta=0.1)
-            tx(fg, n, x + 50, y + 80, 64, 'xb', G, a * p, 'l')
-            tx(fg, h, x + 50, y + 200, 50, 'xb', WHITE, a * p, 'l')
-            tx(fg, s_, x + 50, y + 270, 30, 'm', (0.8, 0.85, 0.82), a * p, 'l')
+            glass(L, x, y, 520, 360, 40, a * p, tint=GT if i == 1 else FGC, ta=0.1)
+            tx(fg, n, x + 50, y + 80, 64, 'xb', GT, a * p, 'l')
+            tx(fg, h, x + 50, y + 200, 50, 'xb', FGC, a * p, 'l')
+            tx(fg, s_, x + 50, y + 270, 30, 'm', MUTED, a * p, 'l')
         return
     l = cur_line(t)
     if l in (120.7, 122.6, 124.4):
@@ -905,22 +975,22 @@ def final_section(L, t):
         p = clamp(pop(t, l))
         glass(L, 1260, 260, 560, 560, 40, p)
         if l == 120.7:
-            tx(fg, 'PSX ANALYZER', 1540, 330, 28, 'mono', G, p)
-            tx(fg, 'Score any listed', 1540, 420, 40, 'b', WHITE, p); tx(fg, 'company in plain', 1540, 470, 40, 'b', WHITE, p)
-            tx(fg, 'English', 1540, 520, 40, 'b', WHITE, p)
+            tx(fg, 'PSX ANALYZER', 1540, 330, 28, 'mono', GT, p)
+            tx(fg, 'Score any listed', 1540, 420, 40, 'b', FGC, p); tx(fg, 'company in plain', 1540, 470, 40, 'b', FGC, p)
+            tx(fg, 'English', 1540, 520, 40, 'b', FGC, p)
             for i in range(5):
-                rr(fg, 1340 + i * 82, 600, 64, 120, 12); col(fg, G, p * (0.25 + 0.75 * (i < 1 + int(clamp((t - l - 0.4) / 1.2) * 4)))); fg.fill()
+                rr(fg, 1340 + i * 82, 600, 64, 120, 12); col(fg, GT, p * (0.25 + 0.75 * (i < 1 + int(clamp((t - l - 0.4) / 1.2) * 4)))); fg.fill()
         elif l == 122.6:
-            tx(fg, 'SIP CALCULATOR', 1540, 330, 28, 'mono', G, p)
-            tx(fg, 'Steady, every month', 1540, 400, 36, 'b', WHITE, p)
+            tx(fg, 'SIP CALCULATOR', 1540, 330, 28, 'mono', GT, p)
+            tx(fg, 'Steady, every month', 1540, 400, 36, 'b', FGC, p)
             for i in range(8):
                 hh = 40 + i * 30 * clamp((t - l - 0.2) / 1.2)
-                rr(fg, 1320 + i * 56, 760 - hh, 40, hh, 8); col(fg, G, p * 0.9); fg.fill()
-            tx(fg, 'HOLD', 1540, 520, 90, 'xb', G, p)
+                rr(fg, 1320 + i * 56, 760 - hh, 40, hh, 8); col(fg, GT, p * 0.9); fg.fill()
+            tx(fg, 'HOLD', 1540, 520, 90, 'xb', GT, p)
         else:
-            tx(fg, 'PATIENCE', 1540, 330, 28, 'mono', G, p)
+            tx(fg, 'PATIENCE', 1540, 330, 28, 'mono', GT, p)
             pts = [(1310 + k * 11, 740 - k * 7 * clamp((t - l) / 1.4) - 14 * math.sin(k * 0.9)) for k in range(42)]
-            line(fg, pts, 6, G, p)
+            line(fg, pts, 6, GT, p)
         return
     # phone: flostocks.com -> Open Account -> form -> submitted
     if 127.6 <= t < 134.9:
@@ -933,20 +1003,20 @@ def final_section(L, t):
             a = fade(t, 127.6, 134.9, 0.3, 0.3)
             phone(L, 1400 if t >= 132.0 else W / 2 + 330, 590, 0.8 * ease_out(clamp((t - 127.6) / 0.4)), t, ph, rot=0.04, a=a)
             if t < 130.2:
-                tx(fg, 'Open your PSX', 640, 470, 96, 'xb', WHITE, clamp((t - 127.8) / 0.3) * a)
-                tx(fg, 'account online', 640, 590, 96, 'xb', G, clamp((t - 128.1) / 0.3) * a)
+                tx(fg, 'Open your PSX', 640, 470, 96, 'xb', FGC, clamp((t - 127.8) / 0.3) * a)
+                tx(fg, 'account online', 640, 590, 96, 'xb', GT, clamp((t - 128.1) / 0.3) * a)
             if t >= 133.6:
                 badges = ('PSX Licensed Brokerage', 'SECP Compliant', 'Personal Relationship Managers')
                 for i, b_ in enumerate(badges):
                     p = ease_out(clamp((t - 133.6 - i * 0.22) / 0.3))
-                    pw = glass_pill(L, 640, 380 + i * 150, '      ' + b_, 38, 'b', WHITE, a * p, tint=G, ta=0.1)
-                    check(fg, 640 - pw / 2 + 52, 380 + i * 150, 30, G, a * p)
+                    pw = glass_pill(L, 640, 380 + i * 150, '      ' + b_, 38, 'b', FGC, a * p, tint=GT, ta=0.1)
+                    check(fg, 640 - pw / 2 + 52, 380 + i * 150, 30, GT, a * p)
         return
     if 137.3 <= t < 139.0:
         a = fade(t, 137.3, 139.0)
-        tx(fg, 'Learn. Open your account.', W / 2, 430, 90, 'xb', WHITE, a * clamp((t - 137.3) / 0.2))
-        tx(fg, 'Start investing.', W / 2, 560, 110, 'xb', G, a * clamp((t - 137.8) / 0.2))
-        glass_pill(L, W / 2, 720, 'flostocks.com', 44, 'b', WHITE, a * clamp((t - 138.2) / 0.2))
+        tx(fg, 'Learn. Open your account.', W / 2, 430, 90, 'xb', FGC, a * clamp((t - 137.3) / 0.2))
+        tx(fg, 'Start investing.', W / 2, 560, 110, 'xb', GT, a * clamp((t - 137.8) / 0.2))
+        glass_pill(L, W / 2, 720, 'flostocks.com', 44, 'b', FGC, a * clamp((t - 138.2) / 0.2))
         return
     if t >= 141.6:
         chant_no(L, t, 139.0, 143.1, a=clamp((143.1 - t) / 0.4))
@@ -954,7 +1024,7 @@ def final_section(L, t):
 
 def outro(L, t):
     fg = L.fg
-    words = [('START', 143.4, WHITE), ('TRADING', 143.85, WHITE), ('IN PSX', 144.3, G), ('TODAY', 144.75, WHITE)]
+    words = [('START', 143.4, FGC), ('TRADING', 143.85, FGC), ('IN PSX', 144.3, GT), ('TODAY', 144.75, FGC)]
     if t < 149.0:
         a = clamp((149.0 - t) / 0.3)
         if t < 146.3:
@@ -966,23 +1036,23 @@ def outro(L, t):
                 fg.save(); fg.translate(W / 2, y); sc = lerp(1.8, 1, ease_out(p)) * (1 + 0.02 * beat_pulse(t)); fg.scale(sc, sc)
                 tx(fg, s_, 0, 0, 180, 'xb', cc, a * clamp(p * 2)); fg.restore()
         else:
-            tx(fg, 'because', W / 2, 250, 80, 'm', (0.85, 0.88, 0.86), clamp((t - 146.4) / 0.2) * a)
+            tx(fg, 'because', W / 2, 250, 80, 'm', FOREST, clamp((t - 146.4) / 0.2) * a)
             chant_no(L, t, 146.75, 149.0, W / 2, 600, 0.8, a)
         return
     # end card
     a = clamp((t - 149.0) / 0.5)
-    tx(fg, 'START TRADING IN PSX TODAY', W / 2, 190, 86, 'xb', WHITE, a)
+    tx(fg, 'START TRADING IN PSX TODAY', W / 2, 190, 86, 'xb', FGC, a)
     glass(L, 360, 290, 1200, 420, 48, a)
-    u = L.ui; u.save(); u.set_matrix(fg.get_matrix()); brand_img(u, 'logo', W / 2, 500, 900 * (0.96 + 0.04 * a), a, dark=True); u.restore()
+    u = L.ui; u.save(); u.set_matrix(fg.get_matrix()); brand_img(u, 'logo', W / 2, 500, 900 * (0.96 + 0.04 * a), a, dark=not LIGHT); u.restore()
     w1 = tw(fg, 'because ', 'm', 46); w2 = tw(fg, 'AB NO DRAMAY BAAZI!', 'xb', 64); x0 = W / 2 - (w1 + w2) / 2
-    tx(fg, 'because', x0, 800, 46, 'm', (0.85, 0.88, 0.86), a, 'l')
+    tx(fg, 'because', x0, 800, 46, 'm', MUTED, a, 'l')
     k = 1 + 0.04 * beat_pulse(t, 9) * (t > 156.2)
     fg.save(); fg.translate(x0 + w1 + w2 / 2, 800); fg.scale(k, k)
-    tx(fg, 'AB NO DRAMAY BAAZI!', 0, 0, 64, 'xb', G, a); fg.restore()
+    tx(fg, 'AB NO DRAMAY BAAZI!', 0, 0, 64, 'xb', GT, a); fg.restore()
     bw = 560
-    glass(L, W / 2 - bw / 2, 880, bw, 100, 50, a, tint=G, ta=0.18)
-    tx(fg, 'Open Account  ·  flostocks.com', W / 2, 930, 34, 'b', WHITE, a)
-    tx(fg, 'Illustrative content. Investing in securities involves risk.', W / 2, 1040, 20, 'm', (0.6, 0.65, 0.62), a * 0.9)
+    glass(L, W / 2 - bw / 2, 880, bw, 100, 50, a, tint=GT, ta=0.18)
+    tx(fg, 'Open Account  ·  flostocks.com', W / 2, 930, 34, 'b', FGC, a)
+    tx(fg, 'Illustrative content. Investing in securities involves risk.', W / 2, 1040, 20, 'm', MUTED, a * 0.9)
 
 
 # ------------------------------------------------------------------ intro
@@ -992,14 +1062,14 @@ def intro_idle(L, t):
         p = clamp((t - 13.6) / 0.3); a = clamp((16.3 - t) / 0.3)
         echo_words(L, t, 'DRAMAY BAAZ', 240, 0.06, 120)
         glass(L, 260, 280, 1400, 480, 48, a * p)
-        tx(fg, 'DRAMAY BAAZ', W / 2, 470, 190, 'xb', WHITE, a * p)
-        tx(fg, 'a PSX story starring', W / 2 - 60, 640, 54, 'm', (0.8, 0.85, 0.82), a * clamp((t - 14.2) / 0.3), 'c')
-        tx(fg, 'YOU', W / 2 + 330, 640, 80, 'xb', G, a * clamp((t - 14.6) / 0.15))
+        tx(fg, 'DRAMAY BAAZ', W / 2, 470, 190, 'xb', FGC, a * p)
+        tx(fg, 'a PSX story starring', W / 2 - 60, 640, 54, 'm', MUTED, a * clamp((t - 14.2) / 0.3), 'c')
+        tx(fg, 'YOU', W / 2 + 330, 640, 80, 'xb', GT, a * clamp((t - 14.6) / 0.15))
         return
     v = idx_value(t)
     glass(L, W / 2 - 520, H / 2 - 190, 1040, 380, 44, 1)
-    tx(fg, 'KSE-100', W / 2, H / 2 - 90, 44, 'mono', (0.7, 0.75, 0.72))
-    tx(fg, f"{v:,.0f}", W / 2, H / 2 + 50, 170, 'xb', WHITE)
+    tx(fg, 'KSE-100', W / 2, H / 2 - 90, 44, 'mono', MUTED)
+    tx(fg, f"{v:,.0f}", W / 2, H / 2 + 50, 170, 'xb', FGC)
 
 
 # ------------------------------------------------------------------ HUD
@@ -1007,13 +1077,13 @@ def hud(L, t):
     if t >= 143.1: return
     a = clamp((t - 2.0) / 0.8)
     glass(L, 36, 34, 336, 86, 43, a, shadow=False)
-    u = L.ui; u.save(); u.identity_matrix(); brand_img(u, 'wordmark', 204, 77, 280, a, dark=True); u.restore()
-    if section(t)[1] in ('final',): return
-    v = idx_value(t); ref = idx_ref(t); ch = (v - ref) / ref * 100; cc = G if ch >= 0 else RED
+    u = L.ui; u.save(); u.identity_matrix(); brand_img(u, 'wordmark', 204, 77, 280, a, dark=not LIGHT); u.restore()
+    return
+    v = idx_value(t); ref = idx_ref(t); ch = (v - ref) / ref * 100; cc = GT if ch >= 0 else RED
     glass(L, W - 400, 34, 364, 86, 43, a, shadow=False)
     fg = L.fg
-    tx(fg, 'KSE-100', W - 370, 77, 22, 'mono', (0.75, 0.8, 0.78), a, 'l')
-    tx(fg, f"{v:,.0f}", W - 250, 77, 34, 'xb', WHITE, a, 'l')
+    tx(fg, 'KSE-100', W - 370, 77, 22, 'mono', MUTED, a, 'l')
+    tx(fg, f"{v:,.0f}", W - 250, 77, 34, 'xb', FGC, a, 'l')
     tx(fg, f"{'+' if ch >= 0 else ''}{ch:.1f}%", W - 60, 77, 22, 'mono', cc, a, 'r')
 
 
@@ -1022,7 +1092,7 @@ def subtitle(L, t):
     if l is None or l not in SUBS: return
     a = fade(t, l + 0.15, LYR_END[l] + 0.3, 0.25, 0.3)
     if a <= 0: return
-    glass_pill(L, W / 2, H - 70, SUBS[l], 30, 'm', (0.92, 0.95, 0.93), a, pad=36)
+    glass_pill(L, W / 2, H - 70, SUBS[l], 30, 'm', MUTED, a, pad=36)
 
 
 # ------------------------------------------------------------------ frame
@@ -1037,6 +1107,7 @@ def render(L, t):
         zoom += 0.03 * beat_pulse(t, 11)
     if 34.8 <= t < 35.7:
         k = 1 - (t - 34.8) / 0.9; sx = math.sin(t * 91) * 30 * k; sy = math.cos(t * 77) * 30 * k
+    CHANT_GREEN[0] = chant_green(t); BEAT_T[0] = t
     for cr in L.all():
         cr.translate(W / 2 + sx, H / 2 + sy); cr.scale(zoom, zoom); cr.translate(-W / 2, -H / 2)
     backdrop(L, t)

@@ -11,7 +11,7 @@ import kt
 
 OUT = 'build'
 yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-VIG = (1 - 0.32 * (((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) ** 1.2).clip(0.55, 1)[..., None].astype(np.float32)
+VIG = (1 - 0.05 * (((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) ** 1.2).clip(0.55, 1)[..., None].astype(np.float32)
 del yy, xx
 GRAIN = [(np.random.default_rng(s).random((H, W, 1), np.float32) - 0.5) * 0.028 for s in range(4)]
 
@@ -49,7 +49,7 @@ def draw(t):
     out = brgb.astype(np.float32) / 255
     m = arr(sm)[..., 3:4].astype(np.float32) / 255
     if m.max() > 0:
-        frost = blur(brgb, 4, 9) * 0.92 + 0.03
+        frost = blur(brgb, 4, 9) * 0.86 + 0.13 if kt.LIGHT else blur(brgb, 4, 9) * 0.92 + 0.03
         out = out * (1 - m) + frost * m
     f = arr(sf)
     out = over(out, f)
@@ -57,7 +57,7 @@ def draw(t):
     fa = f[..., 3:4].astype(np.float32) / 255
     bright = (f[..., 2::-1].astype(np.float32) / 255) * fa
     bright = np.clip(bright - 0.35, 0, 1) * 1.5
-    if bright.max() > 0:
+    if bright.max() > 0 and not kt.LIGHT:
         out = out + blur((bright * 255).astype(np.uint8), 4, 8) * 0.55
     out = out * VIG + GRAIN[int(t * 24) % 4]
     out = over(np.clip(out, 0, 1), arr(su))
