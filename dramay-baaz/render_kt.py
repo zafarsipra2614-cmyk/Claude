@@ -120,7 +120,7 @@ def worker(w, f0, f1, fps):
     def gen():
         for f in range(f0, f1):
             if w == 0 and (f - f0) % 240 == 0: print(f'w0 {f - f0}/{f1 - f0} {time.time() - t0:.0f}s', flush=True)
-            yield bytes(draw_surface(f / fps).get_data())
+            yield bytes(draw_surface(f / fps, not os.environ.get('NOBLUR')).get_data())
     encode(f'{OUT}/{PFX}_seg{w:02d}.mp4', gen(), fps)
 
 
