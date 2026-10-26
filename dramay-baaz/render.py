@@ -44,7 +44,27 @@ STYLES = {
 }
 RISO = np.array([[0.97, 0.95, 0.9], [1.0, 0.85, 0.12], [1.0, 0.33, 0.58], [0.0, 0.64, 0.66], [0.16, 0.2, 0.52],
                  [1.0, 0.33, 0.58 * 0.12 + 0.0], [0.0, 0.62, 0.15], [0.16, 0.2, 0.52 * 0.66], [0.12, 0.1, 0.16], [0.55, 0.12, 0.35]], np.float32)
+PICO = np.array([[0, 0, 0], [29, 43, 83], [126, 37, 83], [0, 135, 81], [171, 82, 54], [95, 87, 79], [194, 195, 199], [255, 241, 232],
+                 [255, 0, 77], [255, 163, 0], [255, 236, 39], [0, 228, 54], [41, 173, 255], [214, 156, 112], [255, 119, 168], [255, 204, 170]],
+                np.float32) / 255
 POST = [None]
+CHAR_STYLES = {
+    'A_truck_art': dict(title='A · Pakistani Truck Art', sub='Folk-art paint, flower patterns, chamak-patti border', paper=(0.98, 0.95, 0.85), grain=0.25,
+                        kind='plain', style=dict(fill_a=1.0, shade='flowers', passes=1, wob=0.3, line=1.3, sat=1.45, wash_mix=0.0, wash_a=1.0,
+                                                 bg='rays', truck_border=True, caption='truck', fonts=dict(bungee='Luckiest Guy', anton='Luckiest Guy', interb='Luckiest Guy'))),
+    'B_pixel_game': dict(title='B · 8-bit Pixel Game', sub='Retro video-game sprites, RPG dialogue boxes', paper=(0.1, 0.1, 0.15), grain=0.0, kind='plain', post='pixel',
+                         style=dict(fill_a=1.0, hatch_mode='none', passes=1, wob=0.0, line=1.5, wash_mix=0.0, wash_a=1.0, bg='plain', caption='dialog',
+                                    fonts=dict(bungee='Press Start 2P', anton='Press Start 2P', interb='Press Start 2P', inter='Press Start 2P', mono='Press Start 2P'))),
+    'C_claymation': dict(title='C · Claymation', sub='Soft 3D clay figures, studio lighting, stop-motion feel', paper=(0.9, 0.88, 0.84), grain=0.15, kind='plain',
+                         style=dict(fill_a=1.0, shade='clay', shadow=True, no_outline=True, wob=0.9, wash_mix=0.15, wash_a=1.0, bg='plain', sat=1.1,
+                                    fonts=dict(bungee='Luckiest Guy', anton='Luckiest Guy', interb='Luckiest Guy'))),
+    'D_whiteboard': dict(title='D · Whiteboard Stick Figures', sub='Marker explainer style, one colour accent', paper=(0.985, 0.985, 0.98), grain=0.2, kind='plain',
+                         style=dict(stick=True, fill_a=0.25, hatch_mode='none', passes=1, wob=0.5, line=1.1, wash_mix=0.9, wash_a=1.0, bg='plain', caption='plain',
+                                    fonts=dict(bungee='Gochi Hand', anton='Gochi Hand', interb='Gochi Hand'))),
+    'E_anime_chibi': dict(title='E · Anime Chibi', sub='Big heads, sparkly eyes, cel shading, speed lines', paper=(0.97, 0.97, 1.0), grain=0.0, kind='plain',
+                          style=dict(anime=True, head=1.3, fill_a=1.0, shade='cel', passes=1, wob=0.0, line=0.75, sat=1.15, wash_mix=0.35, wash_a=1.0, bg='rays',
+                                     caption='plain', fonts=dict(bungee='Bangers', anton='Bangers', interb='Bangers', inter='Inter'))),
+}
 BASE_STYLE = dict(lib.STYLE); BASE_INK = lib.C['ink']
 
 
@@ -71,7 +91,7 @@ def make_paper(base=(0.96, 0.94, 0.88), kind='plain'):
 
 def use_style(key):
     global PAPER, GRAINS, GRAINS_UI
-    st = STYLES[key]
+    st = {**STYLES, **CHAR_STYLES}[key]
     lib.STYLE.clear(); lib.STYLE.update(BASE_STYLE); lib.STYLE.update(st['style']); lib.STYLE['paper_rgb'] = st['paper']
     lib.C['ink'] = st.get('ink', BASE_INK)
     POST[0] = st.get('post')
@@ -97,6 +117,7 @@ def make_grain(seed, strength):
     return np.clip(1 - strength + strength * v, 0.12, 1.0).astype(np.float32)
 
 
+ONES = np.ones((H, W), np.float32)
 PAPER = make_paper()
 GRAINS = [make_grain(s, 1.0) for s in range(3)]
 GRAINS_UI = [make_grain(10 + s, 0.35) for s in range(3)]
@@ -122,12 +143,21 @@ def draw(t):
     if POST[0] == 'glow':
         im = Image.fromarray(sl[..., 2::-1].copy()).resize((W // 4, H // 4), Image.BILINEAR).filter(ImageFilter.GaussianBlur(5))
         out = out + np.asarray(im.resize((W, H), Image.BILINEAR), np.float32) / 255 * 0.9
-    out = comp(out, layer(scenes.render_ui, t), GRAINS_UI[g])
+    if POST[0] != 'pixel':
+        out = comp(out, layer(scenes.render_ui, t), GRAINS_UI[g])
+    if POST[0] == 'pixel':
+        im = Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8)).resize((W // 6, H // 6), Image.BOX)
+        q = np.asarray(im, np.float32) / 255
+        d = ((q[:, :, None, :] - PICO[None, None]) ** 2).sum(-1)
+        small = (PICO[d.argmin(-1)] * 255).astype(np.uint8)
+        out = np.asarray(Image.fromarray(small).resize((W, H), Image.NEAREST), np.float32) / 255
+        out = comp(out, layer(scenes.render_ui, t), ONES)
     if POST[0] == 'riso':
         rng = np.random.default_rng(lib.BOIL[0])
         q = np.clip(out, 0, 1) + (rng.random((H, W, 1), np.float32) - 0.5) * 0.18
         d = ((q[:, :, None, :] - RISO[None, None]) ** 2).sum(-1)
         out = RISO[d.argmin(-1)]
+    out = comp(out, layer(scenes.render_brand, t), ONES)   # official logos: no texture, no colour effects
     out *= scenes.fade(t)
     return (np.clip(out, 0, 1) * 255).astype(np.uint8)
 
@@ -146,25 +176,27 @@ def worker(w, f0, f1, fps):
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
-    if sys.argv[1:2] == ['styleboard']:
+    if sys.argv[1:2] in (['styleboard'], ['charboard']):
+        SET = STYLES if sys.argv[1] == 'styleboard' else CHAR_STYLES
+        prefix = 'style' if sys.argv[1] == 'styleboard' else 'char'
         from PIL import ImageDraw, ImageFont
         times = [19.0, 46.5, 80.2]
         fb = ImageFont.truetype(os.path.expanduser('~/.fonts/CabinSketch-Bold.ttf'), 64)
         fs = ImageFont.truetype(os.path.expanduser('~/.fonts/PatrickHand-Regular.ttf'), 40)
         rows = []
-        for key, st in STYLES.items():
+        for key, st in SET.items():
             use_style(key)
             frames = [Image.fromarray(draw(t)) for t in times]
-            frames[0].save(f'{OUT}/style_{key}_hero.png')
+            frames[0].save(f'{OUT}/{prefix}_{key}_hero.png')
             strip = Image.new('RGB', (2880, 640), (250, 248, 240))
             for i, f in enumerate(frames): strip.paste(f.resize((960, 540), Image.LANCZOS), (i * 960, 100))
             d = ImageDraw.Draw(strip)
             d.text((30, 14), st['title'], font=fb, fill=(20, 20, 20)); d.text((1100, 34), st['sub'], font=fs, fill=(90, 90, 90))
-            strip.save(f'{OUT}/style_{key}_strip.jpg', quality=88)
+            strip.save(f'{OUT}/{prefix}_{key}_strip.jpg', quality=88)
             rows.append(strip); print('style', key, flush=True)
         board = Image.new('RGB', (2880, 640 * len(rows)))
         for i, r in enumerate(rows): board.paste(r, (0, i * 640))
-        board.resize((1920, 640 * len(rows) * 2 // 3), Image.LANCZOS).save(f'{OUT}/style_board.jpg', quality=85)
+        board.resize((1920, 640 * len(rows) * 2 // 3), Image.LANCZOS).save(f'{OUT}/{prefix}_board.jpg', quality=85)
         sys.exit()
     if sys.argv[1:2] == ['stills']:
         for a in sys.argv[2:]:

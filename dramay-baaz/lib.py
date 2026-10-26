@@ -212,9 +212,47 @@ def fill(cr, c, a=1.0, keep=False):
     rgb(cr, c, a * (STYLE['fill_a'] if not big and a > 0.6 else 1)); cr.fill()
     if a > 0.6 and not big:
         cr.new_path(); cr.append_path(p)
-        hatch(cr, p, mix(c, (0.05, 0.05, 0.05), 0.22), a * STYLE['hatch_a'])
+        sh = STYLE.get('shade')
+        if sh == 'flowers' and c in (C['skin'], C['skin2'], C['white'], C['ink'], (0.95, 0.95, 0.93)): pass
+        elif sh: _shade(cr, p, c, a, sh)
+        else: hatch(cr, p, mix(c, (0.05, 0.05, 0.05), 0.22), a * STYLE['hatch_a'])
     cr.new_path()
     if keep: cr.append_path(p)
+
+
+def _shade(cr, p, c, a, mode):
+    x0, y0, x1, y1 = cr.path_extents()
+    w, h = x1 - x0, y1 - y0
+    if w * h < 300: return
+    cr.save(); cr.new_path(); cr.append_path(p); cr.clip()
+    if mode == 'cel':      # hard anime shadow crescent on the lower right
+        rgb(cr, mix(c, (0.1, 0.05, 0.2), 0.32), a); cr.paint()
+        cr.translate(-min(14, w * 0.12), -min(16, h * 0.12)); cr.new_path(); cr.append_path(p); rgb(cr, c, a); cr.fill()
+        cr.identity_matrix()
+    elif mode == 'clay':   # soft 3D clay: lit from the top-left, rim-darkened, small specular
+        cr.new_path()
+        g = cairo.RadialGradient(x0 + w * 0.32, y0 + h * 0.28, 0, x0 + w * 0.45, y0 + h * 0.45, max(w, h) * 0.75)
+        g.add_color_stop_rgba(0, 1, 1, 1, 0.38 * a); g.add_color_stop_rgba(0.45, 1, 1, 1, 0.0)
+        g.add_color_stop_rgba(0.8, 0, 0, 0, 0.12 * a); g.add_color_stop_rgba(1, 0, 0, 0, 0.38 * a)
+        cr.set_source(g); cr.paint()
+        if w > 30 and h > 30:
+            cr.save(); cr.translate(x0 + w * 0.3, y0 + h * 0.24); cr.scale(w * 0.09, h * 0.05); circle(cr, 0, 0, 1); cr.restore()
+            cr.set_source_rgba(1, 1, 1, 0.55 * a); cr.fill()
+    elif mode == 'flowers':   # truck-art: painted dots and little 5-petal flowers
+        sp = 46; row = 0; y = y0 - sp
+        fc = (1, 1, 1) if sum(c) < 1.8 else (0.85, 0.05, 0.25)
+        while y < y1 + sp:
+            x = x0 - sp + (sp / 2 if row % 2 else 0)
+            while x < x1 + sp:
+                if (row + int(x / sp)) % 2:
+                    for k in range(5):
+                        circle(cr, x + math.cos(k * TAU / 5) * 7, y + math.sin(k * TAU / 5) * 7, 4.5)
+                    rgb(cr, fc, 0.85 * a); cr.fill(); circle(cr, x, y, 3.5); rgb(cr, (1, 0.85, 0.1), a); cr.fill()
+                else:
+                    circle(cr, x, y, 3); rgb(cr, fc, 0.7 * a); cr.fill()
+                x += sp
+            y += sp * 0.8; row += 1
+    cr.restore()
 
 
 def outline(cr, w=6, c=None, a=1.0):
@@ -259,28 +297,21 @@ def text(cr, s, x, y, name='bungee', size=60, c=C['white'], a=1.0, align='c', st
     return ext.x_advance
 
 
-# ---------- brand ----------
-def logo_mark(cr, x, y, s, a=1.0, top=C['white']):
-    """FloStocks mark redrawn as vector: two green slanted bars + one top bar. x,y centre, s = height."""
-    u = s / 4.2
-    cr.save(); cr.translate(x - 2.1 * u, y - 2.1 * u)
-    para(cr, 0.0 * u, 0.85 * u, 1.75 * u, 2.25 * u, slant=0.55, r=u * .12); fill(cr, C['green'], a)
-    para(cr, 0.95 * u, 2.0 * u, 1.75 * u, 2.25 * u, slant=0.55, r=u * .12); fill(cr, C['green'], a)
-    para(cr, 2.05 * u, 0.0 * u, 1.85 * u, 1.65 * u, slant=0.55, r=u * .12); fill(cr, top, a)
+# ---------- brand (official FloStocks artwork only, never redrawn) ----------
+_IMG = {}
+
+
+def brand_img(cr, kind, cx, cy, width, a=1.0, dark=None, rot=0.0):
+    """Paint an official logo PNG centred at cx,cy. kind: 'logo' (with tagline), 'wordmark' or 'icon'.
+    dark=True picks the version made for dark backgrounds (white FLO / white bar)."""
+    dark = STYLE.get('dark', False) if dark is None else dark
+    key = f"assets/{kind}_{'dark' if dark else 'light'}.png"
+    if key not in _IMG: _IMG[key] = cairo.ImageSurface.create_from_png(key)
+    im = _IMG[key]; sc = max(1e-3, width / im.get_width())
+    cr.save(); cr.translate(cx, cy); cr.rotate(rot); cr.scale(sc, sc)
+    cr.translate(-im.get_width() / 2, -im.get_height() / 2)
+    cr.set_source_surface(im, 0, 0); cr.get_source().set_filter(cairo.FILTER_BEST); cr.paint_with_alpha(a)
     cr.restore()
-
-
-def logo_full(cr, x, y, s, a=1.0, sub=True):
-    """Mark + FLO(white)STOCKS(green) wordmark centred at x,y; s = mark height."""
-    font(cr, 'bungee', s * 0.62)
-    w1 = cr.text_extents('FLO').x_advance; w2 = cr.text_extents('STOCKS').x_advance
-    total = s * 1.15 + w1 + w2
-    x0 = x - total / 2
-    logo_mark(cr, x0 + s * 0.5, y, s, a)
-    text(cr, 'FLO', x0 + s * 1.15, y, 'bungee', s * 0.62, C['white'], a, 'l')
-    text(cr, 'STOCKS', x0 + s * 1.15 + w1, y, 'bungee', s * 0.62, C['green'], a, 'l')
-    if sub:
-        text(cr, 'By Floret Capitals', x + s * .55, y + s * 0.62, 'inter', s * 0.2, C['white'], a * 0.8)
 
 
 # ---------- characters ----------
@@ -314,9 +345,53 @@ def _hands_front(cr, hands, palm=False):
         if hy < -430 and (palm or math.hypot(hx, hy + 505) > 112): circle(cr, hx, hy, 19); fill(cr, C['skin'], keep=True); outline(cr, 5)
 
 
+def _stick(cr, x, y, s, p, t, father):
+    """Whiteboard marker stick figure sharing the same pose rig."""
+    if 880 <= y <= 980: y -= 70; s *= 0.94
+    ink = C['ink']; acc = C['green2'] if not father else (0.5, 0.3, 0.15)
+    cr.save(); cr.translate(x, y); cr.scale(s, s); cr.translate(0, -p['bob']); cr.rotate(math.radians(p['lean']))
+    for side, (a1, a2) in ((-1, p['lL']), (1, p['rL'])):
+        r1, r2 = math.radians(a1), math.radians(a1 + a2)
+        x1, y1 = side * 6 + math.sin(r1) * 100, -190 + math.cos(r1) * 100
+        stroke_line(cr, [(side * 6, -190), (x1, y1), (x1 + math.sin(r2) * 95, y1 + math.cos(r2) * 95)], 10, ink)
+    stroke_line(cr, [(0, -190), (0, -392)], 11, ink)
+    # one colour accent: green scarf for Baaz, brown waistcoat for Abba
+    if father:
+        cr.new_path(); cr.move_to(-40, -380); cr.line_to(40, -380); cr.line_to(30, -250); cr.line_to(-30, -250); cr.close_path()
+        fill(cr, acc, 0.9, keep=True); outline(cr, 6)
+    else:
+        stroke_line(cr, [(-34, -378), (0, -360), (34, -378)], 16, acc); stroke_line(cr, [(10, -362), (26, -300)], 14, acc)
+    hands = []
+    for side, (a1, a2) in ((-1, p['lA']), (1, p['rA'])):
+        r1, r2 = math.radians(a1), math.radians(a1 + a2)
+        x1, y1 = side * 4 + math.sin(r1) * 92, -372 + math.cos(r1) * 92
+        x2, y2 = x1 + math.sin(r2) * 82, y1 + math.cos(r2) * 82
+        stroke_line(cr, [(side * 4, -372), (x1, y1), (x2, y2)], 10, ink)
+        circle(cr, x2, y2, 12); fill(cr, (1, 1, 1), keep=True); outline(cr, 6); hands.append((x2, y2))
+    cr.save(); cr.translate(0, -505); cr.rotate(math.radians(p['head_tilt']))
+    circle(cr, 0, 0, 112); fill(cr, (1, 1, 1), keep=True); outline(cr, 8)
+    if father:
+        cr.new_path(); cr.move_to(-80, -84); cr.line_to(80, -84); cr.line_to(72, -140); cr.line_to(-72, -140); cr.close_path()
+        fill(cr, (0.45, 0.43, 0.4), 0.9, keep=True); outline(cr, 6)
+        cr.new_path(); cr.move_to(-100, 14); cr.curve_to(-90, 130, -40, 168, 0, 170); cr.curve_to(40, 168, 90, 130, 100, 14)
+        cr.curve_to(60, 70, -60, 70, -100, 14); cr.close_path(); outline(cr, 6)
+        for k in range(5): stroke_line(cr, [(-50 + k * 25, 90), (-44 + k * 25, 140)], 4, ink, 0.6)
+    else:
+        for k in range(7):
+            ang = math.pi * (1.15 + 0.7 * k / 6)
+            stroke_line(cr, [(math.cos(ang) * 108, math.sin(ang) * 108), (math.cos(ang) * 150, math.sin(ang) * 150 - 6)], 8, ink)
+    cr.save(); cr.scale(1.15, 1.15); face(cr, p, t, abba=father); cr.restore()
+    if not father:
+        stroke_line(cr, [(-60, 46), (-28, 32), (0, 42), (28, 32), (60, 46)], 12, ink)
+    cr.restore()
+    cr.restore()
+    return [(x + hx * s, y + (hy - p['bob']) * s) for hx, hy in hands]
+
+
 def baaz(cr, x, y, s, pose=None, t=0, shirt=None):
     """Crayon doodle hero: big round head, spiky scribbled hair, curly mustache, green kurta. Origin at feet centre."""
     p = dict(DEFAULT_POSE); p.update(pose or {})
+    if STYLE.get('stick'): return _stick(cr, x, y, s, p, t, False)
     shirt = shirt or C['green2']
     if 880 <= y <= 980: y -= 70; s *= 0.94
     cr.save(); cr.translate(x, y); cr.scale(s, s); cr.translate(0, -p['bob'])
@@ -327,7 +402,8 @@ def baaz(cr, x, y, s, pose=None, t=0, shirt=None):
     for by in (-360, -320, -280): circle(cr, 0, by, 7); fill(cr, C['gold'])
     hands = [limb(cr, -60, -372, p['lA'][0], 92, p['lA'][1], 82, 22, shirt, True, C['skin'], 19),
              limb(cr, 60, -372, p['rA'][0], 92, p['rA'][1], 82, 22, shirt, True, C['skin'], 19)]
-    cr.save(); cr.translate(0, -505); cr.rotate(math.radians(p['head_tilt']))
+    hs = STYLE.get('head', 1.0)
+    cr.save(); cr.translate(0, -505 - 116 * (hs - 1)); cr.scale(hs, hs); cr.rotate(math.radians(p['head_tilt']))
     for side in (-1, 1): circle(cr, side * 112, 8, 22); fill(cr, C['skin2'], keep=True); outline(cr, 5)
     circle(cr, 0, 0, 116); fill(cr, C['skin'], keep=True); outline(cr, 7)
     # scribbled spiky hair
@@ -373,6 +449,20 @@ def face(cr, p, t, abba=False):
         elif e == 'dollar':
             cr.save(); cr.scale(1, 1.15); circle(cr, ex, ey / 1.15, 20); cr.restore(); fill(cr, C['white'], keep=True); outline(cr, 5)
             text(cr, '$', ex, ey, 'anton', 34, C['green2'])
+        elif STYLE.get('anime') and e in ('open', 'shock'):
+            big = e == 'shock'
+            cr.save(); cr.translate(ex, ey + 4); cr.scale(21, 29); circle(cr, 0, 0, 1); cr.restore()
+            fill(cr, C['white'], keep=True); outline(cr, 4)
+            ix, iy = ex + lx * 4, ey + 8 + ly * 4
+            cr.save(); cr.translate(ix, iy); cr.scale(13 if not big else 8, 22 if not big else 12); circle(cr, 0, 0, 1); cr.restore()
+            fill(cr, (0.25, 0.14, 0.08))
+            cr.save(); cr.translate(ix, iy + 6); cr.scale(9 if not big else 5, 11 if not big else 6); circle(cr, 0, 0, 1); cr.restore()
+            fill(cr, (0.55, 0.32, 0.12))
+            circle(cr, ix - 5, iy - 9, 6 if not big else 4); rgb(cr, (1, 1, 1)); cr.fill()
+            circle(cr, ix + 5, iy + 7, 3); rgb(cr, (1, 1, 1)); cr.fill()
+            stroke_line(cr, [(ex - 22, ey - 22), (ex, ey - 28), (ex + 22, ey - 22)], 6, C['ink'])
+            if abba:
+                circle(cr, ex, ey + 4, 30); outline(cr, 4, (0.25, 0.2, 0.15))
         else:
             big = e == 'shock'
             rw, rh = (22, 26) if big else (16, 20)
@@ -438,6 +528,7 @@ def face(cr, p, t, abba=False):
 def abba(cr, x, y, s, pose=None, t=0):
     """Crayon doodle father: karakul cap, round glasses, scribbled white beard, brown waistcoat."""
     p = dict(DEFAULT_POSE); p.update(pose or {})
+    if STYLE.get('stick'): return _stick(cr, x, y, s, p, t, True)
     if 880 <= y <= 980: y -= 70; s *= 0.94
     cr.save(); cr.translate(x, y); cr.scale(s, s); cr.translate(0, -p['bob']); cr.rotate(math.radians(p['lean']))
     _legs(cr, p, 34, (0.3, 0.18, 0.1))
@@ -450,7 +541,8 @@ def abba(cr, x, y, s, pose=None, t=0):
         cr.line_to(side * 16, -246); cr.close_path(); fill(cr, (0.5, 0.3, 0.15), keep=True); outline(cr, 6)
     hands = [limb(cr, -66, -372, p['lA'][0], 92, p['lA'][1], 82, 24, kameez, True, C['skin'], 19),
              limb(cr, 66, -372, p['rA'][0], 92, p['rA'][1], 82, 24, kameez, True, C['skin'], 19)]
-    cr.save(); cr.translate(0, -505); cr.rotate(math.radians(p['head_tilt']))
+    hs = STYLE.get('head', 1.0)
+    cr.save(); cr.translate(0, -505 - 116 * (hs - 1)); cr.scale(hs, hs); cr.rotate(math.radians(p['head_tilt']))
     for side in (-1, 1): circle(cr, side * 112, 8, 22); fill(cr, C['skin2'], keep=True); outline(cr, 5)
     circle(cr, 0, 0, 114); fill(cr, C['skin'], keep=True); outline(cr, 7)
     for side in (-1, 1):  # grey side tufts

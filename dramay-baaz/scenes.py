@@ -140,6 +140,15 @@ def bg_grad(cr, top, bot, a=0.85):
         g2 = cairo.LinearGradient(0, hz - 140, 0, hz + 20); g2.add_color_stop_rgba(0, 1, 0.2, 0.7, 0); g2.add_color_stop_rgba(1, 1, 0.3, 0.6, 0.35)
         cr.rectangle(0, hz - 140, W, 160); cr.set_source(g2); cr.fill()
         return
+    if mode == 'plain':
+        return
+    if mode == 'rays':   # truck art sunburst / anime speed burst
+        cx, cy = W / 2, H * 0.55; n = 28
+        for k in range(n):
+            a0 = k * TAU / n + BOIL[0] * 0.004
+            cr.new_path(); cr.move_to(cx, cy); cr.arc(cx, cy, 2400, a0, a0 + TAU / n / 2); cr.close_path()
+            rgb(cr, (1, 1, 1) if STYLE.get('anime') else mix(top, (1, 0.85, 0.2), 0.35), 0.10 if STYLE.get('anime') else 0.3); cr.fill()
+        return
     if mode == 'bands':
         rnd = random.Random(5)
         for k in range(5):
@@ -295,12 +304,9 @@ def index_widget(cr, t, a=1.0):
 
 
 def brand_bug(cr, t, a=0.9):
-    cr.save(); cr.translate(40, 40); cr.rotate(-0.02)
-    rrect(cr, 0, 0, 330, 80, 12); fill(cr, (0.99, 0.98, 0.94), a, keep=True); outline(cr, 4, C['ink'], a * 0.8)
-    logo_mark(cr, 44, 40, 50, a, top=TXT)
-    text(cr, 'FLO', 82, 42, 'brand', 30, TXT, a, 'l')
-    text(cr, 'STOCKS', 82 + text_w(cr, 'FLO', 'brand', 30), 42, 'brand', 30, C['green2'], a, 'l')
-    cr.restore()
+    dark = STYLE.get('dark', False)
+    rrect(cr, 36, 36, 330, 84, 14); rgb(cr, (0.06, 0.06, 0.08) if dark else (1, 1, 1), 0.9 * a); cr.fill()
+    brand_img(cr, 'wordmark', 36 + 165, 36 + 42, 290, a)
 
 
 # ---------------- captions ----------------
@@ -313,8 +319,9 @@ def caption(cr, t):
     a = clamp((t - t0 + 0.1) / 0.15) * clamp((t1 - t) / 0.25)
     words = ro.split(' ')
     font(cr, 'anton', 58)
-    widths = [cr.text_extents(w_).x_advance + 22 for w_ in words]
-    total = sum(widths) - 22
+    gap = max(22, cr.text_extents('n').x_advance * 0.9)
+    widths = [cr.text_extents(w_).x_advance + gap for w_ in words]
+    total = sum(widths) - gap
     font(cr, 'inter', 26); ew = cr.text_extents(en).x_advance
     bw = max(total, ew) + 120
     y = H - 160
@@ -327,6 +334,17 @@ def caption(cr, t):
     elif cap == 'neon':
         rrect(cr, W / 2 - bw / 2, y - 54, bw, 122, 22); rgb(cr, (0.06, 0.02, 0.12), 0.82 * a); cr.fill_preserve()
         cr.set_line_width(4); rgb(cr, (0.3, 1, 0.5), a); cr.stroke()
+    elif cap == 'dialog':   # retro RPG dialogue box
+        cr.rectangle(W / 2 - bw / 2, y - 54, bw, 122); rgb(cr, (0.05, 0.07, 0.25), 0.95 * a); cr.fill_preserve()
+        cr.set_line_width(8); rgb(cr, (1, 1, 1), a); cr.stroke()
+        cr.rectangle(W / 2 - bw / 2 + 10, y - 44, bw - 20, 102); cr.set_line_width(3); rgb(cr, (0.6, 0.7, 1), a); cr.stroke()
+    elif cap == 'truck':
+        rrect(cr, W / 2 - bw / 2, y - 54, bw, 122, 40); rgb(cr, (1, 0.85, 0.15), a); cr.fill_preserve()
+        cr.set_line_width(7); rgb(cr, (0.85, 0.05, 0.2), a); cr.stroke()
+        for k in range(int(bw / 40)):
+            circle(cr, W / 2 - bw / 2 + 30 + k * 40, y - 54, 6); rgb(cr, (0.1, 0.6, 0.9), a); cr.fill()
+    elif cap == 'plain':
+        cr.rectangle(W / 2 - bw / 2, y - 54, bw, 122); rgb(cr, (1, 1, 1), 0.95 * a); cr.fill_preserve(); cr.set_line_width(5); rgb(cr, TXT, a); cr.stroke()
     elif cap == 'riso':
         cr.rectangle(W / 2 - bw / 2, y - 54, bw, 122); rgb(cr, (1.0, 0.85, 0.12), a); cr.fill()
     else:
@@ -344,7 +362,7 @@ def caption(cr, t):
         if p <= 0: x += widths[i]; continue
         sc = back_out(p) if p < 1 else 1
         hot = clamp(1 - (t - wt) / 0.4)
-        base_c = (0.95, 0.95, 1.0) if STYLE.get('caption') == 'neon' else TXT
+        base_c = (0.95, 0.95, 1.0) if STYLE.get('caption') in ('neon', 'dialog') else TXT
         col = mix(base_c, (0.9, 0.45, 0.0), hot)
         if any(k in w_.upper() for k in ('BUY', 'GREEN', 'UPPER')): col = C['green2']
         if any(k in w_.upper() for k in ('RED', 'LOWER', 'SELL', 'RIGGED', 'PANIC')): col = C['red']
@@ -352,7 +370,7 @@ def caption(cr, t):
         text(cr, w_, -widths[i] / 2, 0, 'anton', 62, col, a, 'l', stroke=0)
         cr.restore()
         x += widths[i]
-    text(cr, en, W / 2, y + 44, 'inter', 28, (0.75, 0.75, 0.85) if STYLE.get('caption') == 'neon' else (0.3, 0.3, 0.3), a * clamp((t - t0 - 0.25) / 0.3))
+    text(cr, en, W / 2, y + 44, 'inter', 28, (0.75, 0.75, 0.85) if STYLE.get('caption') in ('neon', 'dialog') else (0.3, 0.3, 0.3), a * clamp((t - t0 - 0.25) / 0.3))
     cr.restore()
 
 
@@ -406,8 +424,6 @@ def wipes(cr, t):
                 pk = clamp(p * 1.25 - k * 0.12)
                 x = lerp(-W * 1.6, W * 1.3, ease_io(pk))
                 para(cr, x + k * 120, -50, W * 1.15, H + 100, slant=0.35, r=0); fill(cr, col)
-            if abs(d) < 0.2:
-                logo_mark(cr, W / 2, H / 2, 260 * (1 + 0.1 * (0.2 - abs(d)) * 5), 1.0, top=C['ink'])
 
 
 def flash(cr, t, at, d=0.25, col=C['white']):
@@ -465,7 +481,7 @@ def scene_intro(cr, t):
         cr.save(); cr.translate(W / 2, H / 2 - 40); s = back_out(p); cr.scale(s, s)
         para(cr, -620, -150, 1240, 300, slant=0.25, r=20); fill(cr, (0.01, 0.02, 0.02), 0.92 * a, keep=True); outline(cr, 8, C['green'], a)
         text(cr, 'DRAMAY BAAZ', 0, -20, 'bungee', 130, C['white'], a, stroke=14)
-        text(cr, 'a PSX tragedy-comedy by FloStocks', 0, 90, 'inter', 34, C['green'], a)
+        text(cr, 'a PSX tragedy-comedy', 0, 90, 'inter', 34, C['green'], a)
         cr.restore()
 
 
@@ -902,7 +918,6 @@ def scene_bridge(cr, t):
             text(cr, str(i + 1), -120, -90, 'anton', 50, C['green'])
             cr.restore()
         text(cr, 'STRATEGY SE NIKLE HAL', W / 2, 200, 'bungee', 72, C['white'], pop(t, 112.5), stroke=8)
-        logo_mark(cr, W - 200, 220, 140 * pop(t, 112.8))
 
 
 def uptrend_y(x, t):
@@ -1004,30 +1019,13 @@ def scene_final(cr, t):
         abba(cr, 1220, 940, 0.85, d2, t)
 
 
-LOGO = cairo.ImageSurface.create_from_png('assets/logo_full.png')
-
-
 def scene_outro(cr, t):
     lt = t - 143.1
     bg_grad(cr, (0.97, 0.96, 0.9), (0.85, 0.93, 0.8), 0.5)
     grid(cr, t, C['green'], 0.05)
-    # three logo bars fly in on the drop and assemble
-    s = 420
-    u = s / 4.2; ox, oy = W / 2 - 2.1 * u, 400 - 2.1 * u
-    bars = [((0.0, 0.85), C['green'], 143.4), ((0.95, 2.0), C['green'], 143.9), ((2.05, 0.0), C['ink'], 144.6)]
-    swap = ease_io(clamp((t - 145.2) / 0.5))
-    for k, ((bx, by), col, at) in enumerate(bars):
-        p = ease_out(clamp((t - at) / 0.6))
-        dx = (1 - p) * (-1500 if k % 2 == 0 else 1500)
-        w_, h_ = (1.75, 2.25) if k < 2 else (1.85, 1.65)
-        para(cr, ox + bx * u + dx, oy + by * u, w_ * u, h_ * u, slant=0.55, r=u * .12); fill(cr, col, p * (1 - swap))
-    if swap > 0:
-        sc = 1100 / LOGO.get_width() * (0.8 + 0.2 * back_out(swap))
-        cr.save(); cr.translate(W / 2 - LOGO.get_width() * sc / 2, 470 - LOGO.get_height() * sc / 2); cr.scale(sc, sc)
-        cr.set_source_surface(LOGO, 0, 0); cr.paint_with_alpha(swap); cr.restore()
     a2 = clamp((t - 148.5) / 0.5)
     if a2 > 0:
-        text(cr, 'Invest smart. No dramay baazi.', W / 2, 860, 'interb', 64, C['ink'], a2)
+        text(cr, 'Invest smart. No dramay baazi.', W / 2, 860, 'interb', 64, C['white'] if STYLE.get('dark') else TXT, a2)
         bp = 1 + 0.05 * beat_pulse(t) * env('bass', t)
         cr.save(); cr.translate(W / 2, 960); cr.scale(bp, bp)
         para(cr, -330, -40, 660, 80, slant=0.3, r=12); fill(cr, C['green2'], a2)
@@ -1062,6 +1060,8 @@ def render_scene(cr, t):
         if c[2] == NO: flash(cr, t, c[0], 0.15, C['white'])
     chant_overlay(cr, t)
     wipes(cr, t)
+    if STYLE.get('truck_border'):
+        _truck_border(cr, t)
     if STYLE.get('panel'):
         m = 22
         cr.new_path(); cr.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
@@ -1070,9 +1070,51 @@ def render_scene(cr, t):
         cr.rectangle(m, m, W - 2 * m, H - 2 * m); cr.set_line_width(10); rgb(cr, (0, 0, 0)); cr.stroke()
 
 
+def _truck_border(cr, t):
+    """Pakistani truck-art frame: red band, chamak-patti triangles, mirror dots, corner flowers."""
+    m = 30
+    cr.new_path(); cr.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
+    cr.rectangle(0, 0, W, H); cr.rectangle(m, m, W - 2 * m, H - 2 * m)
+    rgb(cr, (0.8, 0.04, 0.2)); cr.fill(); cr.set_fill_rule(cairo.FILL_RULE_WINDING)
+    cols = [(1, 0.85, 0.1), (0.1, 0.65, 0.95), (0.2, 0.75, 0.25), (1, 1, 1)]
+    k = 0
+    for x in range(m, W - m, 36):   # bunting triangles hanging from top and up from bottom
+        for yb, d in ((m, 1), (H - m, -1)):
+            cr.move_to(x, yb); cr.line_to(x + 36, yb); cr.line_to(x + 18, yb + d * 30); cr.close_path()
+            rgb(cr, cols[k % 4]); cr.fill()
+        k += 1
+    for y in range(m, H - m, 36):
+        for xb, d in ((m, 1), (W - m, -1)):
+            cr.move_to(xb, y); cr.line_to(xb, y + 36); cr.line_to(xb + d * 30, y + 18); cr.close_path()
+            rgb(cr, cols[k % 4]); cr.fill()
+        k += 1
+    for x in range(20, W, 60):
+        for yy in (15, H - 15):
+            circle(cr, x, yy, 7); rgb(cr, (0.85, 0.9, 1.0)); cr.fill()
+    for (cx, cy) in ((m + 10, m + 10), (W - m - 10, m + 10), (m + 10, H - m - 10), (W - m - 10, H - m - 10)):
+        for j in range(8):
+            ang = j * TAU / 8 + t
+            cr.save(); cr.translate(cx + math.cos(ang) * 26, cy + math.sin(ang) * 26); cr.scale(16, 10); cr.rotate(0); circle(cr, 0, 0, 1); cr.restore()
+            rgb(cr, (1, 0.5, 0.75)); cr.fill()
+        circle(cr, cx, cy, 16); rgb(cr, (1, 0.85, 0.1)); cr.fill()
+
+
+def render_brand(cr, t):
+    """Official logo artwork, composited last with no texture so it stays exactly on-brand."""
+    for tb in WIPES:
+        d = t - tb
+        if abs(d) < 0.2 and tb < 143:
+            brand_img(cr, 'icon', W / 2, H / 2, 300 * (1 + 0.5 * (0.2 - abs(d))), 1.0, dark=False)
+    if section(t)[1] == 'outro':
+        p = ease_out(clamp((t - 143.4) / 0.7))
+        if p > 0.001:
+            brand_img(cr, 'logo', W / 2, 470, 1150 * (0.9 + 0.1 * p), p)
+    elif not any(abs(t - w) < 0.3 for w in WIPES):
+        brand_bug(cr, t, 0.95 * clamp((t - 2) / 1))
+
+
 def render_ui(cr, t):
     if section(t)[1] == 'outro' or any(abs(t - w) < 0.3 for w in WIPES): return
-    brand_bug(cr, t, 0.95 * clamp((t - 2) / 1))
     index_widget(cr, t, clamp((t - 2) / 1))
     ticker_tape(cr, t)
     caption(cr, t)
