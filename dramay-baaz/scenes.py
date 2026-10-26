@@ -123,6 +123,11 @@ def bg_grad(cr, top, bot, a=0.85):
     """Crayon wash: soft gradient plus big diagonal scribble strokes, so paper tooth shows through."""
     paper = STYLE.get('paper_rgb', (0.96, 0.94, 0.88))
     top, bot = mix(top, paper, STYLE['wash_mix']), mix(bot, paper, STYLE['wash_mix']); a = STYLE['wash_a']
+    if STYLE.get('kinetic'):
+        sec = section(BOIL[1] if len(BOIL) > 1 else 0)[1]
+        base = {'crash': (0.85, 0.12, 0.18), 'verse2': (0.15, 0.42, 0.92), 'bridge': (0.62, 0.88, 0.78), 'outro': (1.0, 0.84, 0.08)}.get(sec)
+        if base:
+            pop_bg(cr, BOIL[1], base, rays=sec != 'outro'); return
     mode = STYLE.get('bg', 'scribble')
     if mode == 'neon':
         top, bot = mix(top, (0.04, 0.0, 0.1), 0.75), mix(bot, (0.01, 0.0, 0.03), 0.85)
@@ -379,6 +384,13 @@ def caption(cr, t):
 def chant_overlay(cr, t):
     c = chant_at(t)
     if not c: return
+    if STYLE.get('kinetic'):
+        if section(t)[1] in KINETIC: return
+        lt = t - c[0]; p = back_out(clamp(lt / 0.2)) * (1 + 0.05 * beat_pulse(t, 9)); a = clamp((c[1] - t) / 0.2)
+        cr.save(); cr.translate(W / 2, 175); cr.rotate(-0.04); cr.scale(p * 0.5, p * 0.5)
+        burst(cr, 0, 0, 640, 300, 16, (1.0, 0.84, 0.08), rot=t * 0.4, a=a)
+        text(cr, 'DRAMAY BAAZ!', 0, 0, 'bungee', 200, (1, 1, 1), a, stroke=22, shadow=12)
+        cr.restore(); return
     t0, t1, phrase = c
     lt = t - t0
     a = clamp(lt / 0.06) * clamp((t1 - t) / 0.2)
@@ -417,6 +429,21 @@ def chant_overlay(cr, t):
 
 # ---------------- transitions ----------------
 def wipes(cr, t):
+    if STYLE.get('kinetic'):
+        for tb in WIPES:
+            d = t - tb
+            if -0.4 < d < 0.4:
+                ph = (d + 0.4) / 0.8; sp = 64
+                for col, shrink in (((0.02, 0.02, 0.02), 1.0), ((1.0, 0.84, 0.08), 0.82)):
+                    cr.new_path()
+                    for row in range(0, H // sp + 2):
+                        for colx in range(0, W // sp + 2):
+                            x = colx * sp + (sp / 2 if row % 2 else 0); y = row * sp
+                            k = clamp(ph * 2 * 1.9 - x / W * 0.9) if ph < 0.5 else 1 - clamp((ph - 0.5) * 2 * 1.9 - x / W * 0.9)
+                            r = k * 50 * shrink
+                            if r > 0.5: cr.new_sub_path(); cr.arc(x, y, r, 0, TAU)
+                    rgb(cr, col); cr.fill()
+        return
     for tb in WIPES:
         d = t - tb
         if -0.45 < d < 0.45:
@@ -1041,6 +1068,245 @@ def scene_outro(cr, t):
         abba(cr, lerp(W + 200, W - 220, p), 1100, 0.6, dict(lA=(160 + wave, 20), rA=(14, -8), eyes='happy', mouth='smile'), t)
 
 
+
+# ============================================================
+#   KINETIC COMIC: chants + chorus as pop-art kinetic typography
+# ============================================================
+KINETIC = ('intro', 'chorus', 'final')
+POP = dict(yellow=(1.0, 0.84, 0.08), red=(0.93, 0.12, 0.2), green=(0.22, 0.74, 0.12), blue=(0.12, 0.45, 0.95),
+           pink=(1.0, 0.42, 0.62), cream=(0.99, 0.96, 0.86), black=(0.02, 0.02, 0.02))
+SFX = ['DHAM!', 'THAK!', 'DHUM!', 'CLAP!', 'BOOM!', 'DHAK!']
+PANEL_LINES = {45.5: 'green', 85.7: 'green', 49.3: 'red', 89.7: 'red', 52.0: 'screen', 92.4: 'screen', 57.7: 'buy',
+               59.8: 'sell', 61.5: 'cry', 120.7: 'soch', 122.6: 'plan', 124.4: 'sabar', 130.2: 'tension'}
+
+
+def pop_bg(cr, t, base, rays=True, dots=True):
+    cr.rectangle(-200, -200, W + 400, H + 400); rgb(cr, base); cr.fill()
+    if rays:
+        cx, cy = W / 2, H / 2; n = 22; rot = t * 0.12
+        for k in range(n):
+            a0 = rot + k * TAU / n
+            cr.new_path(); cr.move_to(cx, cy); cr.arc(cx, cy, 2400, a0, a0 + TAU / n / 2); cr.close_path()
+            rgb(cr, mix(base, (1, 1, 1), 0.28), 0.45); cr.fill()
+    if dots:
+        dk = mix(base, (0, 0, 0), 0.35); sp = 28
+        for row in range(0, H // sp + 2):
+            yy = row * sp
+            for col in range(0, W // sp + 2):
+                xx = col * sp + (sp / 2 if row % 2 else 0)
+                d = math.hypot(xx - W / 2, yy - H / 2) / (W / 2)
+                r = 1.0 + 8.5 * clamp(d - 0.25) ** 1.2
+                if r > 1.2: circle(cr, xx, yy, r)
+            rgb(cr, dk, 0.5); cr.fill()
+
+
+def pop_word(cr, s_, x, y, size, fill_c, a=1.0, rot=0.0, sc=1.0):
+    cr.save(); cr.translate(x, y); cr.rotate(rot); cr.scale(sc, sc)
+    text(cr, s_, 0, 0, 'bungee', size, fill_c, a, stroke=size * 0.11, sc=POP['black'], shadow=size * 0.06)
+    cr.restore()
+
+
+def speed_lines(cr, t, a=0.3):
+    rnd = random.Random(int(t * 12))
+    for k in range(60):
+        ang = rnd.random() * TAU; r0 = 420 + rnd.random() * 200
+        cr.move_to(W / 2 + math.cos(ang) * r0, H / 2 + math.sin(ang) * r0)
+        cr.line_to(W / 2 + math.cos(ang) * 1500, H / 2 + math.sin(ang) * 1500)
+        cr.set_line_width(2 + rnd.random() * 6); rgb(cr, POP['black'], a); cr.stroke()
+
+
+def sfx_stickers(cr, t, t0, t1):
+    for b in BEATS:
+        if t0 <= b <= t and t - b < 0.42 and b < t1:
+            bi = BEATS.index(b); rnd = random.Random(bi * 7)
+            side = -1 if bi % 2 else 1
+            x = W / 2 + side * rnd.uniform(560, 760); y = rnd.uniform(180, H - 260)
+            p = back_out(clamp((t - b) / 0.12)); a = clamp((0.42 - (t - b)) / 0.15)
+            cr.save(); cr.translate(x, y); cr.rotate(side * 0.2); cr.scale(p, p)
+            burst(cr, 0, 0, 120, 82, 12, [POP['pink'], POP['blue'], POP['yellow']][bi % 3], rot=bi, a=a)
+            text(cr, SFX[bi % len(SFX)], 0, 0, 'bungee', 62, (1, 1, 1), a, stroke=7, sc=POP['black'])
+            cr.restore()
+
+
+def chant_kinetic(cr, t, c):
+    t0, t1, phrase = c
+    lt = t - t0
+    is_no = phrase == NO
+    pop_bg(cr, t, POP['green'] if is_no else (POP['red'] if mood_sign(t) < -0.2 else POP['yellow']))
+    speed_lines(cr, t, 0.22)
+    # cycle the phrase every 4 beats so long chants keep re-slamming
+    bi0 = beat_index(t0 - 0.05) + 1
+    nb = max(0, beat_index(t) - bi0 + 1)
+    cyc, inb = divmod(nb, 4)
+    words = ['AB NO', 'DRAMAY', 'BAAZI!'] if is_no else ['DRAMAY', 'BAAZ!']
+    since = [BEATS[bi0 + cyc * 4 + k] if bi0 + cyc * 4 + k < len(BEATS) else t1 for k in range(len(words))]
+    if lt < 0.12: since[0] = t0
+    if cyc > 0:   # repeats: the whole phrase re-slams together
+        since = [BEATS[min(len(BEATS) - 1, bi0 + cyc * 4)]] * len(words)
+    tilt = (-0.07 if cyc % 2 == 0 else 0.06)
+    cr.save(); cr.translate(W / 2, H / 2 - 30); cr.rotate(tilt)
+    burst(cr, 0, 0, 700 + 30 * beat_pulse(t), 520, 16, POP['blue'] if not is_no else POP['yellow'], rot=t * 0.3)
+    burst(cr, 0, 0, 600, 470, 16, POP['cream'], rot=-t * 0.2 + 0.2)
+    sizes = [150, 230, 230] if is_no else [250, 300]
+    ys = [-230, -10, 210] if is_no else [-120, 150]
+    for k, w_ in enumerate(words):
+        st = since[k] if k else min(since[0], t0 + 0.02) if cyc == 0 else since[0]
+        p = clamp((t - st) / 0.13)
+        if p <= 0: continue
+        sc = lerp(2.2, 1.0, ease_out(p)) * (1 + 0.05 * beat_pulse(t, 10))
+        col = (1, 1, 1) if k == 0 else POP['yellow'] if not is_no else POP['yellow']
+        if not is_no and k == 0: col = (1, 1, 1)
+        pop_word(cr, w_, (k % 2 * 2 - 1) * 14, ys[k], sizes[k], col, p, rot=(0.04 if k % 2 else -0.03), sc=sc)
+    if is_no and t > since[2] + 0.15:   # green slash through DRAMAY BAAZI
+        q = ease_out(clamp((t - since[2] - 0.15) / 0.25))
+        x0, x1 = -520, -520 + 1040 * q
+        stroke_line(cr, [(x0, 140), (x1, 140 - 300 * q)], 50, POP['black']); stroke_line(cr, [(x0, 140), (x1, 140 - 300 * q)], 32, POP['green'])
+    cr.restore()
+    sfx_stickers(cr, t, t0, t1)
+
+
+def comic_panel(cr, t, kind, x, y, w, h, t_in):
+    p = back_out(clamp((t - t_in) / 0.35))
+    cr.save(); cr.translate(x + w / 2 + (1 - clamp((t - t_in) / 0.35)) * 700, y + h / 2); cr.rotate(0.035); cr.scale(p, p)
+    cr.rectangle(-w / 2 - 14, -h / 2 - 14, w + 28, h + 28); rgb(cr, (1, 1, 1)); cr.fill()
+    cr.rectangle(-w / 2, -h / 2, w, h); cr.set_line_width(10); rgb(cr, POP['black']); cr.stroke_preserve()
+    cr.save(); cr.clip()
+    bgc = {'green': POP['green'], 'red': POP['red'], 'screen': POP['red'], 'sell': POP['red'], 'cry': POP['blue'],
+           'buy': POP['yellow'], 'soch': POP['yellow'], 'plan': POP['blue'], 'sabar': POP['pink'], 'tension': POP['green'], 'dance2': POP['yellow']}[kind]
+    cr.translate(-W / 2, -H / 2)
+    cr.save(); cr.translate(W / 2, H / 2); cr.scale(w / W * 1.6, h / H * 1.0); cr.translate(-W / 2, -H / 2)
+    pop_bg(cr, t, bgc, rays=True, dots=True)
+    cr.restore()
+    fx, fy, fs = W / 2, H / 2 + h * 0.45, h / 700
+    if kind == 'green':
+        baaz(cr, fx, fy, fs, dance(t), t)
+    elif kind == 'red':
+        for k in range(10):
+            yy = H / 2 - h / 2 + 60 + k * (h / 10)
+            stroke_line(cr, [(W / 2 - w / 2, yy), (W / 2 - w / 2 + 140 + (k * 37) % 120, yy)], 6, (1, 1, 1), 0.7)
+        baaz(cr, fx, fy, fs, run(t), t)
+    elif kind == 'screen':
+        pose = dict(lA=(-150 + 110 * (1 - beat_phase(t)), -20), rA=(150 - 110 * (1 - beat_phase(t)), 20), brows='angry', mouth='shout', look=(1, -1))
+        baaz(cr, fx, fy, fs, pose, t)
+        for side in (-1, 1):
+            for k in range(3):
+                pp = ((t * 1.5) + k / 3) % 1
+                circle(cr, fx + side * (130 + pp * 50) * fs, fy - 560 * fs - pp * 100, (16 + pp * 20)); rgb(cr, (1, 1, 1), 0.8 * (1 - pp)); cr.fill()
+    elif kind == 'buy':
+        baaz(cr, fx, fy, fs, dict(rA=(-110 + 30 * (beat_phase(t) < 0.25), 0), eyes='closed', mouth='grin'), t)
+    elif kind == 'sell':
+        tr = math.sin(t * 60) * 4
+        baaz(cr, fx + tr, fy, fs, dict(eyes='shock', mouth='wavy', brows='sad', sweat=1, lA=(-150, -30), rA=(150, 30)), t)
+    elif kind == 'cry':
+        baaz(cr, fx, fy, fs, dict(lL=(-80, 80), rL=(80, -80), eyes='cry', mouth='shout', brows='sad', tears=1, lA=(-30, 60), rA=(30, -60)), t)
+    elif kind == 'soch':
+        baaz(cr, fx, fy, fs, dict(rA=(-160, -30), eyes='open', look=(0.5, -1), mouth='flat', brows='raised'), t)
+        circle(cr, fx + 170 * fs, fy - 760 * fs, 50); rgb(cr, POP['yellow']); cr.fill_preserve(); cr.set_line_width(6); rgb(cr, POP['black']); cr.stroke()
+    elif kind == 'plan':
+        baaz(cr, fx, fy, fs, dict(lA=(-30, 20), rA=(30, -20), eyes='happy', mouth='smile'), t)
+    elif kind == 'sabar':
+        baaz(cr, fx - 120 * fs, fy, fs * 0.85, dict(lA=(-150, -20), rA=(60, -40), eyes='happy', mouth='grin', blush=0.8), t)
+        abba(cr, fx + 150 * fs, fy, fs * 0.85, dict(lA=(-60, -60), rA=(150, -30), eyes='happy', mouth='grin', blush=0.6), t)
+    elif kind in ('tension', 'dance2'):
+        baaz(cr, fx - (110 * fs if kind == 'dance2' else 0), fy, fs * (0.85 if kind == 'dance2' else 1), dance(t, 0.7), t)
+        if kind == 'dance2':
+            abba(cr, fx + 140 * fs, fy, fs * 0.85, dance(t + 0.24, 0.6), t)
+    cr.restore()
+    cr.restore()
+
+
+def kinetic_line(cr, t, l, panel_kind):
+    t0, ro, en = l
+    name = section(t)[1]
+    sign = mood_sign(t) if name == 'chorus' else 1
+    base = POP['green'] if sign > 0.2 else POP['red'] if sign < -0.2 else POP['yellow']
+    if name == 'final': base = [POP['yellow'], POP['green'], POP['blue'], POP['pink']][LYRICS.index(l) % 4]
+    pop_bg(cr, t, base)
+    words = ro.replace('"', '').split(' ')
+    span = max(0.6, (LYR_END[t0] - t0) * 0.6)
+    wts = [t0 + span * i / max(1, len(words)) for i in range(len(words))]
+    region = 1120 if panel_kind else 1640
+    cx0 = 90 + region / 2
+    lines, cur = [], []
+    for i, w_ in enumerate(words):
+        if cur and len(' '.join(words[j] for j in cur + [i])) > 11:
+            lines.append(cur); cur = []
+        cur.append(i)
+    lines.append(cur)
+    sizes = []
+    for ln in lines:
+        w100 = text_w(cr, ' '.join(words[i] for i in ln).upper(), 'bungee', 100)
+        sizes.append(min(250, 100 * region / max(1, w100) * 0.92))
+    total = sum(sz * 1.02 for sz in sizes)
+    if total > 640:
+        sizes = [sz * 640 / total for sz in sizes]; total = 640
+    y = H / 2 - 40 - total / 2 + sizes[0] * 0.5
+    for li, ln in enumerate(lines):
+        sz = sizes[li]; font(cr, 'bungee', sz)
+        ws = [cr.text_extents(words[i].upper()).x_advance for i in ln]
+        gap = sz * 0.2; x = cx0 - (sum(ws) + gap * (len(ln) - 1)) / 2
+        rot = -0.045 if li % 2 == 0 else 0.03
+        for k, i in enumerate(ln):
+            p = clamp((t - wts[i]) / 0.14)
+            if p > 0:
+                u = words[i].upper()
+                col = (1, 1, 1)
+                if any(q in u for q in ('BUY', 'GREEN', 'NAACH', 'SABAR', 'HOLD', 'SOCH', 'PLAN', 'DIRECTION')): col = POP['yellow'] if base == POP['green'] else POP['green']
+                if any(q in u for q in ('RED', 'SELL', 'GUSSA', 'BHAAG', 'RO', 'DAR', 'TENSION')): col = POP['yellow'] if base == POP['red'] else POP['red']
+                pop_word(cr, u, x + ws[k] / 2, y + (k % 2) * 6, sz, col, p, rot, lerp(1.9, 1.0, ease_out(p)) * (1 + 0.035 * beat_pulse(t)))
+            x += ws[k] + gap
+        y += sz * 1.02
+    # English line in a comic narration box
+    a = clamp((t - t0 - 0.3) / 0.25) * clamp((LYR_END[t0] - t) / 0.25)
+    if a > 0:
+        font(cr, 'inter', 30); ew = cr.text_extents(en).x_advance + 60
+        bx = cx0 - ew / 2; by = H - 210
+        cr.rectangle(bx, by, ew, 62); rgb(cr, POP['yellow'], a); cr.fill_preserve(); cr.set_line_width(5); rgb(cr, POP['black'], a); cr.stroke()
+        text(cr, en, cx0, by + 31, 'inter', 30, POP['black'], a)
+    if panel_kind:
+        t_in = t0
+        prev = [x_ for x_ in PANEL_LINES if x_ < t0 and t0 - LYR_END.get(x_, x_) < 0.6]
+        if prev: t_in = t0 - 1   # panel already on screen: just swap the drawing
+        comic_panel(cr, t, panel_kind, 1230, 150, 600, 760, t_in)
+
+
+def kinetic_scene(cr, t):
+    name = section(t)[1]
+    c = chant_at(t)
+    if c: return chant_kinetic(cr, t, c)
+    l = cur_line(t)
+    if l is None and name != 'intro':
+        cand = [x for x in LYRICS if x[0] <= t and t - LYR_END[x[0]] < 1.6 and section(x[0])[1] == name]
+        l = cand[-1] if cand else None
+    if l and section(l[0])[1] == name:
+        return kinetic_line(cr, t, l, PANEL_LINES.get(l[0]))
+    if name == 'intro':
+        pop_bg(cr, t, POP['yellow'])
+        if t >= 13.6:   # comic cover title
+            p = back_out(clamp((t - 13.6) / 0.4))
+            cr.save(); cr.translate(W / 2 - 230, H / 2 - 40); cr.rotate(-0.04); cr.scale(p, p)
+            pop_word(cr, 'DRAMAY', 0, -110, 240, (1, 1, 1)); pop_word(cr, 'BAAZ', 0, 130, 280, POP['red'])
+            cr.restore()
+            cr.rectangle(W / 2 - 520, H / 2 + 270, 600, 62); rgb(cr, POP['black'], p > 0.5); cr.fill()
+            text(cr, 'A PSX TRAGEDY-COMEDY', W / 2 - 220, H / 2 + 301, 'bungee', 44, POP['yellow'], clamp((t - 14.1) / 0.3))
+            comic_panel(cr, t, 'buy', 1250, 160, 560, 700, 13.9)
+        else:
+            v = idx_value(t)
+            pop_word(cr, 'KSE-100', W / 2, H / 2 - 170, 110, (1, 1, 1), 1, -0.03)
+            pop_word(cr, f"{v:,.0f}", W / 2, H / 2 + 60, 260, POP['green'], 1, 0.02, 1 + 0.04 * beat_pulse(t))
+        return
+    # gaps in the final chorus: Baaz and Abba dance in one big panel
+    pop_bg(cr, t, POP['green'] if name == 'final' else POP['yellow'])
+    comic_panel(cr, t, 'dance2', W / 2 - 520, 120, 1040, 760, t - 1)
+
+
+def cur_line(t):
+    cur = None
+    for l in LYRICS:
+        if l[0] - 0.1 <= t < LYR_END[l[0]]: cur = l
+    return cur
+
+
 SCENE_FN = {'intro': scene_intro, 'verse1': scene_verse1, 'dream': scene_dream, 'crash': scene_crash, 'chorus': scene_chorus,
             'verse2': scene_verse2, 'bridge': scene_bridge, 'final': scene_final, 'outro': scene_outro}
 
@@ -1054,7 +1320,7 @@ def render_scene(cr, t):
             dx, dy = shake(t, c[0], 0.25, 12); sx += dx; sy += dy
     cr.save()
     cr.translate(W / 2 + sx, H / 2 + sy); cr.scale(zoom, zoom); cr.translate(-W / 2, -H / 2)
-    SCENE_FN[name](cr, t)
+    (kinetic_scene if (STYLE.get('kinetic') and name in KINETIC) else SCENE_FN[name])(cr, t)
     cr.restore()
     flash(cr, t, 34.8, 0.3, (1, 0.2, 0.25))
     for c in CHANTS:
@@ -1104,13 +1370,13 @@ def render_brand(cr, t):
     """Official logo artwork, composited last with no texture so it stays exactly on-brand."""
     for tb in WIPES:
         d = t - tb
-        if abs(d) < 0.2 and tb < 143:
+        if abs(d) < 0.2 and tb < 143 and not STYLE.get('no_wipes'):
             brand_img(cr, 'icon', W / 2, H / 2, 300 * (1 + 0.5 * (0.2 - abs(d))), 1.0, dark=False)
     if section(t)[1] == 'outro':
         p = ease_out(clamp((t - 143.4) / 0.7))
         if p > 0.001:
             brand_img(cr, 'logo', W / 2, 470, 1150 * (0.9 + 0.1 * p), p)
-    elif not any(abs(t - w) < 0.3 for w in WIPES):
+    elif STYLE.get('no_wipes') or not any(abs(t - w) < 0.3 for w in WIPES):
         brand_bug(cr, t, 0.95 * clamp((t - 2) / 1))
 
 
@@ -1118,7 +1384,7 @@ def render_ui(cr, t):
     if section(t)[1] == 'outro' or any(abs(t - w) < 0.3 for w in WIPES): return
     index_widget(cr, t, clamp((t - 2) / 1))
     ticker_tape(cr, t)
-    caption(cr, t)
+    if not (STYLE.get('kinetic') and section(t)[1] in KINETIC): caption(cr, t)
 
 
 def fade(t):

@@ -116,7 +116,7 @@ def circle(cr, x, y, r):
 
 
 # ---------- crayon look: wobbly paths, sketchy strokes, hatched fills ----------
-BOIL = [0]  # changes ~8x/sec so lines "boil" like hand-drawn frames
+BOIL = [0, 0.0]  # [boil frame, current time]; changes ~8x/sec so lines "boil" like hand-drawn frames
 
 
 def _jit(x, y, sd, amp):
@@ -572,7 +572,8 @@ def candle(cr, x, yo, yc, yh, yl, w, up=None, a=1.0):
     c = C['green'] if up else C['red']
     stroke_line(cr, [(x, yh), (x, yl)], max(2, w * 0.12), c, a, cairo.LINE_CAP_BUTT)
     top, bot = min(yo, yc), max(yo, yc)
-    cr.rectangle(x - w / 2, top, w, max(2, bot - top)); fill(cr, c, a)
+    cr.rectangle(x - w / 2, top, w, max(2, bot - top)); fill(cr, c, a, keep=STYLE.get('kinetic') and w > 60)
+    if STYLE.get('kinetic') and w > 60: cr.set_line_width(8); rgb(cr, (0.02, 0.02, 0.02), a); cr.stroke()
 
 
 def phone(cr, x, y, s, t, content=None, a=1.0):

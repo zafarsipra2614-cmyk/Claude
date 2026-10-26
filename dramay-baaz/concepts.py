@@ -6,7 +6,7 @@ from scenes import LYRICS, LYR_END, CHANTS, DB, NO, section, mood_sign, market_m
 
 SPEC = np.load('audio/spec64.npy').astype(np.float32)
 
-CRISP = dict(fill_a=1.0, hatch_mode='none', passes=1, wob=0.0, line=1.0, wash_mix=0.0, wash_a=1.0, pastel=0.0, sat=1.0,
+CRISP = dict(no_wipes=True, fill_a=1.0, hatch_mode='none', passes=1, wob=0.0, line=1.0, wash_mix=0.0, wash_a=1.0, pastel=0.0, sat=1.0,
              fonts=dict(bungee='Bungee', anton='Anton', inter='Inter', interb='Inter', mono='JetBrains Mono'))
 
 KEY = {16.2: 'INDEX', 18.1: 'BUY!', 20.4: 'UPPER LOCK', 23.0: 'TIP', 25.5: 'AKHBAAR', 27.3: 'ALL IN', 31.1: 'RAJA',

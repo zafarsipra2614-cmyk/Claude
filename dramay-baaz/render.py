@@ -42,6 +42,9 @@ STYLES = {
                         post='riso', style=dict(fill_a=1.0, hatch_mode='none', passes=1, wob=0.6, wash_mix=0.3, wash_a=1.0, caption='riso',
                                    fonts=dict(bungee='Rubik Mono One', anton='Anton', interb='Anton', inter='Inter'))),
 }
+STYLES['MAIN'] = dict(STYLES['D_pop_art'], title='Pop-Art Comic + Kinetic Type', sub='Story in comic panels, chants and choruses as kinetic type')
+STYLES['MAIN']['style'] = dict(STYLES['D_pop_art']['style'], kinetic=True, no_wipes=True,
+                               fonts=dict(bungee='Bangers', anton='Bangers', interb='Bangers', inter='Inter', mono='Bangers'))
 RISO = np.array([[0.97, 0.95, 0.9], [1.0, 0.85, 0.12], [1.0, 0.33, 0.58], [0.0, 0.64, 0.66], [0.16, 0.2, 0.52],
                  [1.0, 0.33, 0.58 * 0.12 + 0.0], [0.0, 0.62, 0.15], [0.16, 0.2, 0.52 * 0.66], [0.12, 0.1, 0.16], [0.55, 0.12, 0.35]], np.float32)
 PICO = np.array([[0, 0, 0], [29, 43, 83], [126, 37, 83], [0, 135, 81], [171, 82, 54], [95, 87, 79], [194, 195, 199], [255, 241, 232],
@@ -136,7 +139,7 @@ def comp(dst, arr, grain):
 
 
 def draw(t):
-    lib.BOIL[0] = int(t * 8)
+    lib.BOIL[0] = int(t * 8); lib.BOIL[1] = t
     g = lib.BOIL[0] % 3
     sl = layer(scenes.render_scene, t)
     out = comp(PAPER, sl, GRAINS[g])
@@ -259,9 +262,11 @@ if __name__ == '__main__':
         board.resize((1920, 640 * len(rows) * 2 // 3), Image.LANCZOS).save(f'{OUT}/{prefix}_board.jpg', quality=85)
         sys.exit()
     if sys.argv[1:2] == ['stills']:
+        use_style('MAIN')
         for a in sys.argv[2:]:
             Image.fromarray(draw(float(a))).save(f'{OUT}/still_{float(a):07.2f}.png')
         sys.exit()
+    use_style('MAIN')
     fps = int(sys.argv[1]) if len(sys.argv) > 1 else 24
     nw = int(sys.argv[2]) if len(sys.argv) > 2 else os.cpu_count()
     total = int(scenes.DUR * fps)
