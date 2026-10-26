@@ -1136,7 +1136,7 @@ def chant_kinetic(cr, t, c):
     speed_lines(cr, t, 0.22)
     # cycle the phrase every 4 beats so long chants keep re-slamming
     bi0 = beat_index(t0 - 0.05) + 1
-    nb = max(0, beat_index(t) - bi0 + 1)
+    nb = max(0, beat_index(t) - bi0)   # whole beats elapsed since the chant's first beat
     cyc, inb = divmod(nb, 4)
     words = ['AB NO', 'DRAMAY', 'BAAZI!'] if is_no else ['DRAMAY', 'BAAZ!']
     since = [BEATS[bi0 + cyc * 4 + k] if bi0 + cyc * 4 + k < len(BEATS) else t1 for k in range(len(words))]
