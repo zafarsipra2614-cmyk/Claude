@@ -132,8 +132,8 @@ if __name__ == '__main__':
         sys.exit()
     if sys.argv[1:2] == ['clip']:
         t0, dur, fps = float(sys.argv[2]), float(sys.argv[3]), 24
-        fps = 60
-        encode(f'{OUT}/kt_clip_{t0:g}.mp4', (bytes(draw_surface(t0 + i / fps).get_data()) for i in range(int(dur * fps))), fps, (t0, dur), 20)
+        fps = int(os.environ.get('FPS', 60)); blur = not os.environ.get('NOBLUR')
+        encode(f'{OUT}/{PFX}_clip_{t0:g}.mp4', (bytes(draw_surface(t0 + i / fps, blur).get_data()) for i in range(int(dur * fps))), fps, (t0, dur), 20)
         sys.exit()
     fps = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     nw = int(sys.argv[2]) if len(sys.argv) > 2 else os.cpu_count()
