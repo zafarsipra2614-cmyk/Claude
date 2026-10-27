@@ -34,12 +34,15 @@ export type Word = {text: string; t: number; end: number};
 export type Item = {kind: 'line' | 'chant' | 'dots' | 'cta'; start: number; end: number; words: Word[]};
 
 const raw = L.items as {kind: Item['kind']; start: number; end: number; words: [string, number][]}[];
-// the closing message replaces the final instrumental dots
-const closing = raw[raw.length - 1].kind === 'dots' ? raw.pop()! : null;
-const ctaStart = closing ? closing.start : 156.3;
-const ctaBeats = BEATS.filter((b) => b >= ctaStart - 0.05);
+// the closing message replaces the final instrumental dots; it starts on the first beat after the last shout,
+// one word per half-beat: "Open your PSX trading account today, because ab NO DRAMAY BAAZI!"
+if (raw[raw.length - 1].kind === 'dots') raw.pop();
+const ctaBeats = BEATS.filter((b) => b >= 155.8);
+const half = (ctaBeats[1] - ctaBeats[0]) / 2;
+export const CTA_ACCENT_FROM = 6;   // words from "because" on are in green
 raw.push({kind: 'cta', start: ctaBeats[0], end: 159.4,
-  words: ['Open', 'your', 'PSX', 'trading', 'account', 'today'].map((w, i) => [w, ctaBeats[0] + i * 0.23] as [string, number])});
+  words: ['Open', 'your', 'PSX', 'trading', 'account', 'today,', 'because', 'ab', 'NO', 'DRAMAY', 'BAAZI!']
+    .map((w, i) => [w, ctaBeats[0] + i * half] as [string, number])});
 
 export const ITEMS: Item[] = raw.map((it) => ({
   kind: it.kind, start: it.start, end: it.end,

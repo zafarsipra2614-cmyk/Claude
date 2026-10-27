@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {continueRender, delayRender, interpolate} from 'remotion';
 import {fontsReady} from '../fonts';
-import {BEATS, GREEN, INK, ITEMS, Item, clamp, easeInOut, easeOut, hitEnv} from './data';
+import {BEATS, CTA_ACCENT_FROM, GREEN, INK, ITEMS, Item, clamp, easeInOut, easeOut, hitEnv} from './data';
 
 // Apple/Spotify-style synced lyrics: active line on an anchor, words fill as they are sung,
 // the list glides up with a slight stagger, distant lines fade and soften.
@@ -65,16 +65,16 @@ const Dots: React.FC<{it: Laid; t: number}> = ({it, t}) => {
 };
 
 const Words: React.FC<{it: Laid; t: number; active: boolean}> = ({it, t, active}) => {
-  const accent = it.kind === 'chant' || it.kind === 'cta';
-  const on = accent ? GREEN : INK;
-  const off = accent ? 'rgba(56,209,0,0.32)' : 'rgba(10,14,10,0.26)';
+  // chant lines are green; in the closing line only "because ab NO DRAMAY BAAZI!" is green
+  const isAccent = (i: number) => it.kind === 'chant' || (it.kind === 'cta' && i >= CTA_ACCENT_FROM);
   return (
     <div style={{fontFamily: 'Manrope', fontWeight: 800, fontSize: FS, lineHeight: LH, letterSpacing: -0.6, whiteSpace: 'nowrap'}}>
       {it.rows.map((row, r) => <div key={r}>{row.map((i) => { const w = it.words[i];
+        const accent = isAccent(i), on = accent ? GREEN : INK, off = accent ? 'rgba(56,209,0,0.32)' : 'rgba(10,14,10,0.26)';
         const p = clamp((t - w.t) / (w.end - w.t));
         const lift = active ? easeOut(clamp((t - w.t) / 0.25)) * (1 - 0.6 * clamp((t - w.end) / 0.4)) : 0;
         const style: React.CSSProperties = {display: 'inline-block', marginRight: '0.26em', transform: `translateY(${-3 * lift}px)`};
-        if (!active) return <span key={i} style={{...style, color: t > it.start ? on : accent ? GREEN : INK}}>{w.text}</span>;
+        if (!active) return <span key={i} style={{...style, color: on}}>{w.text}</span>;
         const edge = p * 112;
         return (
           <span key={i} style={{...style, color: 'transparent', WebkitBackgroundClip: 'text', backgroundClip: 'text',
