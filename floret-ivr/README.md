@@ -2,24 +2,24 @@
 
 | File | Use |
 |---|---|
-| `floret_ivr_8k_mono.wav` | Upload to the phone system (8 kHz, mono, 16-bit PCM, band-limited to 250–3500 Hz) |
-| `floret_ivr_review.mp3` | Full-quality copy for listening/approval |
+| `floret_ivr_<female|male>_8k_mono.wav` | Upload to the phone system (8 kHz, mono, 16-bit PCM, band-limited to 250–3500 Hz) |
+| `floret_ivr_<female|male>_review.mp3` | Full-quality copy for listening/approval |
 
-Length: about 22 s of speech, 34.6 s in total (1 s music intro, the script's pauses, and a 4 s music tail with fade-out).
+Length: about 20–22 s of speech, 32–33 s in total (1 s music intro, the script's pauses, and a 4 s music tail with fade-out).
 
-Voices (same gender, matching warm tone, 10% slower than normal):
-- English: `en-IN-NeerjaNeural` (South Asian English accent)
-- Urdu: `ur-PK-UzmaNeural` (Pakistani Urdu)
+Voices (8% slower than normal):
+- Female: `en-IN-NeerjaNeural` + `ur-PK-UzmaNeural`
+- Male: `en-IN-PrabhatNeural` + `ur-PK-AsadNeural`
 
-Pronunciation handling: "Flor-et" / "فلورِٹ" for FLOR-et; PMEX/PSX are written as separate letters with
-punctuation so each letter gets a small gap; the numbers are set off with commas for a slight stress.
+Each section is read as one natural sentence (no spliced fragments). "Flor-et" / "فلورِٹ" steers FLOR-et;
+PMEX/PSX are written as spaced letters (P M E X) so they are spelled out.
 
 Music: original soft piano and pad bed generated in code (no licensing needed), ducked under the voice.
 
 ## Rebuild
 ```bash
 pip install edge-tts numpy
-python3 make_voice.py clips/          # set TTS_CA_BUNDLE=<ca.crt> if behind a TLS proxy
-python3 build_mix.py clips/ .
+python3 make_voice.py male clips/         # set TTS_CA_BUNDLE=<ca.crt> if behind a TLS proxy
+python3 build_mix.py clips/ . male
 ```
 Edit the text in `make_voice.py` and the pauses in `build_mix.py` (`TIMELINE`).

@@ -1,4 +1,7 @@
-"""Generate the Floret Capitals IVR voice clips with edge-tts."""
+"""Generate the Floret Capitals IVR voice clips with edge-tts.
+
+Usage: python3 make_voice.py <female|male> <clips_dir>
+"""
 import asyncio, os, ssl, sys, edge_tts
 import edge_tts.communicate as _c
 
@@ -6,28 +9,27 @@ import edge_tts.communicate as _c
 if os.environ.get("TTS_CA_BUNDLE"):
     _c._SSL_CTX = ssl.create_default_context(cafile=os.environ["TTS_CA_BUNDLE"])
 
-EN = "en-IN-NeerjaNeural"
-UR = "ur-PK-UzmaNeural"
-RATE = "-10%"   # about 10% slower for phone lines
+VOICES = {
+    "female": ("en-IN-NeerjaNeural", "ur-PK-UzmaNeural"),
+    "male":   ("en-IN-PrabhatNeural", "ur-PK-AsadNeural"),
+}
+RATE = "-8%"   # a little slower for phone lines without sounding dragged
 
-# Spellings tuned for pronunciation:
-#  - "Flor-et" / "فلورِٹ" -> FLOR-et
-#  - letters spaced with commas -> P, M, E, X with a small gap
-#  - numbers set off with commas so they get a slight stress
+# Written as natural sentences so the voice keeps its normal flow.
+# Each section is one utterance (no splicing) to avoid a stitched, robotic sound.
 LINES = {
-    "01_en_greeting": (EN, "Thank you for calling Flor-et Capitals."),
-    "02_ur_greeting": (UR, "فلورِٹ کیپٹلز کو کال کرنے کا شکریہ۔"),
-    "03_en_menu1":    (EN, "Press, ONE, for P. M. E. X."),
-    "04_en_menu2":    (EN, "Press, TWO, for P. S. X."),
-    "05_ur_menu1":    (UR, "پی، ایم، ای، ایکس کے لیے، ایک، دبائیں۔"),
-    "06_ur_menu2":    (UR, "پی، ایس، ایکس کے لیے، دو، دبائیں۔"),
-    "07_en_hold":     (EN, "Please hold, while we connect you to a representative."),
-    "08_ur_hold":     (UR, "براہِ کرم انتظار فرمائیں، ہم آپ کو ہمارے نمائندے سے ملا رہے ہیں۔"),
+    "01_en_greeting": ("en", "Thank you for calling Flor-et Capitals."),
+    "02_ur_greeting": ("ur", "فلورِٹ کیپٹلز کو کال کرنے کا شکریہ۔"),
+    "03_en_menu":     ("en", "Press 1 for P M E X. Press 2 for P S X."),
+    "04_ur_menu":     ("ur", "پی ایم ای ایکس کے لیے ایک دبائیں۔ پی ایس ایکس کے لیے دو دبائیں۔"),
+    "05_en_hold":     ("en", "Please hold while we connect you to a representative."),
+    "06_ur_hold":     ("ur", "براہِ کرم انتظار فرمائیں، ہم آپ کو ہمارے نمائندے سے ملا رہے ہیں۔"),
 }
 
-async def main(out):
-    for name, (voice, text) in LINES.items():
+async def main(gender, out):
+    en, ur = VOICES[gender]
+    for name, (lang, text) in LINES.items():
+        voice = en if lang == "en" else ur
         await edge_tts.Communicate(text, voice, rate=RATE).save(f"{out}/{name}.mp3")
-        print("made", name)
 
-asyncio.run(main(sys.argv[1]))
+asyncio.run(main(sys.argv[1], sys.argv[2]))

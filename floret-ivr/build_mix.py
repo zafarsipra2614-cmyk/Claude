@@ -1,12 +1,12 @@
 """Assemble the Floret Capitals IVR greeting: voice clips + pauses + soft piano bed.
 
-Usage: python3 build_mix.py <clips_dir> <out_dir>
+Usage: python3 build_mix.py <clips_dir> <out_dir> <female|male>
 """
 import subprocess, sys, wave
 import numpy as np
 
 SR = 24000
-clips_dir, out_dir = sys.argv[1], sys.argv[2]
+clips_dir, out_dir, tag = sys.argv[1], sys.argv[2], sys.argv[3]
 
 
 def load(name):
@@ -30,10 +30,10 @@ TIMELINE = [
     gap(1.0),                       # music intro
     "01_en_greeting", gap(1.0),
     "02_ur_greeting", gap(1.5),
-    "03_en_menu1", gap(0.45), "04_en_menu2", gap(1.0),
-    "05_ur_menu1", gap(0.45), "06_ur_menu2", gap(2.0),
-    "07_en_hold", gap(1.0),
-    "08_ur_hold",
+    "03_en_menu", gap(1.0),
+    "04_ur_menu", gap(2.0),
+    "05_en_hold", gap(1.0),
+    "06_ur_hold",
 ]
 TAIL = 4.0  # music continues after last line
 
@@ -113,10 +113,15 @@ fade[:fi] = np.linspace(0, 1, fi)
 fo = int(3.0 * SR)
 fade[-fo:] = np.linspace(1, 0, fo) ** 1.5
 
-mix = voice + music * music_gain * fade
+bed = (music * music_gain * fade).astype(np.float32)
+bed = np.frombuffer(subprocess.run(
+    ["ffmpeg", "-v", "error", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-",
+     "-af", "aecho=0.8:0.7:60|113|171:0.35|0.25|0.18", "-f", "f32le", "-"],
+    input=bed.tobytes(), capture_output=True, check=True).stdout, np.float32)[:N]
+mix = voice + bed
 mix /= max(1.0, np.max(np.abs(mix)) / 0.95)
 
-master = f"{out_dir}/floret_ivr_master_24k.wav"
+master = f"{out_dir}/_master_{tag}.wav"
 with wave.open(master, "wb") as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes((mix * 32767).astype(np.int16).tobytes())
@@ -125,11 +130,12 @@ with wave.open(master, "wb") as w:
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", master,
                 "-af", "highpass=f=250,lowpass=f=3500,loudnorm=I=-18:TP=-2:LRA=11",
                 "-ar", "8000", "-ac", "1", "-c:a", "pcm_s16le",
-                f"{out_dir}/floret_ivr_8k_mono.wav"], check=True)
+                f"{out_dir}/floret_ivr_{tag}_8k_mono.wav"], check=True)
 # Review copy: full-band MP3.
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", master,
                 "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "44100",
                 "-ac", "1", "-c:a", "libmp3lame", "-b:a", "128k",
-                f"{out_dir}/floret_ivr_review.mp3"], check=True)
+                f"{out_dir}/floret_ivr_{tag}_review.mp3"], check=True)
 
-print(f"speech: {speech_sec:.1f}s  total: {N / SR:.1f}s")
+import os; os.remove(master)
+print(f"{tag} speech: {speech_sec:.1f}s  total: {N / SR:.1f}s")
