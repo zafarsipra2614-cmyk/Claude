@@ -31,18 +31,14 @@ export const bands = (frame: number): number[] =>
 export const loudness = (frame: number) => (WAVE.loud.charCodeAt(Math.min(Math.max(frame, 0), WAVE.frames - 1)) - 48) / 74;
 
 export type Word = {text: string; t: number; end: number};
-export type Item = {kind: 'line' | 'chant' | 'dots' | 'cta'; start: number; end: number; words: Word[]};
+export type Item = {kind: 'line' | 'chant' | 'dots'; start: number; end: number; words: Word[]};
 
 const raw = L.items as {kind: Item['kind']; start: number; end: number; words: [string, number][]}[];
-// the closing message replaces the final instrumental dots; it starts on the first beat after the last shout,
-// one word per half-beat: "Open your PSX trading account today, because ab NO DRAMAY BAAZI!"
-if (raw[raw.length - 1].kind === 'dots') raw.pop();
-const ctaBeats = BEATS.filter((b) => b >= 155.8);
-const half = (ctaBeats[1] - ctaBeats[0]) / 2;
-export const CTA_ACCENT_FROM = 6;   // words from "because" on are in green
-raw.push({kind: 'cta', start: ctaBeats[0], end: 159.4,
-  words: ['Open', 'your', 'PSX', 'trading', 'account', 'today,', 'because', 'ab', 'NO', 'DRAMAY', 'BAAZI!']
-    .map((w, i) => [w, ctaBeats[0] + i * half] as [string, number])});
+// the lyrics screen ends when the final beat drops (~144 s); the outro (logo build + CTA) takes over from there
+export const OUTRO_T = 144.2;
+while (raw.length && raw[raw.length - 1].start >= OUTRO_T - 0.3) raw.pop();
+const last = raw[raw.length - 1];
+if (last.kind === 'dots') last.end = Math.min(last.end, OUTRO_T - 0.45);
 
 export const ITEMS: Item[] = raw.map((it) => ({
   kind: it.kind, start: it.start, end: it.end,

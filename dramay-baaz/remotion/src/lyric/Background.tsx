@@ -13,12 +13,12 @@ const BLOBS = [
 const Q = 4; // render scale divisor
 const g = (rgb: string, a: number) => `rgba(${rgb},${a.toFixed(3)})`;
 
-export const Background: React.FC<{t: number; player: number; loud: number; pulse: number}> = ({t, player, loud, pulse}) => {
+export const Background: React.FC<{t: number; player: number; loud: number; pulse: number; fade?: number}> = ({t, player, loud, pulse, fade = 1}) => {
   const layers = BLOBS.map((b) => {
     const hx = b.intro[0] + (b.player[0] - b.intro[0]) * player, hy = b.intro[1] + (b.player[1] - b.intro[1]) * player;
     const x = hx + noise2D(b.seed, t * 0.06, 0) * 280, y = hy + noise2D(b.seed, 0, t * 0.06) * 210;
     const R = b.r * (1 + 0.05 * pulse + 0.07 * loud + 0.06 * noise2D(b.seed + 'r', t * 0.1, 3));
-    const a = b.a * (0.85 + 0.25 * loud);
+    const a = b.a * (0.85 + 0.25 * loud) * fade;
     return `radial-gradient(circle ${(R / Q).toFixed(1)}px at ${(x / Q).toFixed(1)}px ${(y / Q).toFixed(1)}px, ${g(b.rgb, a)} 0%, ${g(b.rgb, a * 0.72)} 30%, ${g(b.rgb, a * 0.38)} 56%, ${g(b.rgb, a * 0.12)} 80%, ${g(b.rgb, 0)} 100%)`;
   });
   return (

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {continueRender, delayRender, interpolate} from 'remotion';
 import {fontsReady} from '../fonts';
-import {BEATS, CTA_ACCENT_FROM, GREEN, INK, ITEMS, Item, clamp, easeInOut, easeOut, hitEnv} from './data';
+import {BEATS, GREEN, INK, ITEMS, Item, clamp, easeInOut, easeOut, hitEnv} from './data';
 
 // Apple/Spotify-style synced lyrics: active line on an anchor, words fill as they are sung,
 // the list glides up with a slight stagger, distant lines fade and soften.
@@ -65,8 +65,7 @@ const Dots: React.FC<{it: Laid; t: number}> = ({it, t}) => {
 };
 
 const Words: React.FC<{it: Laid; t: number; active: boolean}> = ({it, t, active}) => {
-  // chant lines are green; in the closing line only "because ab NO DRAMAY BAAZI!" is green
-  const isAccent = (i: number) => it.kind === 'chant' || (it.kind === 'cta' && i >= CTA_ACCENT_FROM);
+  const isAccent = (_i: number) => it.kind === 'chant';   // shouted lines are green
   return (
     <div style={{fontFamily: 'Manrope', fontWeight: 800, fontSize: FS, lineHeight: LH, letterSpacing: -0.6, whiteSpace: 'nowrap'}}>
       {it.rows.map((row, r) => <div key={r}>{row.map((i) => { const w = it.words[i];
