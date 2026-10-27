@@ -1,12 +1,14 @@
 import {continueRender, delayRender, staticFile} from 'remotion';
 
-// Brand font (Manrope) loaded from public/fonts so every render uses it, not a system fallback.
-const faces: [string, string][] = [['500', 'ManropeM.ttf'], ['700', 'ManropeB.ttf'], ['800', 'ManropeXB.ttf']];
-const extra = [new FontFace('Plex', `url(${staticFile('fonts/IBMPlexMono-Bold.ttf')})`, {weight: '700'})];
-extra.forEach((f) => document.fonts.add(f));
-const handle = delayRender('Loading Manrope');
-Promise.all(faces.map(([weight, file]) => {
-  const f = new FontFace('Manrope', `url(${staticFile('fonts/' + file)})`, {weight});
+// Brand fonts loaded from public/fonts so every render uses them, not a system fallback.
+const faces: [string, string, string][] = [
+  ['Manrope', '500', 'ManropeM.ttf'], ['Manrope', '700', 'ManropeB.ttf'], ['Manrope', '800', 'ManropeXB.ttf'],
+  ['Plex', '700', 'IBMPlexMono-Bold.ttf'],
+];
+const handle = delayRender('Loading fonts');
+export const fontsReady: Promise<unknown> = Promise.all(faces.map(([family, weight, file]) => {
+  const f = new FontFace(family, `url(${staticFile('fonts/' + file)})`, {weight});
   document.fonts.add(f);
   return f.load();
-}).concat(extra.map((f) => f.load()))).then(() => continueRender(handle));
+}));
+fontsReady.then(() => continueRender(handle));
