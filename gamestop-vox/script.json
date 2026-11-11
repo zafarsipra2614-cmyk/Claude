@@ -1,0 +1,16 @@
+{
+  "topic": "The GameStop short squeeze, January 2021",
+  "beats": [
+    { "id": 1, "narration": "Professional investors had sold more shares of one company than were actually available to trade." },
+    { "id": 2, "narration": "The company was GameStop, a mall video game store that most of Wall Street assumed was dying." },
+    { "id": 3, "narration": "Hedge funds borrowed its shares and sold them, planning to buy them back later, for less." },
+    { "id": 4, "narration": "By January, shares sold short had passed a hundred and forty percent of the available float." },
+    { "id": 5, "narration": "On a Reddit forum called WallStreetBets, ordinary traders did the math." },
+    { "id": 6, "narration": "If they kept buying, the short sellers would be forced to buy too, at any price." },
+    { "id": 7, "narration": "So they bought. Under twenty dollars a share in early January. Three hundred and forty-seven by the twenty-seventh." },
+    { "id": 8, "narration": "Melvin Capital, one of the biggest short sellers, lost more than half its money that month." },
+    { "id": 9, "narration": "The next morning, Robinhood and other brokers stopped letting customers buy." },
+    { "id": 10, "narration": "The price crashed. Within weeks, Congress was holding hearings." },
+    { "id": 11, "narration": "Sell more shares than anyone can buy back, and sooner or later, someone asks for them." }
+  ]
+}

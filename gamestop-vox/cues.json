@@ -1,0 +1,66 @@
+{
+  "scenes": [
+    { "name": "hook", "beats": [1] },
+    { "name": "store", "beats": [2] },
+    { "name": "mechanism", "beats": [3, 4] },
+    { "name": "forum", "beats": [5, 6] },
+    { "name": "squeeze", "beats": [7] },
+    { "name": "melvin", "beats": [8] },
+    { "name": "halt", "beats": [9, 10] },
+    { "name": "closer", "beats": [11], "tail": 45 }
+  ],
+  "cues": {
+    "s1.stackA": { "beat": 1, "word": "shares", "offset": -14 },
+    "s1.stackB": { "beat": 1, "word": "more", "offset": -8 },
+    "s1.labelA": { "beat": 1, "word": "available", "offset": -4 },
+    "s1.question": { "beat": 1, "word": "trade", "offset": 6 },
+
+    "s2.store": { "beat": 2, "start": true },
+    "s2.sign": { "beat": 2, "word": "GameStop", "offset": -4 },
+    "s2.caption": { "beat": 2, "word": "Wall Street", "offset": -10 },
+    "s2.stamp": { "beat": 2, "word": "dying" },
+
+    "s3.borrow": { "beat": 3, "word": "borrowed", "offset": -6 },
+    "s3.sell": { "beat": 3, "word": "sold", "offset": -4 },
+    "s3.buyback": { "beat": 3, "word": "buy", "offset": -4 },
+    "s3.less": { "beat": 3, "word": "less" },
+    "s3.cardsOut": { "beat": 4, "start": true, "offset": -6 },
+    "s3.barFloat": { "beat": 4, "word": "January", "offset": 4 },
+    "s3.barShort": { "beat": 4, "word": "shares" },
+    "s3.countEnd": { "beat": 4, "word": "percent", "offset": 6 },
+    "s3.overflow": { "beat": 4, "word": "float" },
+
+    "s4.card": { "beat": 5, "word": "Reddit", "offset": -10 },
+    "s4.name": { "beat": 5, "word": "WallStreetBets", "offset": -4 },
+    "s4.math": { "beat": 5, "word": "math", "offset": -4 },
+    "s4.n1": { "beat": 6, "word": "buying", "offset": -6 },
+    "s4.n2": { "beat": 6, "word": "short", "offset": -4 },
+    "s4.n3": { "beat": 6, "word": "forced", "offset": -2 },
+    "s4.loop": { "beat": 6, "word": "any", "offset": -6 },
+
+    "s5.axis": { "beat": 7, "start": true },
+    "s5.low": { "beat": 7, "word": "twenty", "offset": -4 },
+    "s5.drawStart": { "beat": 7, "word": "January", "offset": 4 },
+    "s5.drawEnd": { "beat": 7, "word": "forty-seven", "offset": 10 },
+    "s5.peak": { "beat": 7, "word": "twenty-seventh", "offset": -4 },
+
+    "s6.ledger": { "beat": 8, "start": true },
+    "s6.name": { "beat": 8, "word": "Melvin" },
+    "s6.drop": { "beat": 8, "word": "lost", "offset": -2 },
+    "s6.stamp": { "beat": 8, "word": "half" },
+
+    "s7.phone": { "beat": 9, "start": true },
+    "s7.date": { "beat": 9, "word": "morning", "offset": -4 },
+    "s7.broker": { "beat": 9, "word": "Robinhood" },
+    "s7.disable": { "beat": 9, "word": "stopped" },
+    "s7.crash": { "beat": 10, "word": "crashed", "offset": -6 },
+    "s7.hearing": { "beat": 10, "word": "Congress", "offset": -2 },
+
+    "s8.line1Start": { "beat": 11, "word": "Sell" },
+    "s8.line1End": { "beat": 11, "word": "back", "offset": 8 },
+    "s8.line2Start": { "beat": 11, "word": "someone", "offset": -2 },
+    "s8.line2End": { "beat": 11, "word": "them", "offset": 10 },
+    "s8.reveal": { "beat": 11, "word": "sooner" },
+    "s8.vignette": { "beat": 11, "word": "them" }
+  }
+}
