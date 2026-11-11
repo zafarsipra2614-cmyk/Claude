@@ -14,13 +14,12 @@
     "@fontsource/pt-serif": "^5.3.0",
     "@fontsource/special-elite": "^5.3.0",
     "@remotion/cli": "4.0.397",
-    "@remotion/fonts": "^4.0.397",
     "@remotion/google-fonts": "4.0.397",
+    "@remotion/transitions": "4.0.397",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.397",
-    "zod": "3.22.3",
-    "@remotion/transitions": "4.0.397"
+    "zod": "3.22.3"
   },
   "devDependencies": {
     "@types/react": "19.2.7",

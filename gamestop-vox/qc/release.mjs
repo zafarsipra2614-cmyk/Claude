@@ -14,14 +14,17 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..")
 const out = (p) => path.join(root, "out", p);
 const run = (cmd, args, label) => {
   console.log(`\n▸ ${label}`);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
+  // long renders print far more than spawnSync's 1 MB default buffer, which kills the child
+  const r = spawnSync(cmd, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", maxBuffer: 1 << 30 });
   const text = `${r.stdout}${r.stderr}`
     .split("\n")
     .filter((l) => l.trim() && !/memory|docker|lower amount|\[Tab|Rendered|Encoded|Bundl/i.test(l))
     .join("\n");
   if (text) console.log(text);
   if (r.status !== 0) {
-    console.error(`✗ ${label} failed — deliverable not updated`);
+    // on failure, show the raw tail: the filter above must never hide the cause
+    console.error(`${r.stdout}${r.stderr}`.split("\n").filter((l) => !/Rendered|Encoded|Bundling/.test(l)).slice(-40).join("\n"));
+    console.error(`✗ ${label} failed (exit ${r.status}${r.signal ? `, signal ${r.signal}` : ""}) — deliverable not updated`);
     process.exit(1);
   }
 };
