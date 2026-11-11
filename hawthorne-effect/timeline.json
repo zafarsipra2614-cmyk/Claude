@@ -1,0 +1,109 @@
+{
+ "total": 58.8,
+ "scenes": [
+  {
+   "id": "intro",
+   "start": 0.0,
+   "end": 7.233,
+   "lines": [
+    {
+     "text": "Do you work harder when someone is watching?",
+     "start": 0.35,
+     "end": 3.9
+    },
+    {
+     "text": "That's the Hawthorne effect.",
+     "start": 4.12,
+     "end": 6.67
+    }
+   ]
+  },
+  {
+   "id": "what",
+   "start": 7.233,
+   "end": 13.133,
+   "lines": [
+    {
+     "text": "People change their behavior when they know they're being observed.",
+     "start": 7.583,
+     "end": 12.573
+    }
+   ]
+  },
+  {
+   "id": "origin",
+   "start": 13.133,
+   "end": 25.533,
+   "lines": [
+    {
+     "text": "In the 1920s, researchers studied workers at the Hawthorne Works factory near Chicago.",
+     "start": 13.483,
+     "end": 19.653
+    },
+    {
+     "text": "Brighter lights? Output went up. Dimmer lights? Output still went up.",
+     "start": 19.873,
+     "end": 24.983
+    }
+   ]
+  },
+  {
+   "id": "explain",
+   "start": 25.533,
+   "end": 36.067,
+   "lines": [
+    {
+     "text": "The story became: workers responded to the attention, not the lights.",
+     "start": 25.883,
+     "end": 30.993
+    },
+    {
+     "text": "Henry Landsberger named it the Hawthorne effect in 1958.",
+     "start": 31.213,
+     "end": 35.513
+    }
+   ]
+  },
+  {
+   "id": "matters",
+   "start": 36.067,
+   "end": 41.133,
+   "lines": [
+    {
+     "text": "It can skew studies, surveys, and performance reviews.",
+     "start": 36.417,
+     "end": 40.587
+    }
+   ]
+  },
+  {
+   "id": "catch",
+   "start": 41.133,
+   "end": 53.167,
+   "lines": [
+    {
+     "text": "But a 2011 re-analysis of the lighting data found the famous pattern wasn't really there.",
+     "start": 41.483,
+     "end": 47.843
+    },
+    {
+     "text": "The effect exists, but it's usually smaller than the legend.",
+     "start": 48.063,
+     "end": 52.613
+    }
+   ]
+  },
+  {
+   "id": "takeaway",
+   "start": 53.167,
+   "end": 58.8,
+   "lines": [
+    {
+     "text": "Takeaway: watching people can change what you see.",
+     "start": 53.517,
+     "end": 57.437
+    }
+   ]
+  }
+ ]
+}

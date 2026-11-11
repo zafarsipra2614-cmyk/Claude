@@ -1,0 +1,20 @@
+[
+  {"id": "intro", "lines": [
+    {"t": "Do you work harder when someone is watching?"},
+    {"t": "That's the Hawthorne effect."}]},
+  {"id": "what", "lines": [
+    {"t": "People change their behavior when they know they're being observed."}]},
+  {"id": "origin", "lines": [
+    {"t": "In the 1920s, researchers studied workers at the Hawthorne Works factory near Chicago."},
+    {"t": "Brighter lights? Output went up. Dimmer lights? Output still went up."}]},
+  {"id": "explain", "lines": [
+    {"t": "The story became: workers responded to the attention, not the lights."},
+    {"t": "Henry Landsberger named it the Hawthorne effect in 1958."}]},
+  {"id": "matters", "lines": [
+    {"t": "It can skew studies, surveys, and performance reviews."}]},
+  {"id": "catch", "lines": [
+    {"t": "But a 2011 re-analysis of the lighting data found the famous pattern wasn't really there."},
+    {"t": "The effect exists, but it's usually smaller than the legend."}]},
+  {"id": "takeaway", "lines": [
+    {"t": "Takeaway: watching people can change what you see."}]}
+]
