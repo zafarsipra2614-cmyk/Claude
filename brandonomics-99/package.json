@@ -1,0 +1,30 @@
+{
+  "name": "brandonomics-99",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "remotion studio",
+    "audit": "node qc/fitcheck.mjs",
+    "release": "node qc/release.mjs"
+  },
+  "dependencies": {
+    "@fontsource/archivo-black": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/pt-serif": "^5.3.0",
+    "@fontsource/special-elite": "^5.3.0",
+    "@remotion/cli": "4.0.397",
+    "@remotion/fonts": "^4.0.397",
+    "@remotion/google-fonts": "4.0.397",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.397",
+    "zod": "3.22.3",
+    "@remotion/transitions": "4.0.397"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "prettier": "3.6.0",
+    "typescript": "5.9.3"
+  }
+}

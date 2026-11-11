@@ -5,8 +5,8 @@
 - **No footer of any kind.** No dark desk band (the skill's `DeskEdge`) and no
   pale paper strip (`PaperBand`) across the bottom. Compose every scene on the
   full 16:9 frame (1920×1080) and put labels next to what they label.
-- **Never push a video that hasn't passed the audit.** For `gamestop-vox`, ship
-  only through `npm run release`, which:
+- **Never push a video that hasn't passed the audit.** For each video project
+  (`gamestop-vox`, `brandonomics-99`), ship only through `npm run release`, which:
   1. runs the layout audit (`npm run audit`, `qc/fitcheck.mjs`) on a settled
      frame after every cue plus each scene's end, failing on
      - CONTAIN: text past its container's padding, or anything outside the frame
@@ -15,6 +15,11 @@
        elements such as stamps may sit on other boxes, and still never on text);
   2. renders, then pulls every audited frame back out of the MP4 and compares
      it with the audited still; the deliverable is replaced only if all match.
-  Still look at `out/qc/sheet.png` for anything the rules can't judge.
+  Still look at a contact sheet of every scene for anything the rules can't
+  judge (wrong numbers, awkward spacing, things that merely touch).
 - New containers get `data-fit="name"`; text laid over a separate card gets
-  `data-inside="id"` with the card tagged `data-box="id"`.
+  `data-inside="id"` with the card tagged `data-box="id"`; deliberate marks on
+  text (strike-throughs, circles) get `data-mark`.
+- When working from a client's voiceover, time everything from word-level
+  timestamps of the actual recording, and apply any requested audio edits to
+  the recording itself (scripted, losslessly) before re-transcribing.

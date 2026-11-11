@@ -1,0 +1,726 @@
+{
+ "fps": 30,
+ "transition": 14,
+ "tail": 75,
+ "scenes": [
+  {
+   "name": "hook",
+   "at": "10"
+  },
+  {
+   "name": "brain",
+   "at": "you know theyre"
+  },
+  {
+   "name": "stakes",
+   "at": "that one cent"
+  },
+  {
+   "name": "why99",
+   "at": "so why does"
+  },
+  {
+   "name": "ch1",
+   "at": "chapter 1"
+  },
+  {
+   "name": "read",
+   "at": "heres what happens"
+  },
+  {
+   "name": "impatient",
+   "at": "and your brain is impatient"
+  },
+  {
+   "name": "grabs",
+   "at": "so when you see"
+  },
+  {
+   "name": "study1",
+   "at": "researchers call this"
+  },
+  {
+   "name": "firstdigit",
+   "at": "they found that a price"
+  },
+  {
+   "name": "numberline",
+   "at": "your brain files"
+  },
+  {
+   "name": "strange",
+   "at": "and heres the strange"
+  },
+  {
+   "name": "ch2",
+   "at": "chapter 2"
+  },
+  {
+   "name": "catalog",
+   "at": "first a clothing catalog"
+  },
+  {
+   "name": "dresstest",
+   "at": "at 34 it sold"
+  },
+  {
+   "name": "newitems",
+   "at": "so the extra 5"
+  },
+  {
+   "name": "cars",
+   "at": "second used cars"
+  },
+  {
+   "name": "odometer",
+   "at": "cars with 79"
+  },
+  {
+   "name": "cliff",
+   "at": "but compared to cars"
+  },
+  {
+   "name": "auction",
+   "at": "and sellers noticed"
+  },
+  {
+   "name": "ch3",
+   "at": "chapter three"
+  },
+  {
+   "name": "origin",
+   "at": "the internet loves"
+  },
+  {
+   "name": "register",
+   "at": "if something costs"
+  },
+  {
+   "name": "unproven",
+   "at": "its a great story"
+  },
+  {
+   "name": "twenties",
+   "at": "what we do know"
+  },
+  {
+   "name": "everywhere",
+   "at": "studies have found"
+  },
+  {
+   "name": "ch4",
+   "at": "chapter four"
+  },
+  {
+   "name": "luxury",
+   "at": "a designer handbag"
+  },
+  {
+   "name": "champagne",
+   "at": "in 2015"
+  },
+  {
+   "name": "hearthead",
+   "at": "round numbers are"
+  },
+  {
+   "name": "trick",
+   "at": "and that reveals"
+  },
+  {
+   "name": "message",
+   "at": "so the nine isnt"
+  },
+  {
+   "name": "twist",
+   "at": "and heres the twist"
+  },
+  {
+   "name": "costume",
+   "at": "the nine isnt a discount"
+  },
+  {
+   "name": "challenge",
+   "at": "so heres a challenge"
+  },
+  {
+   "name": "comments",
+   "at": "whats the sneakiest"
+  }
+ ],
+ "cues": {
+  "hook.a": {
+   "at": "10",
+   "off": 2
+  },
+  "hook.b": {
+   "at": "9 99",
+   "off": -4
+  },
+  "hook.gap": {
+   "at": "one cent apart",
+   "off": -2
+  },
+  "brain.same": {
+   "at": "same price",
+   "off": -4
+  },
+  "brain.tilt": {
+   "at": "refuses",
+   "off": -4
+  },
+  "brain.label": {
+   "at": "them the same",
+   "off": -2
+  },
+  "stakes.coin": {
+   "at": "one cent",
+   "off": -6
+  },
+  "stakes.title": {
+   "at": "changes",
+   "off": -4
+  },
+  "stakes.car": {
+   "at": "used cars",
+   "off": -6
+  },
+  "stakes.dress": {
+   "at": "dresses",
+   "off": -6
+  },
+  "stakes.bag": {
+   "at": "luxury",
+   "off": -6
+  },
+  "why99.tags": {
+   "at": "everything",
+   "off": -10
+  },
+  "why99.q": {
+   "at": "saving you money",
+   "off": -8
+  },
+  "ch1.num": {
+   "at": "chapter 1"
+  },
+  "ch1.title": {
+   "at": "the left digit",
+   "off": -6
+  },
+  "read.kicker": {
+   "at": "heres what"
+  },
+  "read.price": {
+   "at": "look at a price",
+   "off": -6
+  },
+  "read.sweep": {
+   "at": "left to right",
+   "off": -4
+  },
+  "impatient.kicker": {
+   "at": "impatient",
+   "off": -6
+  },
+  "impatient.circle": {
+   "at": "first digit"
+  },
+  "impatient.fade": {
+   "at": "before it has",
+   "off": -2
+  },
+  "grabs.lift": {
+   "at": "the nine"
+  },
+  "grabs.line": {
+   "at": "nine something",
+   "off": -6
+  },
+  "grabs.strike": {
+   "at": "not ten",
+   "off": 4
+  },
+  "study1.title": {
+   "at": "left digit effect",
+   "off": -6
+  },
+  "study1.card": {
+   "at": "in 2005",
+   "off": -6
+  },
+  "study1.names": {
+   "at": "thomas",
+   "off": -8
+  },
+  "study1.five": {
+   "at": "five experiments",
+   "off": -4
+  },
+  "firstdigit.h1": {
+   "at": "they found"
+  },
+  "firstdigit.h2": {
+   "at": "but mostly",
+   "off": -4
+  },
+  "firstdigit.r1": {
+   "at": "2 99 versus",
+   "off": -8
+  },
+  "firstdigit.g1": {
+   "at": "big difference",
+   "off": -4
+  },
+  "firstdigit.r2": {
+   "at": "2 89",
+   "off": -8
+  },
+  "firstdigit.g2": {
+   "at": "barely",
+   "off": -4
+  },
+  "numberline.real": {
+   "at": "9 99",
+   "off": -4
+  },
+  "numberline.felt": {
+   "at": "closer",
+   "off": -4
+  },
+  "numberline.cent": {
+   "at": "single cent",
+   "off": -4
+  },
+  "strange.kicker": {
+   "at": "isnt just",
+   "off": -6
+  },
+  "strange.cards": {
+   "at": "the same shortcut",
+   "off": -6
+  },
+  "strange.hl": {
+   "at": "number you read",
+   "off": -6
+  },
+  "ch2.num": {
+   "at": "chapter 2"
+  },
+  "ch2.title": {
+   "at": "the proof",
+   "off": -4
+  },
+  "ch2.q": {
+   "at": "does this",
+   "off": -4
+  },
+  "ch2.folders": {
+   "at": "two famous",
+   "off": -6
+  },
+  "catalog.page": {
+   "at": "clothing catalog",
+   "off": -10
+  },
+  "catalog.names": {
+   "at": "eric",
+   "off": -6
+  },
+  "catalog.dress": {
+   "at": "single dress",
+   "off": -6
+  },
+  "dresstest.tag": {
+   "at": "at 34",
+   "off": -6
+  },
+  "dresstest.bar34": {
+   "at": "sold at a normal",
+   "off": -4
+  },
+  "dresstest.p39": {
+   "at": "to 39",
+   "off": -2
+  },
+  "dresstest.ghost": {
+   "at": "fewer sales",
+   "off": -6
+  },
+  "dresstest.jump": {
+   "at": "demand jumped",
+   "off": -2
+  },
+  "dresstest.third": {
+   "at": "a third",
+   "off": -4
+  },
+  "dresstest.p44": {
+   "at": "tried 44",
+   "off": -2
+  },
+  "dresstest.bar44": {
+   "at": "ended up",
+   "off": -6
+  },
+  "newitems.five": {
+   "at": "extra 5",
+   "off": -4
+  },
+  "newitems.circle": {
+   "at": "the nine at",
+   "off": -2
+  },
+  "newitems.new": {
+   "at": "new items",
+   "off": -8
+  },
+  "newitems.compare": {
+   "at": "no price",
+   "off": -6
+  },
+  "cars.car": {
+   "at": "used cars",
+   "off": -8
+  },
+  "cars.names": {
+   "at": "economists",
+   "off": -6
+  },
+  "cars.count": {
+   "at": "22",
+   "off": -10
+  },
+  "cars.countEnd": {
+   "at": "million",
+   "off": 12
+  },
+  "odometer.left": {
+   "at": "79",
+   "off": -10
+  },
+  "odometer.more": {
+   "at": "210",
+   "off": -6
+  },
+  "odometer.right": {
+   "at": "than cars",
+   "off": -6
+  },
+  "odometer.cross": {
+   "at": "crossed"
+  },
+  "cliff.ten": {
+   "at": "only about",
+   "off": -4
+  },
+  "cliff.cliff": {
+   "at": "same car",
+   "off": -6
+  },
+  "cliff.seven": {
+   "at": "seven",
+   "off": -6
+  },
+  "cliff.eight": {
+   "at": "eight",
+   "off": -6
+  },
+  "auction.bars": {
+   "at": "rush",
+   "off": -6
+  },
+  "auction.spikes": {
+   "at": "just before",
+   "off": -4
+  },
+  "auction.marks": {
+   "at": "each 10",
+   "off": -4
+  },
+  "auction.wins": {
+   "at": "left digit still wins",
+   "off": -6
+  },
+  "auction.stamp": {
+   "at": "ordinary buyers",
+   "off": -4
+  },
+  "ch3.num": {
+   "at": "chapter three"
+  },
+  "ch3.title": {
+   "at": "where did",
+   "off": -6
+  },
+  "origin.card": {
+   "at": "neat origin",
+   "off": -6
+  },
+  "origin.reg": {
+   "at": "shop owners",
+   "off": -10
+  },
+  "origin.type": {
+   "at": "shop owners"
+  },
+  "origin.typeEnd": {
+   "at": "stealing",
+   "word": "end"
+  },
+  "origin.year": {
+   "at": "1800s",
+   "off": -4
+  },
+  "register.t1": {
+   "at": "exactly 1",
+   "off": -6
+  },
+  "register.slip": {
+   "at": "slip",
+   "off": -6
+  },
+  "register.pocket": {
+   "at": "pocket"
+  },
+  "register.t2": {
+   "at": "99 cents",
+   "off": -6
+  },
+  "register.open": {
+   "at": "open the register",
+   "off": -2
+  },
+  "register.coin": {
+   "at": "change",
+   "off": -4
+  },
+  "register.receipt": {
+   "at": "records",
+   "off": -4
+  },
+  "unproven.stamp": {
+   "at": "proven",
+   "off": -6
+  },
+  "twenties.line": {
+   "at": "these prices",
+   "off": -6
+  },
+  "twenties.y1920": {
+   "at": "1920s",
+   "off": -4
+  },
+  "twenties.t95": {
+   "at": "in 95",
+   "off": -4
+  },
+  "twenties.t99": {
+   "at": "not 99",
+   "off": -4
+  },
+  "twenties.stuck": {
+   "at": "it stuck",
+   "off": -4
+  },
+  "everywhere.stat": {
+   "at": "60",
+   "off": -8
+  },
+  "everywhere.bar": {
+   "at": "of prices",
+   "off": -6
+  },
+  "everywhere.stores": {
+   "at": "every store",
+   "off": -6
+  },
+  "everywhere.odd": {
+   "at": "only one",
+   "off": -4
+  },
+  "everywhere.full": {
+   "at": "full 10",
+   "off": -4
+  },
+  "ch4.num": {
+   "at": "chapter four"
+  },
+  "ch4.title": {
+   "at": "four",
+   "off": 8
+  },
+  "ch4.no": {
+   "at": "no nines",
+   "off": -4
+  },
+  "luxury.bag": {
+   "at": "designer",
+   "off": -6
+  },
+  "luxury.t1": {
+   "at": "2 000",
+   "off": -4
+  },
+  "luxury.t2": {
+   "at": "1 999",
+   "off": -4
+  },
+  "luxury.strike": {
+   "at": "1 999",
+   "word": "end"
+  },
+  "luxury.purpose": {
+   "at": "on purpose",
+   "off": -4
+  },
+  "champagne.card": {
+   "at": "researchers",
+   "off": -6
+  },
+  "champagne.head": {
+   "at": "round prices",
+   "off": -4
+  },
+  "champagne.out": {
+   "at": "people were",
+   "off": -10
+  },
+  "champagne.bottle": {
+   "at": "champagne",
+   "off": -10
+  },
+  "champagne.t40": {
+   "at": "exactly 40",
+   "off": -4
+  },
+  "champagne.t3972": {
+   "at": "39 72",
+   "off": -4
+  },
+  "champagne.win1": {
+   "at": "39 72",
+   "off": 8,
+   "word": "end"
+  },
+  "champagne.calc": {
+   "at": "calculator",
+   "off": -8
+  },
+  "champagne.win2": {
+   "at": "messy price",
+   "off": -2
+  },
+  "hearthead.heart": {
+   "at": "heart",
+   "off": -4
+  },
+  "hearthead.right": {
+   "at": "odd numbers",
+   "off": -6
+  },
+  "hearthead.head": {
+   "at": "head",
+   "off": -4
+  },
+  "trick.kicker": {
+   "at": "real trick",
+   "off": -6
+  },
+  "trick.card": {
+   "at": "2003",
+   "off": -6
+  },
+  "trick.reg": {
+   "at": "regular",
+   "off": -6
+  },
+  "trick.sale": {
+   "at": "99 endings",
+   "off": -6
+  },
+  "trick.badge": {
+   "at": "discounts",
+   "off": -4
+  },
+  "message.label": {
+   "at": "message",
+   "off": -4
+  },
+  "message.bubble": {
+   "at": "this is",
+   "off": -4
+  },
+  "message.bubbleEnd": {
+   "at": "bargain",
+   "word": "end"
+  },
+  "message.q": {
+   "at": "whether",
+   "off": -2
+  },
+  "twist.kicker": {
+   "at": "twist",
+   "off": -6
+  },
+  "twist.card": {
+   "at": "2019",
+   "off": -6
+  },
+  "twist.bars": {
+   "at": "prices ending",
+   "off": -6
+  },
+  "twist.higher": {
+   "at": "higher",
+   "off": -4
+  },
+  "twist.not": {
+   "at": "not lower",
+   "off": -4
+  },
+  "costume.disc": {
+   "at": "discount",
+   "off": -4
+  },
+  "costume.strike": {
+   "at": "discount",
+   "word": "end"
+  },
+  "costume.cost": {
+   "at": "costume",
+   "off": -6
+  },
+  "challenge.kicker": {
+   "at": "challenge",
+   "off": -6
+  },
+  "challenge.shelf": {
+   "at": "next time",
+   "off": -6
+  },
+  "challenge.count": {
+   "at": "count how many",
+   "off": -2
+  },
+  "challenge.deal": {
+   "at": "actually a deal",
+   "off": -4
+  },
+  "comments.type": {
+   "at": "whats the"
+  },
+  "comments.typeEnd": {
+   "at": "for",
+   "word": "end"
+  },
+  "comments.cta": {
+   "at": "comments",
+   "off": -4
+  },
+  "comments.end": {
+   "at": "see you",
+   "off": -6
+  }
+ }
+}
