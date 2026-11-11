@@ -163,6 +163,7 @@ export const Stamp: React.FC<{
   });
   return (
     <div
+      data-fit={`stamp ${title}`}
       style={{
         position: "absolute",
         left: 960 + x,

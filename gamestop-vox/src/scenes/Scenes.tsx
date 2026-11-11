@@ -1,18 +1,19 @@
 import React from "react";
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig, spring } from "remotion";
 import { C, DROP, Grain, Paper } from "../shared/system";
-import { ARIAL, DeskEdge, PaperBand, Stamp, Strike, Typewriter, tornClip } from "../shared/pieces";
+import { ARIAL, PaperBand, Stamp, Strike, Typewriter, tornClip } from "../shared/pieces";
 import { PLAYFAIR, PT_SERIF, TYPEWRITER } from "../shared/fonts";
 import { CUE } from "../shared/timing";
-import { Kicker, Label, Pt, Rise, along, clamp, pathOf, ramp } from "./kit";
+import { FitCheck, Kicker, Label, Pt, Rise, along, clamp, pathOf, ramp } from "./kit";
 
 const BG = "background.jpg";
 
 const Frame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <AbsoluteFill style={{ backgroundColor: C.paper, overflow: "hidden" }}>
+  <AbsoluteFill data-frame style={{ backgroundColor: C.paper, overflow: "hidden" }}>
     <Paper asset={BG} />
     {children}
     <Grain />
+    <FitCheck />
   </AbsoluteFill>
 );
 
@@ -23,6 +24,7 @@ const Frame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const Certificate: React.FC<{ excess?: boolean; seed: number }> = ({ excess, seed }) => (
   <div
+    data-fit="certificate"
     style={{
       width: "100%",
       height: "100%",
@@ -112,6 +114,49 @@ const GameCases: React.FC<{ seed: number }> = ({ seed }) => {
   );
 };
 
+const ReasonIcon: React.FC<{ kind: string }> = ({ kind }) => (
+  <svg width={76} height={76} viewBox="0 0 76 76">
+    {kind === "download" ? (
+      <g stroke={C.ink} strokeWidth={7} fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 38 8 L 38 44 M 22 30 L 38 46 L 54 30" />
+        <path d="M 10 50 L 10 66 L 66 66 L 66 50" />
+      </g>
+    ) : kind === "mall" ? (
+      <g>
+        <path d="M 6 66 L 6 30 L 38 10 L 70 30 L 70 66 Z" fill={C.ink} />
+        <rect x={30} y={42} width={16} height={24} fill={C.card} />
+        <path d="M 52 40 L 52 60 M 45 53 L 52 60 L 59 53" stroke={C.red} strokeWidth={6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    ) : (
+      <g stroke={C.red} strokeWidth={7} fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 8 14 L 30 38 L 44 28 L 68 60" />
+        <path d="M 50 60 L 68 60 L 68 42" />
+      </g>
+    )}
+  </svg>
+);
+
+/** One of the reasons the market had written the company off. */
+const ReasonCard: React.FC<{ start: number; top: number; icon: string; title: [string, string]; sub: string; figure?: string }> = ({ start, top, icon, title, sub, figure }) => (
+  <Rise start={start} dur={26} dist={240} left={80} top={top} width={420} height={176} rotate={[-1, 0.8, -0.6][Math.round(top / 200) % 3]} z={14}>
+    <div data-fit="reason card" style={{ position: "absolute", inset: 0, background: C.card, padding: "24px 26px", boxSizing: "border-box", display: "flex", gap: 22, alignItems: "center", overflow: "hidden" }}>
+      <ReasonIcon kind={icon} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: ARIAL, fontSize: 28, lineHeight: 1.08, color: C.ink, whiteSpace: "nowrap" }}>
+          {title[0]}
+          <br />
+          {title[1]}
+        </div>
+        {figure ? (
+          <div style={{ fontFamily: ARIAL, fontSize: 46, color: C.red, marginTop: 6, lineHeight: 1 }}>{figure}</div>
+        ) : (
+          <div style={{ fontFamily: PT_SERIF, fontSize: 24, color: "rgba(22,17,13,0.72)", marginTop: 8, whiteSpace: "nowrap" }}>{sub}</div>
+        )}
+      </div>
+    </div>
+  </Rise>
+);
+
 export const StoreScene: React.FC = () => {
   const frame = useCurrentFrame();
   const sign = ramp(frame, CUE["s2.sign"], CUE["s2.sign"] + 10);
@@ -119,8 +164,8 @@ export const StoreScene: React.FC = () => {
   return (
     <Frame>
       <Kicker start={CUE["s2.caption"]} text="WALL STREET'S VERDICT" sub="A MALL RETAILER IN THE STREAMING ERA" />
-      <Rise start={CUE["s2.store"] + 4} dur={34} left={460} top={300} width={1000} height={620} rotate={-0.6} stroke={{ x: 26, y: 10 }}>
-        <div style={{ position: "absolute", inset: 0, background: "#2A241D" }} />
+      <Rise start={CUE["s2.store"] + 4} dur={34} left={560} top={290} width={1000} height={620} rotate={-0.6} stroke={{ x: 26, y: 10 }}>
+        <div data-fit="storefront" style={{ position: "absolute", inset: 0, background: "#2A241D" }} />
         {/* sign band */}
         <div
           style={{
@@ -153,7 +198,11 @@ export const StoreScene: React.FC = () => {
         </div>
       </Rise>
       <Stamp startFrame={CUE["s2.stamp"]} x={650} y={-330} rotate={-6} title="DYING" sub="CONSENSUS" width={420} zIndex={30} />
-      <DeskEdge startFrame={0} endFrame={24} height={230} label="MALL CONCOURSE · 2020" />
+      {/* floor shadow so the store stands on something */}
+      <div style={{ position: "absolute", left: 520, top: 900, width: 1100, height: 60, borderRadius: "50%", background: "radial-gradient(ellipse at center, rgba(55,45,31,0.32), transparent 70%)", zIndex: 9 }} />
+      <ReasonCard start={CUE["s2.r1"]} top={300} icon="download" title={["GAMES WENT", "DIGITAL"]} sub="downloads replace discs" />
+      <ReasonCard start={CUE["s2.r2"]} top={505} icon="mall" title={["MALL TRAFFIC", "FALLING"]} sub="fewer shoppers walk in" />
+      <ReasonCard start={CUE["s2.r3"]} top={710} icon="loss" title={["NET LOSS", "FISCAL 2019"]} sub="" figure="$471M" />
     </Frame>
   );
 };
@@ -163,7 +212,7 @@ export const StoreScene: React.FC = () => {
 /* ------------------------------------------------------------------ */
 
 const StepCard: React.FC<{ n: string; title: string; sub: string; highlight?: number }> = ({ n, title, sub, highlight = 0 }) => (
-  <div style={{ width: "100%", height: "100%", background: C.card, padding: "34px 34px", boxSizing: "border-box", clipPath: tornClip(Number(n) * 5, 14, 1.6) }}>
+  <div data-fit="step card" style={{ width: "100%", height: "100%", background: C.card, padding: "34px 34px", boxSizing: "border-box", clipPath: tornClip(Number(n) * 5, 14, 1.6) }}>
     <div style={{ fontFamily: ARIAL, fontSize: 96, color: C.red, lineHeight: 1 }}>{n}</div>
     <div style={{ fontFamily: ARIAL, fontSize: 58, letterSpacing: -1, color: C.ink, marginTop: 18, whiteSpace: "nowrap" }}>{title}</div>
     <div style={{ position: "relative", display: "inline-block", marginTop: 16 }}>
@@ -201,6 +250,14 @@ export const MechanismScene: React.FC = () => {
   return (
     <Frame>
       <Kicker start={6} text="THE SHORT SALE" sub="HOW A HEDGE FUND BETS ON A FALL" />
+      {cards.map((c, i) => (
+        <Rise key={`ex${c.n}`} start={c.at + 12} dur={24} dist={160} left={c.x + 10} top={700} width={460} height={110} rotate={[0.8, -0.6, 0.5][i]} exit={out + i * 3} z={13}>
+          <div data-fit="example chip" style={{ position: "absolute", inset: 0, background: i === 2 ? C.ink : C.paper, border: `4px solid ${C.ink}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 22px", boxSizing: "border-box" }}>
+            <Label size={22} spacing={3} color={i === 2 ? "rgba(239,235,224,0.75)" : undefined}>{["EXAMPLE", "SELL AT", "BUY AT $10"][i]}</Label>
+            <div style={{ fontFamily: ARIAL, fontSize: 42, color: i === 2 ? C.amber : C.ink, whiteSpace: "nowrap" }}>{["1 SHARE", "$20", "KEEP $10"][i]}</div>
+          </div>
+        </Rise>
+      ))}
       {cards.map((c, i) => (
         <Rise key={c.n} start={c.at} dur={28} left={c.x} top={330} width={480} height={330} rotate={[-1, 0.6, -0.4][i]} exit={out + i * 3}>
           <StepCard n={c.n} title={c.title} sub={c.sub} highlight={i === 2 ? hl : 0} />
@@ -303,6 +360,32 @@ const Node: React.FC<{ x: number; y: number; at: number; text: string; red?: boo
   );
 };
 
+/** Each lap of the loop leaves the price a step higher. */
+const PriceLadder: React.FC<{ start: number }> = ({ start }) => {
+  const frame = useCurrentFrame();
+  const H = [36, 62, 96, 136, 184];
+  const X0 = 1090, W = 96, GAP = 40, BASE = 1080 - 120;
+  const tops = H.map((h, i) => ({ x: X0 + i * (W + GAP) + W / 2, y: BASE - h - 26 }));
+  const arrow = ramp(frame, start + 10, start + 10 + H.length * 7);
+  return (
+    <>
+      {H.map((h, i) => {
+        const g = ramp(frame, start + i * 7, start + i * 7 + 14, Easing.out(Easing.cubic));
+        return (
+          <div key={i} style={{ position: "absolute", left: X0 + i * (W + GAP), top: BASE - h * g, width: W, height: h * g, background: i === H.length - 1 ? C.red : C.orange, filter: DROP, zIndex: 16 }} />
+        );
+      })}
+      <svg width={1920} height={1080} style={{ position: "absolute", inset: 0, zIndex: 17 }}>
+        <path d={pathOf(tops)} stroke={C.ink} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" fill="none" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - arrow} />
+        <path d={`M ${tops[4].x - 22} ${tops[4].y - 4} L ${tops[4].x + 2} ${tops[4].y - 20} L ${tops[4].x + 6} ${tops[4].y + 8}`} stroke={C.ink} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={arrow > 0.95 ? 1 : 0} />
+      </svg>
+      <div style={{ position: "absolute", left: X0, width: 5 * W + 4 * GAP, top: BASE + 22, textAlign: "center", opacity: ramp(frame, start, start + 12), zIndex: 18 }}>
+        <Label size={22} color={C.ink} spacing={4}>EVERY LAP, A HIGHER PRICE</Label>
+      </div>
+    </>
+  );
+};
+
 export const ForumScene: React.FC = () => {
   const frame = useCurrentFrame();
   const math = ramp(frame, CUE["s4.math"], CUE["s4.math"] + 16, Easing.out(Easing.cubic));
@@ -328,7 +411,7 @@ export const ForumScene: React.FC = () => {
   return (
     <Frame>
       <Rise start={CUE["s4.card"]} dur={30} left={120} top={190} width={760} height={640} rotate={-1.2} stroke={{ x: -26, y: 10 }}>
-        <div style={{ position: "absolute", inset: 0, background: C.card, padding: "40px 46px", boxSizing: "border-box" }}>
+        <div data-fit="forum card" style={{ position: "absolute", inset: 0, background: C.card, padding: "40px 46px", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.orange }} />
             <div>
@@ -368,7 +451,7 @@ export const ForumScene: React.FC = () => {
       <Node x={N[1].x} y={N[1].y} at={CUE["s4.n2"]} text="PRICE RISES" />
       <Node x={N[2].x} y={N[2].y} at={CUE["s4.n3"]} text="SHORTS FORCED TO BUY" red />
       <Stamp startFrame={CUE["s4.loop"] + 6} x={680} y={-370} rotate={-5} title="AT ANY PRICE" width={400} zIndex={30} />
-      <DeskEdge startFrame={0} endFrame={24} height={170} label="THE SHORT SQUEEZE" />
+      <PriceLadder start={CUE["s4.lap"]} />
     </Frame>
   );
 };
@@ -455,7 +538,7 @@ export const MelvinScene: React.FC = () => {
   return (
     <Frame>
       <Rise start={CUE["s6.ledger"] + 2} dur={32} left={260} top={170} width={1400} height={640} rotate={-0.7} stroke={{ x: -26, y: 10 }}>
-        <div style={{ position: "absolute", inset: 0, background: C.card, padding: "54px 70px", boxSizing: "border-box", backgroundImage: "repeating-linear-gradient(180deg, transparent 0 63px, rgba(26,26,26,0.08) 63px 65px)" }}>
+        <div data-fit="ledger" style={{ position: "absolute", inset: 0, background: C.card, padding: "54px 70px", boxSizing: "border-box", backgroundImage: "repeating-linear-gradient(180deg, transparent 0 63px, rgba(26,26,26,0.08) 63px 65px)" }}>
           <Label size={24} spacing={6}>HEDGE FUND · RETURN, JANUARY 2021</Label>
           <div style={{ fontFamily: PLAYFAIR, fontSize: 104, color: C.inkDeep, letterSpacing: -2, marginTop: 10, opacity: nameOn }}>Melvin Capital</div>
           <div style={{ height: 4, background: C.inkDeep, margin: "26px 0 56px", opacity: 0.7 }} />
@@ -482,7 +565,16 @@ export const MelvinScene: React.FC = () => {
         </div>
       </Rise>
       <Stamp startFrame={CUE["s6.stamp"]} x={520} y={-350} rotate={-6} title="−53%" sub="IN ONE MONTH" width={500} zIndex={30} />
-      <DeskEdge startFrame={0} endFrame={24} height={250} label="SOURCE: FUND RETURNS REPORTED TO INVESTORS, JAN 2021" />
+      <Rise start={CUE["s6.rescue"]} dur={26} dist={300} left={1090} top={730} width={700} height={240} rotate={1.4} stroke={{ x: 22, y: 10 }} z={24}>
+        <div data-fit="rescue card" style={{ position: "absolute", inset: 0, background: C.card, padding: "28px 36px", boxSizing: "border-box", overflow: "hidden" }}>
+          <Label size={22} color={C.red} spacing={4}>JAN 25, 2021 · EMERGENCY FUNDING</Label>
+          <div style={{ fontFamily: ARIAL, fontSize: 64, color: C.ink, marginTop: 12, lineHeight: 1, whiteSpace: "nowrap" }}>$2.75 BILLION</div>
+          <div style={{ fontFamily: PT_SERIF, fontSize: 28, color: C.inkDeep, marginTop: 14, whiteSpace: "nowrap" }}>from Citadel and Point72</div>
+        </div>
+      </Rise>
+      <div style={{ position: "absolute", left: 270, top: 900, zIndex: 20, opacity: 0.6 }}>
+        <Label size={18} spacing={3}>FUND RETURN AS REPORTED · JANUARY 2021</Label>
+      </div>
     </Frame>
   );
 };
@@ -504,9 +596,9 @@ export const HaltScene: React.FC = () => {
   return (
     <Frame>
       <Kicker start={CUE["s7.date"]} text="JANUARY 28, 2021" sub="ROBINHOOD AND OTHER BROKERS RESTRICT BUYING" />
-      <Rise start={CUE["s7.phone"] + 2} dur={32} left={300} top={300} width={440} height={860} rotate={-2} stroke={{ x: -26, y: 10, radius: 56 }}>
+      <Rise start={CUE["s7.phone"] + 2} dur={32} left={300} top={250} width={430} height={780} rotate={-2} stroke={{ x: -26, y: 10, radius: 56 }}>
         <div style={{ position: "absolute", inset: 0, background: C.inkDeep, borderRadius: 56, padding: 22, boxSizing: "border-box" }}>
-          <div style={{ width: "100%", height: "100%", background: "#F4F1EA", borderRadius: 38, padding: "60px 40px", boxSizing: "border-box" }}>
+          <div data-fit="phone screen" style={{ width: "100%", height: "100%", background: "#F4F1EA", borderRadius: 38, padding: "48px 38px", boxSizing: "border-box" }}>
             <Label size={24} spacing={4}>GAMESTOP CORP</Label>
             <div style={{ fontFamily: ARIAL, fontSize: 82, color: C.ink, marginTop: 6 }}>GME</div>
             <svg width={360} height={120} style={{ marginTop: 18 }}>
@@ -536,6 +628,15 @@ export const HaltScene: React.FC = () => {
             <div style={{ marginTop: 22, textAlign: "center", opacity: grey }}>
               <Label size={19} color={C.red} spacing={2}>POSITION CLOSING ONLY</Label>
             </div>
+            <div style={{ height: 3, background: "rgba(26,26,26,0.15)", margin: "34px 0 22px" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <Label size={18} spacing={3}>INTRADAY HIGH</Label>
+              <div style={{ fontFamily: ARIAL, fontSize: 40, color: C.ink }}>$483</div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 12 }}>
+              <Label size={18} spacing={3}>CLOSE</Label>
+              <div style={{ fontFamily: ARIAL, fontSize: 40, color: C.red }}>$193.60</div>
+            </div>
           </div>
         </div>
       </Rise>
@@ -548,7 +649,14 @@ export const HaltScene: React.FC = () => {
         <text x={CR.right} y={y2(53.5) + 60} textAnchor="end" fontFamily={ARIAL} fontSize={44} fill={C.red} opacity={ramp(frame, CUE["s7.crash"] + 34, CUE["s7.crash"] + 44)}>$53.50 · FEB 4</text>
       </svg>
       <Stamp startFrame={CUE["s7.hearing"]} x={640} y={-170} rotate={-4} title="CONGRESS" sub="HEARING · FEB 18" width={560} zIndex={30} />
-      <DeskEdge startFrame={0} endFrame={24} height={230} label="TRADING RESTRICTIONS · JAN 28 – FEB 2021" />
+      <Rise start={CUE["s7.why"]} dur={26} dist={260} left={980} top={850} width={760} height={170} rotate={-0.8} z={20}>
+        <div data-fit="why card" style={{ position: "absolute", inset: 0, background: C.card, padding: "24px 32px", boxSizing: "border-box", overflow: "hidden", borderLeft: `10px solid ${C.red}` }}>
+          <Label size={22} color={C.red} spacing={4}>WHY THE BRAKES?</Label>
+          <div style={{ fontFamily: PT_SERIF, fontSize: 28, lineHeight: 1.3, color: C.inkDeep, marginTop: 10 }}>
+            Clearing deposits spiked. Robinhood was told to post about $3 billion overnight.
+          </div>
+        </div>
+      </Rise>
     </Frame>
   );
 };
@@ -566,10 +674,10 @@ export const CloserScene: React.FC = () => {
   const vig = ramp(frame, CUE["s8.vignette"], CUE["s8.vignette"] + 40, Easing.out(Easing.cubic));
   return (
     <Frame>
-      <Rise start={0} dur={36} dist={340} left={490} top={150} width={940} height={720} rotate={-1.4} z={11} style={{ filter: DROP, opacity: 0.62 }}>
-        <div style={{ position: "absolute", inset: 0, background: C.card, clipPath: tornClip(41, 20, 2) }} />
+      <Rise start={0} dur={36} dist={340} left={210} top={120} width={1500} height={800} rotate={-1.2} z={11} style={{ filter: DROP, opacity: 0.62 }}>
+        <div data-box="closer card" style={{ position: "absolute", inset: 0, background: C.card, clipPath: tornClip(41, 20, 2) }} />
       </Rise>
-      <div style={{ position: "absolute", left: 960, top: 230, width: 1300, transform: "translateX(-50%)", textAlign: "center", zIndex: 20 }}>
+      <div data-inside="closer card" style={{ position: "absolute", left: 960, top: 230, width: 1300, transform: "translateX(-50%)", textAlign: "center", zIndex: 20 }}>
         <Typewriter
           text="Sell more shares than anyone can buy back,"
           startFrame={CUE["s8.line1Start"]}
@@ -577,13 +685,13 @@ export const CloserScene: React.FC = () => {
           style={{ fontFamily: TYPEWRITER, fontSize: 46, color: "rgba(26,26,26,0.8)" }}
         />
       </div>
-      <div style={{ position: "absolute", left: 960, top: 360, width: 1560, transform: "translateX(-50%)", textAlign: "center", zIndex: 22 }}>
+      <div data-inside="closer card" style={{ position: "absolute", left: 960, top: 360, width: 1560, transform: "translateX(-50%)", textAlign: "center", zIndex: 22 }}>
         <div style={{ opacity: revealO, transform: `scale(${interpolate(s, [0, 1], [1.4, 1])})` }}>
           <div style={{ fontFamily: ARIAL, fontSize: 116, letterSpacing: -2, color: C.red, whiteSpace: "nowrap", lineHeight: 1 }}>SOONER OR LATER</div>
         </div>
         <div style={{ height: 9, width: 640, background: C.red, margin: "26px auto 0", transform: `scaleX(${rule})` }} />
       </div>
-      <div style={{ position: "absolute", left: 960, top: 600, width: 1300, transform: "translateX(-50%)", textAlign: "center", zIndex: 22 }}>
+      <div data-inside="closer card" style={{ position: "absolute", left: 960, top: 600, width: 1300, transform: "translateX(-50%)", textAlign: "center", zIndex: 22 }}>
         <Typewriter
           text="someone asks for them."
           startFrame={CUE["s8.line2Start"]}
@@ -591,10 +699,9 @@ export const CloserScene: React.FC = () => {
           style={{ fontFamily: PLAYFAIR, fontStyle: "italic", fontSize: 66, color: C.inkDeep }}
         />
       </div>
-      <div style={{ position: "absolute", left: 960, top: 740, transform: "translateX(-50%)", zIndex: 22, opacity: ramp(frame, CUE["s8.vignette"], CUE["s8.vignette"] + 20) }}>
+      <div data-inside="closer card" style={{ position: "absolute", left: 960, top: 740, transform: "translateX(-50%)", zIndex: 22, opacity: ramp(frame, CUE["s8.vignette"], CUE["s8.vignette"] + 20) }}>
         <Label size={24} spacing={6}>GAMESTOP · JANUARY 2021</Label>
       </div>
-      <DeskEdge startFrame={0} endFrame={24} height={190} />
       <AbsoluteFill
         aria-hidden
         style={{ background: "radial-gradient(circle at 50% 48%, transparent 38%, rgba(20,16,12,0.62) 100%)", opacity: vig, pointerEvents: "none", zIndex: 30 }}
