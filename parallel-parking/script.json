@@ -1,0 +1,23 @@
+[
+  {"id": "intro", "lines": [
+    {"t": "Parallel parking looks hard, but it's just three steering moves."},
+    {"t": "Right, straight, left. Here's how."}]},
+  {"id": "setup", "lines": [
+    {"t": "Find a space about one and a half car lengths long."},
+    {"t": "Signal right and stop beside the front car, about 2–3 feet away."},
+    {"t": "Line up your rear bumper with its rear bumper."}]},
+  {"id": "move1", "lines": [
+    {"t": "Check behind you, then reverse slowly with the wheel turned fully right."},
+    {"t": "Stop when your car is at about 45° to the curb."}]},
+  {"id": "move2", "lines": [
+    {"t": "Straighten the wheel and back up in a straight line."},
+    {"t": "Stop when your front bumper clears the car ahead."}]},
+  {"id": "move3", "lines": [
+    {"t": "Now turn the wheel fully left and keep reversing."},
+    {"t": "The front swings in and your car lines up with the curb."}]},
+  {"id": "finish", "lines": [
+    {"t": "Straighten the wheels and pull forward to center in the space."},
+    {"t": "Aim for about a foot from the curb."}]},
+  {"id": "remember", "lines": [
+    {"t": "Go slow, keep checking your mirrors, and remember: right, straight, left."}]}
+]

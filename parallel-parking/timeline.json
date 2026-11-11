@@ -1,0 +1,124 @@
+{
+ "total": 61.733333333333334,
+ "scenes": [
+  {
+   "id": "intro",
+   "start": 0.0,
+   "end": 8.167,
+   "lines": [
+    {
+     "text": "Parallel parking looks hard, but it's just three steering moves.",
+     "start": 0.35,
+     "end": 4.71
+    },
+    {
+     "text": "Right, straight, left. Here's how.",
+     "start": 4.93,
+     "end": 7.62
+    }
+   ]
+  },
+  {
+   "id": "setup",
+   "start": 8.167,
+   "end": 20.867,
+   "lines": [
+    {
+     "text": "Find a space about one and a half car lengths long.",
+     "start": 8.517,
+     "end": 12.147
+    },
+    {
+     "text": "Signal right and stop beside the front car, about 2\u20133 feet away.",
+     "start": 12.367,
+     "end": 16.727
+    },
+    {
+     "text": "Line up your rear bumper with its rear bumper.",
+     "start": 16.947,
+     "end": 20.307
+    }
+   ]
+  },
+  {
+   "id": "move1",
+   "start": 20.867,
+   "end": 30.2,
+   "lines": [
+    {
+     "text": "Check behind you, then reverse slowly with the wheel turned fully right.",
+     "start": 21.217,
+     "end": 26.017
+    },
+    {
+     "text": "Stop when your car is at about 45\u00b0 to the curb.",
+     "start": 26.237,
+     "end": 29.647
+    }
+   ]
+  },
+  {
+   "id": "move2",
+   "start": 30.2,
+   "end": 38.533,
+   "lines": [
+    {
+     "text": "Straighten the wheel and back up in a straight line.",
+     "start": 30.55,
+     "end": 34.24
+    },
+    {
+     "text": "Stop when your front bumper clears the car ahead.",
+     "start": 34.46,
+     "end": 37.98
+    }
+   ]
+  },
+  {
+   "id": "move3",
+   "start": 38.533,
+   "end": 47.067,
+   "lines": [
+    {
+     "text": "Now turn the wheel fully left and keep reversing.",
+     "start": 38.883,
+     "end": 42.403
+    },
+    {
+     "text": "The front swings in and your car lines up with the curb.",
+     "start": 42.623,
+     "end": 46.533
+    }
+   ]
+  },
+  {
+   "id": "finish",
+   "start": 47.067,
+   "end": 55.167,
+   "lines": [
+    {
+     "text": "Straighten the wheels and pull forward to center in the space.",
+     "start": 47.417,
+     "end": 51.657
+    },
+    {
+     "text": "Aim for about a foot from the curb.",
+     "start": 51.877,
+     "end": 54.617
+    }
+   ]
+  },
+  {
+   "id": "remember",
+   "start": 55.167,
+   "end": 61.733,
+   "lines": [
+    {
+     "text": "Go slow, keep checking your mirrors, and remember: right, straight, left.",
+     "start": 55.517,
+     "end": 60.377
+    }
+   ]
+  }
+ ]
+}
