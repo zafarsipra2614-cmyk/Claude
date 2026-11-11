@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<!-- Made with the Bang Motion skill v1.19.0 by Bang Tutorial (https://youtube.com/bangtutorial) - MIT - https://github.com/bangtutorial/bang-motion -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bang Motion Promo</title>
+<!--
+  =====  STYLE BRIEF  =====
+  Product + feel        : Bang Motion (agent skill for motion graphics) — kinetic, crafted, confident
+  Concept candidates    : 1 Single continuous shot along the logo's motion path (CHOSEN)
+                          2 Problem → gone: a slide deck torn apart by one motion path
+                          3 Pure typography: the words of the README rebuild into the logo
+                          Chosen because the logo IS a motion path with keyframes — riding it is the proof.
+  Fingerprint           : single continuous shot · 7 stops + reveal · grey slide / opener card / kinetic words on
+                          warm field / logo sting / lower third / six-card explainer deck / index.html file ·
+                          in media res (a dull slide already on screen) · pull back: the path is the logo
+  Palette (from icon)   : base #0A0D1C + surface #151A33 (icon stage) · path #FF4D3D→#FF8A3D→#FFC24D (icon path) ·
+                          accent #FFFFFF (keyframe diamonds) · warm field #FFF1E2 (derived: light tint of path orange)
+  Type                  : Syne 500–700 display · JetBrains Mono labels
+  Emphasis              : colour only (keyword takes the path gradient)
+  Background            : dark cinematic from the icon; one switch to a warm field at the kinetic stop,
+                          triggered by the keyframe diamond growing to fill the frame
+  Signature motion      : the path draws itself; everything enters when a keyframe diamond is hit
+                          (active = white, passed = outline — the icon's own grammar)
+  Background motion     : §7c #6 giant diamond outlines rotating slowly, 2 parallax layers
+  Surface               : §7d a (horizon glow) + g (live grain)
+  Render family         : neon line on dark + flat
+  Transitions           : camera travel along the path · diamond-to-field · whip with directional blur (once)
+  Special moment        : final pull back — the whole journey resolves into the Bang Motion icon
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<style>
+:root{
+  --base:#0A0D1C; --surface:#151A33; --red:#FF4D3D; --orange:#FF8A3D; --gold:#FFC24D;
+  --ink:#F4F2EE; --dim:#7D8299; --cream:#FFF1E2; --ink-dark:#1B1230;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060c;overflow:hidden;font-family:"Syne",system-ui,sans-serif;color:var(--ink)}
+#filters{position:fixed;width:0;height:0;opacity:0;pointer-events:none}
+#stage{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%);overflow:hidden;background:var(--base)}
+
+/* ---------- background (screen layer, parallax from camera) ---------- */
+#bg{position:absolute;inset:0;
+  background:radial-gradient(70% 45% at 50% 112%,rgba(255,106,61,.30),rgba(255,106,61,.08) 50%,transparent 72%),
+             linear-gradient(180deg,#06081300 0%,#0A0D1C 55%,#141833 100%),#080a16}
+#bgwarm{position:absolute;width:1400px;height:1400px;border-radius:50%;left:900px;top:-500px;
+  background:radial-gradient(circle,rgba(255,77,61,.18),transparent 65%)}
+#bgd{position:absolute;left:-1040px;top:-1460px;width:4000px;height:4000px}
+#grain{position:absolute;inset:-60px;pointer-events:none;filter:url(#grainf);opacity:.2;mix-blend-mode:overlay;z-index:30}
+.vignette{position:absolute;inset:0;pointer-events:none;z-index:20;
+  background:radial-gradient(ellipse 80% 70% at 50% 50%,transparent 45%,rgba(0,0,0,.55) 88%,rgba(0,0,0,.85) 100%)}
+
+/* ---------- world (camera rig) ---------- */
+#world{position:absolute;left:0;top:0;width:7168px;height:7168px;transform-origin:0 0;will-change:transform}
+#trail{position:absolute;left:0;top:0;width:7168px;height:7168px;overflow:visible}
+.stop{position:absolute;width:0;height:0}
+.inner{position:absolute;opacity:0}
+.field{position:absolute;width:160px;height:160px;left:-80px;top:-80px;border-radius:30px;opacity:0;
+  background:radial-gradient(circle at 35% 30%,#FFF8EE,#FFF1E2 45%,#FFE0C4 100%)}
+
+/* ---------- text ---------- */
+.claim{position:absolute;font-weight:600;letter-spacing:-.02em;white-space:nowrap;line-height:1.05;color:var(--ink);
+  text-shadow:0 4px 28px rgba(0,0,0,.45)}
+.claim.sm{font-size:84px}.claim.md{font-size:100px}.claim.lg{font-size:118px}
+.wd{display:inline-block;white-space:nowrap}
+.ch{display:inline-block;will-change:transform,opacity,filter;opacity:0}
+.hl{position:relative;display:inline-block}
+.hl-t{position:relative;display:inline-block;opacity:0}
+.grad{background:linear-gradient(95deg,var(--red),var(--orange) 55%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;padding-right:.04em}
+.dimw{color:var(--dim)}
+.tag{position:absolute;font-family:"JetBrains Mono",monospace;font-size:34px;font-weight:500;color:var(--gold);
+  letter-spacing:.02em;white-space:nowrap;opacity:0}
+.tag::before{content:"";display:inline-block;width:18px;height:18px;margin-right:16px;transform:rotate(45deg) translateY(-3px);
+  border:4px solid currentColor;border-radius:4px}
+
+/* ---------- A: the slide ---------- */
+.slide{position:absolute;left:90px;top:250px;width:1000px;height:560px;background:#D7D9DE;border-radius:6px;
+  font-family:Arial,Helvetica,sans-serif;color:#3a3d44;padding:56px 64px;transform-origin:50% 100%;
+  box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.slide h3{font-size:56px;font-weight:700;margin-bottom:40px;color:#2a2d33}
+.slide .bl{font-size:36px;margin:0 0 22px 6px;display:block}
+.slide .ft{position:absolute;right:40px;bottom:30px;font-size:30px;color:#80848c}
+.slide .clip{position:absolute;right:64px;top:150px;width:250px;height:190px;background:#BFC2C9;border-radius:4px}
+
+/* ---------- B: opener card ---------- */
+.card{position:absolute;background:linear-gradient(160deg,#1B2142,#0E1226);border-radius:30px;overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.06)}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;border:3px solid var(--orange);opacity:0}
+.launch{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:100px;font-weight:800;
+  letter-spacing:-.03em;color:#fff;white-space:nowrap}
+.cardglow{position:absolute;left:50%;top:50%;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,138,61,.45),transparent 60%);opacity:0}
+
+/* ---------- C: kinetic words ---------- */
+.kw{position:absolute;font-weight:700;color:var(--ink-dark);white-space:nowrap;letter-spacing:-.035em;line-height:1}
+.kw .wd{opacity:0}
+
+/* ---------- D: bumper ---------- */
+.nova-w{position:absolute;left:0;right:0;top:420px;text-align:center;font-size:96px;font-weight:700;letter-spacing:.18em;
+  color:#fff;padding-left:.18em}
+.dot{position:absolute;left:50%;top:44%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:35px;
+  background:linear-gradient(135deg,var(--red),var(--gold));opacity:0}
+
+/* ---------- E: lower third ---------- */
+.footage{position:absolute;overflow:hidden;border-radius:22px;background:#1d2236}
+.fblob{position:absolute;border-radius:50%;filter:blur(40px)}
+.l3{position:absolute;left:70px;bottom:80px;height:150px;display:flex;align-items:stretch}
+.l3bar{width:16px;background:linear-gradient(180deg,var(--gold),var(--red));transform-origin:50% 100%}
+.l3box{background:rgba(250,247,242,.96);padding:22px 40px 0 34px;clip-path:inset(0 100% 0 0)}
+.l3n{font-size:54px;font-weight:700;color:var(--ink-dark);letter-spacing:-.02em;line-height:1.1}
+.l3r{font-family:"JetBrains Mono",monospace;font-size:31px;color:#5b5568;margin-top:6px}
+
+/* ---------- F: explainer deck ---------- */
+.ex{position:absolute;width:262px;height:370px;border-radius:22px;overflow:hidden;opacity:0;
+  box-shadow:0 26px 60px rgba(0,0,0,.45)}
+.ex b{position:absolute;left:22px;right:18px;bottom:20px;font-family:"JetBrains Mono",monospace;font-weight:500;font-size:30px;line-height:1.1}
+.ex i{position:absolute;display:block}
+
+/* ---------- G: the file ---------- */
+.file{position:absolute;left:40px;top:110px;width:460px;height:580px;background:#F7F3EC;border-radius:26px;
+  clip-path:polygon(0 0,74% 0,100% 20%,100% 100%,0 100%);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.fold{position:absolute;left:380px;top:110px;width:120px;height:116px;background:linear-gradient(225deg,#d9d2c6 50%,#efe9de 50%);border-radius:0 0 0 22px}
+.code{position:absolute;left:46px;height:22px;border-radius:11px}
+.fname{position:absolute;left:46px;bottom:52px;font-family:"JetBrains Mono",monospace;font-size:50px;font-weight:700;color:var(--ink-dark);opacity:0}
+.chip{position:absolute;font-family:"JetBrains Mono",monospace;font-size:34px;font-weight:500;color:var(--ink);white-space:nowrap;
+  padding:14px 26px;border-radius:40px;background:rgba(255,255,255,.06);border:2px solid rgba(255,194,77,.55);opacity:0}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:10}
+#wm{position:absolute;left:0;right:0;top:720px;text-align:center;font-size:132px;font-weight:700;letter-spacing:-.03em;white-space:nowrap}
+#wl{position:absolute;left:0;right:0;top:890px;text-align:center;font-family:"JetBrains Mono",monospace;font-size:38px;color:#C7C9DA;opacity:0}
+
+#ui{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:none;align-items:center;gap:14px;padding:11px 18px;
+  border-radius:16px;background:rgba(14,16,22,.9);border:1px solid rgba(255,255,255,.1);font:13px system-ui;color:#A0A6B4;z-index:50}
+#ui.on{display:flex}
+#ui button{background:#262A34;color:#fff;border:none;padding:8px 16px;border-radius:9px;font:inherit;cursor:pointer}
+#scrub{width:340px;accent-color:var(--orange)}
+#clock{font-variant-numeric:tabular-nums;min-width:5.2ch;text-align:right}
+</style>
+</head>
+<body>
+<svg id="filters"><defs>
+  <filter id="grainf" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</defs></svg>
+
+<div id="stage">
+  <div id="bg">
+    <div id="bgwarm"></div>
+    <svg id="bgd" viewBox="0 0 4000 4000">
+      <g id="bgd1" fill="none" stroke="#FF8A3D" stroke-opacity=".085" stroke-width="5">
+        <rect x="1250" y="1250" width="1500" height="1500" rx="180" transform="rotate(45 2000 2000)"/>
+        <rect x="900" y="900" width="2200" height="2200" rx="240" transform="rotate(45 2000 2000)"/>
+      </g>
+      <g id="bgd2" fill="none" stroke="#ffffff" stroke-opacity=".045" stroke-width="4">
+        <rect x="550" y="550" width="2900" height="2900" rx="320" transform="rotate(45 2000 2000)"/>
+        <rect x="1550" y="1550" width="900" height="900" rx="120" transform="rotate(45 2000 2000)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div id="world">
+    <svg id="trail" viewBox="0 0 7168 7168">
+      <defs>
+        <linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="1456" y1="5208" x2="5712" y2="2100">
+          <stop offset="0" stop-color="#FF4D3D"/><stop offset=".6" stop-color="#FF8A3D"/><stop offset="1" stop-color="#FFC24D"/>
+        </linearGradient>
+        <linearGradient id="ibg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#151A33"/><stop offset="1" stop-color="#0A0D1C"/>
+        </linearGradient>
+        <radialGradient id="iglow" cx=".72" cy=".28" r=".6">
+          <stop offset="0" stop-color="#FF6A3D" stop-opacity=".35"/><stop offset="1" stop-color="#FF6A3D" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="headg"><stop offset="0" stop-color="#FFF4DC"/><stop offset=".25" stop-color="#FFC24D" stop-opacity=".9"/><stop offset="1" stop-color="#FF8A3D" stop-opacity="0"/></radialGradient>
+        <radialGradient id="dglow"><stop offset="0" stop-color="#FFC24D" stop-opacity=".55"/><stop offset="1" stop-color="#FFC24D" stop-opacity="0"/></radialGradient>
+      </defs>
+      <g id="icon" opacity="0">
+        <rect width="7168" height="7168" rx="1568" fill="url(#ibg)"/>
+        <rect width="7168" height="7168" rx="1568" fill="url(#iglow)"/>
+      </g>
+      <path id="p-glow2" fill="none" stroke="#FF6A3D" stroke-linecap="round" stroke-opacity=".12"/>
+      <path id="p-glow1" fill="none" stroke="#FF6A3D" stroke-linecap="round" stroke-opacity=".28"/>
+      <path id="p-main" fill="none" stroke="url(#pg)" stroke-linecap="round"/>
+      <circle id="head" r="90" fill="url(#headg)"/>
+      <g id="diamonds"></g>
+    </svg>
+
+    <!-- A · the slide -->
+    <div class="stop" id="st0"><div class="inner" style="left:-590px;top:-410px;width:1180px;height:820px">
+      <h1 class="claim md" id="cA" style="left:90px;top:40px"><span class="txt">Most agents make</span>&nbsp;<span class="hl"><span class="hl-t dimw">slides</span></span></h1>
+      <div class="slide" id="slide">
+        <h3>Q3 Product Update</h3>
+        <span class="bl">• Faster onboarding</span>
+        <span class="bl">• New dashboard</span>
+        <span class="bl">• Questions?</span>
+        <div class="clip"></div>
+        <div class="ft">1 / 24</div>
+      </div>
+    </div></div>
+
+    <!-- B · opener -->
+    <div class="stop" id="st1"><div class="inner" style="left:-560px;top:-400px;width:1120px;height:800px">
+      <h1 class="claim lg" id="cB" style="left:40px;top:0"><span class="txt">This one makes</span>&nbsp;<span class="hl"><span class="hl-t grad">motion</span></span></h1>
+      <div class="tag" id="tB" style="left:44px;top:178px">openers &amp; promos</div>
+      <div class="card" id="cardB" style="left:40px;top:240px;width:1040px;height:540px">
+        <div class="cardglow" id="glowB"></div>
+        <div class="ring" id="r1"></div><div class="ring" id="r2"></div><div class="ring" id="r3"></div>
+        <div class="launch" id="launch"><span class="txt">Launch day</span></div>
+      </div>
+    </div></div>
+
+    <!-- C · kinetic typography on a warm field -->
+    <div class="stop" id="st2">
+      <div class="field" id="field"></div>
+      <div class="inner" style="left:-760px;top:-450px;width:1520px;height:900px;opacity:1">
+        <div class="tag" id="tC" style="left:60px;top:30px;color:#C2410C">kinetic typography</div>
+        <div class="kw" id="k1" style="left:60px;top:110px;font-size:250px"><span class="wd">Type</span></div>
+        <div class="kw" id="k2" style="left:740px;top:150px;font-size:120px;font-weight:600"><span class="wd">that</span></div>
+        <div class="kw" id="k3" style="left:330px;top:360px;font-size:290px;color:#E8452F"><span class="wd">moves</span></div>
+        <div class="kw" id="k4" style="left:640px;top:690px;font-size:110px;font-weight:600"><span class="wd">to</span> <span class="wd">the</span> <span class="wd">beat</span></div>
+      </div>
+    </div>
+
+    <!-- D · bumper -->
+    <div class="stop" id="st3"><div class="inner" style="left:-350px;top:-400px;width:700px;height:800px">
+      <div class="tag" id="tD" style="left:40px;top:40px">bumpers &amp; idents</div>
+      <div class="card" id="cardD" style="left:40px;top:120px;width:620px;height:620px">
+        <svg width="620" height="620" style="position:absolute;left:0;top:0">
+          <circle id="dRing" cx="310" cy="272" r="150" fill="none" stroke="url(#pg)" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="943" stroke-dashoffset="943" transform="rotate(-90 310 272)"/>
+          <circle id="dRing2" cx="310" cy="272" r="196" fill="none" stroke="#FFC24D" stroke-opacity=".35" stroke-width="4"
+            stroke-dasharray="1232" stroke-dashoffset="1232" transform="rotate(90 310 272)"/>
+        </svg>
+        <div class="dot" id="dDot"></div>
+        <div class="nova-w" id="nova"><span class="txt">NOVA</span></div>
+      </div>
+    </div></div>
+
+    <!-- E · lower third -->
+    <div class="stop" id="st4"><div class="inner" style="left:-600px;top:-390px;width:1200px;height:780px">
+      <div class="tag" id="tE" style="left:12px;top:0">lower thirds</div>
+      <div class="footage" id="foot" style="left:10px;top:76px;width:1180px;height:664px">
+        <div class="fblob" id="fb1" style="width:700px;height:700px;left:-120px;top:-160px;background:#3B5B8C"></div>
+        <div class="fblob" id="fb2" style="width:620px;height:620px;left:560px;top:120px;background:#8C4A5B"></div>
+        <div class="fblob" id="fb3" style="width:420px;height:420px;left:340px;top:-80px;background:#D99A5B;opacity:.7"></div>
+        <div class="fblob" id="fb4" style="width:300px;height:300px;left:860px;top:-60px;background:#F2D6A2;opacity:.5"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.5),transparent 55%)"></div>
+        <div class="l3"><div class="l3bar" id="l3bar"></div><div class="l3box" id="l3box">
+          <div class="l3n">Maya Ortiz</div><div class="l3r">Founder, Lumen Studio</div></div></div>
+      </div>
+    </div></div>
+
+    <!-- F · explainer deck -->
+    <div class="stop" id="st5"><div class="inner" style="left:-760px;top:-450px;width:1520px;height:900px">
+      <h1 class="claim sm" id="cF" style="left:0;right:0;top:20px;text-align:center"><span class="txt">Explainers in</span>&nbsp;<span class="hl"><span class="hl-t grad">six styles</span></span></h1>
+      <div id="deck" style="position:absolute;left:760px;top:560px">
+        <div class="ex" style="background:#F1E3C8"><i style="left:60px;top:70px;width:180px;height:180px;border-radius:50%;background:#E8794A;border:10px solid #fff;transform:rotate(-6deg)"></i><i style="left:150px;top:40px;width:90px;height:40px;background:#9ED0C4;transform:rotate(12deg)"></i><b style="color:#5a3b22">Cartoon collage</b></div>
+        <div class="ex" style="background:#0E0E0E"><i style="left:26px;top:70px;font:800 66px/1 'Syne';color:#fff;letter-spacing:-.02em">4 IN<br>10</i><i style="left:26px;top:66px;width:96px;height:74px;background:#FFD400;mix-blend-mode:multiply;opacity:.0"></i><i style="left:140px;top:140px;width:120px;height:64px;background:#FFD400"></i><b style="color:#FFD400">Visual journalism</b></div>
+        <div class="ex" style="background:#fff;background-image:linear-gradient(#eee 2px,transparent 2px),linear-gradient(90deg,#eee 2px,transparent 2px);background-size:40px 40px"><i style="left:80px;top:60px;width:140px;height:180px;border-radius:16px;background:#2b2b2b"></i><i style="left:50px;top:200px;width:200px;height:34px;background:#FFE14D;opacity:.85"></i><b style="color:#111">White catalog</b></div>
+        <div class="ex" style="background:radial-gradient(circle at 50% 40%,#F0E2C0,#D9C08E)"><i style="left:70px;top:60px;width:160px;height:160px;border-radius:50%;border:4px solid #6b4a2b;box-shadow:inset 0 0 0 14px #E9D9B5,inset 0 0 0 18px #6b4a2b"></i><i style="left:120px;top:110px;width:60px;height:60px;transform:rotate(45deg);background:#B8862D"></i><b style="color:#5a3b1c">Vintage sketch</b></div>
+        <div class="ex" style="background:linear-gradient(180deg,#BFE0F5 0 58%,#9BCB6B 58%)"><i style="left:30px;top:190px;width:250px;height:58px;border-radius:8px 40px 8px 8px;background:#fff;box-shadow:inset 0 -10px 0 #E23B3B"></i><i style="left:0;top:130px;width:120px;height:6px;background:#fff;opacity:.8"></i><b style="color:#1f3b16">Continuous action</b></div>
+        <div class="ex" style="background:#FFE45C"><i style="left:120px;top:60px;width:70px;height:70px;border-radius:50%;background:#2E2A6B"></i><i style="left:142px;top:128px;width:26px;height:110px;border-radius:13px;background:#2E2A6B"></i><i style="left:100px;top:140px;width:110px;height:22px;border-radius:11px;background:#FF5A5F;transform:rotate(-20deg)"></i><b style="color:#2E2A6B">Cartoon stage</b></div>
+      </div>
+    </div></div>
+
+    <!-- G · one file -->
+    <div class="stop" id="st6"><div class="inner" style="left:-650px;top:-400px;width:1300px;height:800px">
+      <div class="file" id="file">
+        <i class="code" style="top:190px;width:150px;background:#FF8A3D"></i><i class="code" style="top:190px;left:216px;width:120px;background:#2E2A6B;opacity:.25"></i>
+        <i class="code" style="top:240px;left:86px;width:230px;background:#2E2A6B;opacity:.25"></i>
+        <i class="code" style="top:290px;left:86px;width:110px;background:#FF4D3D"></i><i class="code" style="top:290px;left:216px;width:150px;background:#2E2A6B;opacity:.25"></i>
+        <i class="code" style="top:340px;left:126px;width:200px;background:#FFC24D"></i>
+        <i class="code" style="top:390px;width:180px;background:#2E2A6B;opacity:.25"></i>
+        <div class="fname" id="fname">index.html</div>
+      </div>
+      <div class="fold" id="fold"></div>
+      <h1 class="claim md" id="cG" style="left:600px;top:200px"><span class="txt">One file.</span></h1>
+      <h1 class="claim md" id="cG2" style="left:600px;top:320px"><span class="txt">Press</span>&nbsp;<span class="hl"><span class="hl-t grad">play.</span></span></h1>
+      <div class="tag" id="tG" style="left:604px;top:500px">works with</div>
+      <div class="chip" id="ch1" style="left:600px;top:560px">Claude Code</div>
+      <div class="chip" id="ch2" style="left:900px;top:560px">Codex</div>
+      <div class="chip" id="ch3" style="left:600px;top:650px">Gemini CLI</div>
+      <div class="chip" id="ch4" style="left:880px;top:650px">Cursor</div>
+    </div></div>
+  </div>
+
+  <div id="hud">
+    <div id="wm"><span class="txt">Bang Motion</span></div>
+    <div id="wl">motion design skill for AI agents</div>
+  </div>
+  <div class="vignette" id="vig"></div>
+  <div id="grain"></div>
+</div>
+
+<div id="ui">
+  <button id="btn-play">Pause</button><button id="btn-restart">Restart</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0">
+  <span id="clock">0.00s</span>
+</div>
+
+<script>
+/* ============ UTIL: split + directional motion blur ============ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const defs=$('#filters defs'); let fc=0;
+function makeBlur(){const id='mb'+(fc++),NS='http://www.w3.org/2000/svg';
+  const f=document.createElementNS(NS,'filter');f.id=id;
+  f.setAttribute('x','-70%');f.setAttribute('y','-70%');f.setAttribute('width','240%');f.setAttribute('height','240%');
+  const g=document.createElementNS(NS,'feGaussianBlur');g.setAttribute('stdDeviation','0 0');f.appendChild(g);defs.appendChild(f);
+  return {url:`url(#${id})`,node:g};}
+function blurTween(tl,targets,at,from,to,dur,{ease='power3.out',ax=1,ay=.08}={}){
+  const b=makeBlur(),o={v:from};
+  tl.set(targets,{filter:b.url},at);
+  tl.to(o,{v:to,duration:dur,ease,onUpdate(){b.node.setAttribute('stdDeviation',`${(o.v*ax).toFixed(2)} ${(o.v*ay).toFixed(2)}`);}},at);
+  tl.set(targets,{filter:'none'},at+dur);}
+const VERT={ax:.1,ay:1};
+function splitChars(el){const words=(el.textContent||'').split(' ');el.textContent='';const out=[];
+  words.forEach((w,i)=>{const wr=document.createElement('span');wr.className='wd';
+    for(const c of w){const s=document.createElement('span');s.className='ch';s.textContent=c;wr.appendChild(s);out.push(s);}
+    el.appendChild(wr);
+    if(i<words.length-1){const sp=document.createElement('span');sp.className='ch';sp.innerHTML='&nbsp;';el.appendChild(sp);out.push(sp);}});
+  return out;}
+
+/* ============ PATH GEOMETRY (the logo's motion path ×14) ============ */
+const W=1920,H=1080,K=14;
+const D=`M${104*K} ${372*K} C ${190*K} ${372*K}, ${188*K} ${152*K}, ${292*K} ${152*K} S ${372*K} ${244*K}, ${408*K} ${150*K}`;
+['p-glow2','p-glow1','p-main'].forEach(id=>$('#'+id).setAttribute('d',D));
+const pm=$('#p-main'), TOT=pm.getTotalLength();
+const seg1=document.createElementNS('http://www.w3.org/2000/svg','path');
+seg1.setAttribute('d',`M${104*K} ${372*K} C ${190*K} ${372*K}, ${188*K} ${152*K}, ${292*K} ${152*K}`);
+const MID=seg1.getTotalLength()/TOT;
+const pt=u=>{const p=pm.getPointAtLength(Math.max(0,Math.min(1,u))*TOT);return {x:p.x,y:p.y};};
+
+/* stops: u along the path, content offset from the keyframe, camera scale. A, E(mid) and G are the icon's three keyframes */
+const STOPS=[
+  {u:0,    dx:-560, dy:-300, s:1.0},
+  {u:.14,  dx:-620, dy:-260, s:1.0},
+  {u:.30,  dx: 640, dy: 200, s:1.0},
+  {u:.46,  dx:-560, dy:-120, s:1.08},
+  {u:MID,  dx:  80, dy:-560, s:1.0},
+  {u:.835, dx:  20, dy: 620, s:1.0},
+  {u:1,    dx: 720, dy: -40, s:1.0},
+];
+STOPS.forEach((st,i)=>{const p=pt(st.u);st.x=p.x;st.y=p.y;st.cx=p.x+st.dx;st.cy=p.y+st.dy;
+  st.fx=p.x+st.dx*.86;st.fy=p.y+st.dy*.86;
+  const el=$('#st'+i);el.style.left=st.cx+'px';el.style.top=st.cy+'px';});
+/* field sits on keyframe C, not on the content centre */
+$('#field').style.left=(STOPS[2].x-STOPS[2].cx-80)+'px';$('#field').style.top=(STOPS[2].y-STOPS[2].cy-80)+'px';
+
+/* keyframe diamonds */
+const NS='http://www.w3.org/2000/svg', ICONIC=[0,4,6];
+const dia=STOPS.map((st,i)=>{const g=document.createElementNS(NS,'g');
+  g.innerHTML=`<rect class="dg" fill="url(#dglow)"/><rect class="dr"/>`;$('#diamonds').appendChild(g);
+  return {g,glow:g.querySelector('.dg'),r:g.querySelector('.dr'),st,iconic:ICONIC.includes(i)};});
+
+/* ============ STATE (all driven by the timeline) ============ */
+const CAM={s:1,fx:STOPS[0].fx,fy:STOPS[0].fy,shake:0};
+const P={d:0,head:0,k:0,icon:0,fade:1,bgWarm:0};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const world=$('#world'), grainEl=$('#grain');
+
+function render(t){
+  /* camera */
+  const s=CAM.s*(1+.012*Math.sin(t*.6));
+  const sx=Math.sin(t*97.3)*CAM.shake, sy=Math.cos(t*83.1)*CAM.shake;
+  world.style.transform=`translate(${W/2-CAM.fx*s+sx}px,${H/2-CAM.fy*s+sy}px) scale(${s})`;
+  /* background: giant diamonds rotate slowly, parallax from camera */
+  const px=-(CAM.fx-3584)*.035, py=-(CAM.fy-3584)*.035;
+  $('#bgd1').setAttribute('transform',`translate(${px} ${py}) rotate(${t*9} 2000 2000)`);
+  $('#bgd2').setAttribute('transform',`translate(${px*.5} ${py*.5}) rotate(${-t*5} 2000 2000)`);
+  $('#bgwarm').style.transform=`translate(${Math.sin(t*.31)*120+px*.6}px,${Math.cos(t*.23)*80+py*.6}px)`;
+  /* live grain: deterministic jumps 12x per second */
+  const kf=Math.floor(t*12);grainEl.style.transform=`translate(${kf*37%60-30}px,${kf*61%60-30}px)`;
+  /* the path */
+  const k=P.k, sw=lerp(16,30*K,k);
+  pm.setAttribute('stroke-width',sw);
+  $('#p-glow1').setAttribute('stroke-width',sw*2.2);$('#p-glow2').setAttribute('stroke-width',sw*4.2);
+  const off=TOT*(1-P.d);
+  for(const id of ['p-main','p-glow1','p-glow2']){const e=$('#'+id);e.setAttribute('stroke-dasharray',TOT);e.setAttribute('stroke-dashoffset',off);}
+  const hp=pt(P.d);const head=$('#head');head.setAttribute('cx',hp.x);head.setAttribute('cy',hp.y);
+  head.setAttribute('opacity',P.head);head.setAttribute('r',90+30*Math.sin(t*9));
+  $('#icon').setAttribute('opacity',P.icon);
+  /* diamonds: active = filled white, passed = outline, ahead = faint ghost (the icon's grammar) */
+  let active=0;STOPS.forEach((st,i)=>{if(P.d>=st.u-1e-4)active=i;});
+  dia.forEach((d,i)=>{const passed=i<active,act=i===active,ahead=i>active;
+    const half=act?lerp(36,30*K,k):lerp(34,24*K,k), sk=act?0:lerp(11,10*K,k);
+    const rx=act?lerp(10,10*K,k):lerp(9,8*K,k);
+    const pop=d.pop||1;
+    d.g.setAttribute('transform',`translate(${d.st.x} ${d.st.y}) rotate(45) scale(${pop})`);
+    d.r.setAttribute('x',-half);d.r.setAttribute('y',-half);d.r.setAttribute('width',half*2);d.r.setAttribute('height',half*2);d.r.setAttribute('rx',rx);
+    d.r.setAttribute('fill',act?'#FFFFFF':'#0A0D1C');d.r.setAttribute('stroke',act?'none':'#FFFFFF');d.r.setAttribute('stroke-width',sk);
+    const gh=act?half*2.6:0;d.glow.setAttribute('x',-gh);d.glow.setAttribute('y',-gh);d.glow.setAttribute('width',gh*2);d.glow.setAttribute('height',gh*2);
+    let op=ahead?.22:1; if(!d.iconic)op*=P.fade; d.g.setAttribute('opacity',op);});
+  /* lower-third footage: slow drifting light */
+  $('#fb1').style.transform=`translate(${Math.sin(t*.5)*80}px,${Math.cos(t*.4)*50}px)`;
+  $('#fb2').style.transform=`translate(${Math.cos(t*.45)*90}px,${Math.sin(t*.35)*60}px)`;
+  $('#fb3').style.transform=`translate(${Math.sin(t*.7+1)*120}px,${Math.cos(t*.6)*40}px)`;
+  $('#fb4').style.transform=`translate(${Math.cos(t*.8)*60}px,${Math.sin(t*.9)*50}px)`;
+}
+
+/* ============ TIMELINE — the only clock ============ */
+const Q=new URLSearchParams(location.search);
+const DURATION=36;
+const tl=gsap.timeline({paused:true});
+
+/* text doors */
+const inUp   =(ch,el,at,{dur=.8,st=.024}={})=>{tl.fromTo(ch,{opacity:0,yPercent:60,scaleY:1.45},{opacity:1,yPercent:0,scaleY:1,duration:dur,ease:'power4.out',stagger:st,immediateRender:false},at);blurTween(tl,el,at,30,0,dur,VERT);};
+const inLeft =(ch,el,at,{dur=.75,st=.02}={})=>{tl.fromTo(ch,{opacity:0,xPercent:-45},{opacity:1,xPercent:0,duration:dur,ease:'power4.out',stagger:st,immediateRender:false},at);blurTween(tl,el,at,50,0,dur,{ease:'power4.out'});};
+const inRight=(ch,el,at,{dur=.75,st=.02}={})=>{tl.fromTo(ch,{opacity:0,xPercent:45},{opacity:1,xPercent:0,duration:dur,ease:'power4.out',stagger:{each:st,from:'end'},immediateRender:false},at);blurTween(tl,el,at,50,0,dur,{ease:'power4.out'});};
+const inDepth=(ch,el,at,{dur=1,st=.018}={})=>{tl.fromTo(ch,{opacity:0,scale:2.4},{opacity:1,scale:1,duration:dur,ease:'expo.out',stagger:{each:st,from:'center'},immediateRender:false},at);blurTween(tl,el,at,22,0,dur,{ease:'expo.out',ax:1,ay:1});};
+const inMask =(ch,el,at,{dur=.9}={})=>{tl.set(ch,{opacity:1},at);
+  tl.fromTo(el,{clipPath:'inset(0% 100% 0% 0%)'},{clipPath:'inset(0% 0% 0% 0%)',duration:dur,ease:'power3.inOut',immediateRender:false},at);tl.set(el,{clipPath:'none'},at+dur);};
+const outUp  =(ch,el,at,{dur=.4,st=.01}={})=>{tl.to(ch,{opacity:0,yPercent:-70,duration:dur,ease:'power2.in',stagger:st},at);blurTween(tl,el,at,0,45,dur+.1,{ease:'power2.in',...VERT});};
+const outLeft=(ch,el,at,{dur=.4,st=.01}={})=>{tl.to(ch,{opacity:0,xPercent:-60,duration:dur,ease:'power2.in',stagger:st},at);blurTween(tl,el,at,0,55,dur+.1,{ease:'power2.in'});};
+const outDepth=(ch,el,at,{dur=.5,st=.008}={})=>{tl.to(ch,{opacity:0,scale:2.6,duration:dur,ease:'power2.in',stagger:{each:st,from:'center'}},at);blurTween(tl,el,at,0,30,dur+.1,{ease:'power2.in',ax:1,ay:1});};
+const mark=(hl,at)=>tl.fromTo($('.hl-t',hl),{opacity:0,yPercent:60},{opacity:1,yPercent:0,duration:.7,ease:'power4.out',immediateRender:false},at);
+const unmark=(hl,at,x=0,y=-70)=>tl.to($('.hl-t',hl),{opacity:0,xPercent:x,yPercent:y,duration:.4,ease:'power2.in'},at);
+const typeOn=(el,at,{cps=16}={})=>{const str=el.dataset.full||(el.dataset.full=el.textContent);const o={i:0};
+  tl.set(el,{opacity:1},at);tl.fromTo(o,{i:0},{i:str.length,duration:str.length/cps,ease:'none',immediateRender:false,
+    onUpdate(){el.textContent=str.slice(0,Math.round(o.i));}},at);
+  tl.set(o,{i:0},0);tl.call(()=>{el.textContent='';},null,0.001);};
+const show=(el,at,dur=.35)=>tl.fromTo(el,{opacity:0},{opacity:1,duration:dur,ease:'power1.out',immediateRender:false},at);
+const hide=(el,at,dur=.35)=>tl.to(el,{opacity:0,duration:dur,ease:'power2.in'},at);
+/* keyframe hit: diamond punches when the path reaches it */
+const hit=(i,at)=>{const o=dia[i];o.pop=1;tl.fromTo(o,{pop:1.9},{pop:1,duration:.6,ease:'back.out(3)',immediateRender:false},at);};
+/* camera travel: path draws ahead, camera moves between stops with a scale dip */
+const travel=(i,t0,t1,{dip=.62,lead=0}={})=>{const a=STOPS[i],b=STOPS[i+1],mid=(t0+t1)/2;
+  tl.to(P,{d:b.u,duration:t1-t0-.1+lead,ease:'power2.inOut'},t0);
+  tl.to(CAM,{fx:b.fx,fy:b.fy,duration:t1-t0,ease:'power3.inOut'},t0);
+  tl.to(CAM,{s:dip,duration:(t1-t0)/2,ease:'sine.in'},t0);
+  tl.to(CAM,{s:b.s,duration:(t1-t0)/2,ease:'sine.out'},mid);
+  hit(i+1,t1-.12+lead);};
+
+/* ---- initial state (also the loop reset) ---- */
+tl.set(CAM,{s:STOPS[0].s,fx:STOPS[0].fx,fy:STOPS[0].fy,shake:0},0);
+tl.set(P,{d:0,head:0,k:0,icon:0,fade:1},0);
+
+/* ================= RUNDOWN =================
+   0.0  A  grey slide already on screen; "Most agents make slides"; the path tears out of the keyframe
+   3.0  →  B  "This one makes motion" + opener card ("Launch day" slams in through rings)
+   7.8  →  C  keyframe grows into a warm field; "Type that moves to the beat" word by word
+  13.0  →  D  bumper: ring draws, dot snaps, NOVA unmasks
+  16.9  →  E  lower third over drifting footage (whip in)
+  20.9  →  F  "Explainers in six styles": six style cards dealt into a fan
+  25.4  →  G  index.html typed on the file; "One file. Press play."; agent chips
+  29.9  pull back: the path thickens, extra keyframes fade, icon stage appears — the journey is the logo
+  32.4  "Bang Motion" wordmark + line; slow push; loop at 36
+   ========================================== */
+
+/* A · the slide */
+const elA=$('#cA'),chA=splitChars($('.txt',elA)),inA=$('#st0 .inner');
+tl.set(inA,{opacity:1},0);
+tl.set('#slide',{rotateX:0,y:0,opacity:1,transformPerspective:1600},0);
+tl.set('#slide .bl',{y:0,x:0,rotation:0,opacity:1},0);
+inLeft(chA,elA,.35); mark($('.hl',elA),.95);
+tl.to('#slide',{y:-6,duration:1.2,ease:'sine.inOut'},.3);
+tl.to(P,{head:1,duration:.25},1.75);
+hit(0,1.75);
+tl.to(P,{d:.035,duration:.9,ease:'power2.in'},1.85);
+/* the tear: bullets drop, slide falls back */
+[[-40,520,-28],[60,560,22],[-20,600,-14]].forEach(([x,y,r],i)=>{
+  tl.to($$('#slide .bl')[i],{x,y,rotation:r,opacity:0,duration:.9,ease:'power2.in'},2.0+i*.08);});
+tl.to('#slide .clip',{y:420,rotation:18,opacity:0,duration:.9,ease:'power2.in'},2.05);
+tl.to('#slide',{rotateX:78,y:160,opacity:0,duration:1.0,ease:'power3.in'},2.25);
+tl.to(CAM,{shake:6,duration:.08},2.0); tl.to(CAM,{shake:0,duration:.5},2.08);
+outLeft(chA,elA,2.55); unmark($('.hl',elA),2.6,-60,0);
+tl.set(inA,{opacity:0},3.3);
+
+/* travel A → B */
+travel(0,3.0,4.6);
+
+/* B · opener */
+const inB=$('#st1 .inner'),elB=$('#cB'),chB=splitChars($('.txt',elB));
+const elL=$('#launch'),chL=splitChars($('.txt',elL));
+tl.set(inB,{opacity:1},4.2);
+tl.set('#cardB',{opacity:0,rotateY:-30,transformPerspective:1800},0);
+inUp(chB,elB,4.45); mark($('.hl',elB),4.95);
+tl.to('#cardB',{opacity:1,rotateY:0,duration:1,ease:'power3.out'},4.8);
+show('#tB',5.1);
+['#r1','#r2','#r3'].forEach((r,i)=>{tl.fromTo(r,{width:40,height:40,marginLeft:-20,marginTop:-20,opacity:.9},
+  {width:1300,height:1300,marginLeft:-650,marginTop:-650,opacity:0,duration:1.5,ease:'expo.out',immediateRender:false},5.55+i*.14);});
+tl.fromTo('#glowB',{opacity:0,scale:.4},{opacity:1,scale:1,duration:.8,ease:'power3.out',immediateRender:false},5.5);
+inDepth(chL,elL,5.5,{dur:1.1});
+tl.to(elL,{scale:1.03,duration:1.6,ease:'sine.out'},6.4);
+outUp(chB,elB,7.55); unmark($('.hl',elB),7.6);
+tl.to('#cardB',{opacity:0,rotateY:30,duration:.5,ease:'power2.in'},7.7);
+hide('#tB',7.6);
+tl.set(inB,{opacity:0},8.3);
+
+/* travel B → C */
+travel(1,7.8,9.3);
+
+/* C · the keyframe becomes a warm field */
+const k1=$$('#k1 .wd'),k2=$$('#k2 .wd'),k3=$$('#k3 .wd'),k4=$$('#k4 .wd');
+tl.set('#field',{opacity:0,scale:.6,rotation:45},0);
+tl.set('#field',{opacity:1},9.35);
+tl.to('#field',{scale:52,duration:.6,ease:'power3.in'},9.35);
+tl.to('#vig',{opacity:.35,duration:.4},9.7);
+tl.to('#grain',{opacity:.12,duration:.3},9.8);
+show('#tC',10.0);
+tl.fromTo(k1,{opacity:0,xPercent:-40},{opacity:1,xPercent:0,duration:.6,ease:'power4.out',immediateRender:false},10.1);
+blurTween(tl,'#k1',10.1,50,0,.6,{ease:'power4.out'});
+tl.fromTo(k2,{opacity:0,yPercent:-90},{opacity:1,yPercent:0,duration:.5,ease:'power4.out',immediateRender:false},10.6);
+blurTween(tl,'#k2',10.6,30,0,.5,VERT);
+tl.fromTo(k3,{opacity:0,scale:2.2},{opacity:1,scale:1,duration:.7,ease:'expo.out',immediateRender:false},11.05);
+blurTween(tl,'#k3',11.05,24,0,.7,{ease:'expo.out',ax:1,ay:1});
+tl.to(CAM,{shake:5,duration:.06},11.1); tl.to(CAM,{shake:0,duration:.4},11.16);
+tl.fromTo(k4,{opacity:0,yPercent:80,rotateX:-60},{opacity:1,yPercent:0,rotateX:0,duration:.45,ease:'back.out(1.8)',stagger:.28,immediateRender:false},11.6);
+tl.to(CAM,{s:1.07,duration:2.4,ease:'sine.inOut'},10.0);
+tl.to(['#k1','#k2','#k3','#k4','#tC'],{opacity:0,yPercent:-30,duration:.35,ease:'power2.in',stagger:.05},12.7);
+tl.to('#field',{scale:.6,duration:.55,ease:'power3.inOut'},13.0);
+tl.set('#field',{opacity:0},13.55);
+tl.to('#vig',{opacity:1,duration:.4},13.1);
+tl.to('#grain',{opacity:.2,duration:.3},13.2);
+tl.set(['#k1','#k2','#k3','#k4'],{opacity:1,yPercent:0},0);
+
+/* travel C → D */
+travel(2,13.2,14.6);
+
+/* D · bumper */
+const inD=$('#st3 .inner'),elN=$('#nova'),chN=splitChars($('.txt',elN));
+tl.set(inD,{opacity:1},14.2);
+tl.set('#cardD',{opacity:0,scale:.85},0);
+tl.to('#cardD',{opacity:1,scale:1,duration:.6,ease:'power3.out'},14.4);
+show('#tD',14.6);
+tl.fromTo('#dRing',{attr:{'stroke-dashoffset':943}},{attr:{'stroke-dashoffset':0},duration:.8,ease:'power3.inOut',immediateRender:false},14.7);
+tl.fromTo('#dRing2',{attr:{'stroke-dashoffset':1232}},{attr:{'stroke-dashoffset':0},duration:1,ease:'power3.inOut',immediateRender:false},14.85);
+tl.fromTo('#dDot',{opacity:0,scale:0},{opacity:1,scale:1,duration:.45,ease:'back.out(3)',immediateRender:false},15.35);
+tl.to('#dDot',{scale:1.5,duration:.25,ease:'power2.out'},15.8);
+inMask(chN,elN,15.75,{dur:.7});
+tl.fromTo(chN,{letterSpacing:'.5em'},{letterSpacing:'0em',duration:1,ease:'expo.out',immediateRender:false},15.75);
+tl.to('#cardD',{scale:1.04,duration:1.2,ease:'sine.out'},15.8);
+tl.to('#cardD',{opacity:0,scale:.9,duration:.4,ease:'power2.in'},16.85);
+hide('#tD',16.8);
+tl.set(inD,{opacity:0},17.3);
+
+/* travel D → E — the whip (directional blur, once) */
+travel(3,16.9,18.1,{dip:.7});
+blurTween(tl,'#world',17.25,0,22,.25,{ease:'power2.in',ax:1,ay:.5});
+blurTween(tl,'#world',17.5,22,0,.3,{ease:'power2.out',ax:1,ay:.5});
+
+/* E · lower third */
+const inE=$('#st4 .inner');
+tl.set(inE,{opacity:1},17.7);
+tl.set('#foot',{opacity:0,scale:1.08},0);
+tl.to('#foot',{opacity:1,scale:1,duration:.7,ease:'power3.out'},17.9);
+show('#tE',18.2);
+tl.fromTo('#l3bar',{scaleY:0},{scaleY:1,duration:.4,ease:'power3.out',immediateRender:false},18.6);
+tl.fromTo('#l3box',{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)',duration:.65,ease:'power3.inOut',immediateRender:false},18.85);
+tl.to(CAM,{s:1.1,fx:STOPS[4].fx-260,fy:STOPS[4].fy+180,duration:1.6,ease:'power2.inOut'},19.0);
+tl.to('#l3box',{clipPath:'inset(0 100% 0 0)',duration:.4,ease:'power2.in'},20.5);
+tl.to('#l3bar',{scaleY:0,duration:.3,ease:'power2.in'},20.75);
+tl.to('#foot',{opacity:0,duration:.4},20.8);
+hide('#tE',20.7);
+tl.set(inE,{opacity:0},21.3);
+
+/* travel E → F */
+travel(4,20.9,22.3);
+
+/* F · explainer deck */
+const inF=$('#st5 .inner'),elF=$('#cF'),chF=splitChars($('.txt',elF)),cards=$$('#deck .ex');
+tl.set(inF,{opacity:1},21.9);
+inMask(chF,elF,22.3,{dur:.8}); mark($('.hl',elF),22.75);
+cards.forEach((c,i)=>{const n=cards.length,a=(i-(n-1)/2);
+  tl.set(c,{x:-131,y:-330,rotation:0,opacity:0},0);
+  tl.fromTo(c,{x:-131,y:0,rotation:-4,opacity:0,scale:.9},
+    {x:-131+a*262,y:-330+a*a*10,rotation:a*4,opacity:1,scale:1,duration:.7,ease:'back.out(1.5)',immediateRender:false},22.6+i*.14);
+  tl.to(c,{y:`-=${14+i%2*10}`,duration:1.2,ease:'sine.inOut',yoyo:true,repeat:1},23.6+i*.05);});
+tl.to(cards,{opacity:0,y:'+=160',duration:.4,ease:'power2.in',stagger:.04},25.3);
+outUp(chF,elF,25.35); unmark($('.hl',elF),25.4);
+tl.set(inF,{opacity:0},26.0);
+
+/* travel F → G */
+travel(5,25.4,26.8);
+
+/* G · one file */
+const inG=$('#st6 .inner'),elG=$('#cG'),chG=splitChars($('.txt',elG)),elG2=$('#cG2'),chG2=splitChars($('.txt',elG2));
+tl.set(inG,{opacity:1},26.4);
+tl.set(['#file','#fold'],{opacity:0,y:80,rotation:-4},0);
+tl.to(['#file','#fold'],{opacity:1,y:0,rotation:0,duration:.8,ease:'power3.out'},26.6);
+tl.set('.code',{scaleX:0,transformOrigin:'0 50%'},0);
+tl.to('.code',{scaleX:1,duration:.4,ease:'power3.out',stagger:.06},26.9);
+typeOn($('#fname'),27.3,{cps:18});
+inRight(chG,elG,27.5);
+inUp(chG2,elG2,28.0); mark($('.hl',elG2),28.35);
+show('#tG',28.5);
+['#ch1','#ch2','#ch3','#ch4'].forEach((c,i)=>tl.fromTo(c,{opacity:0,scale:.6,y:20},{opacity:1,scale:1,y:0,duration:.45,ease:'back.out(2.4)',immediateRender:false},28.7+i*.13));
+tl.to(CAM,{s:1.05,duration:1.6,ease:'sine.inOut'},27.6);
+tl.to(['#cG','#cG2','#tG','#ch1','#ch2','#ch3','#ch4','#file','#fold'],{opacity:0,duration:.5,ease:'power2.in',stagger:.03},29.8);
+tl.set(inG,{opacity:0},30.6);
+
+/* pull back: the journey is the logo */
+const FS=520/7168, FFX=3584, FFY=3584+(540-400)/FS;
+tl.to(P,{head:0,duration:.4},29.9);
+tl.to(CAM,{s:FS,fx:FFX,fy:FFY,duration:2.6,ease:'power3.inOut'},29.9);
+tl.to(P,{k:1,duration:2.2,ease:'power2.in'},30.2);
+tl.to(P,{fade:0,duration:.8},30.6);
+tl.to(P,{icon:1,duration:1,ease:'power1.inOut'},31.2);
+const wm=$('#wm'),chW=splitChars($('.txt',wm));
+inUp(chW,wm,32.4,{dur:1,st:.035});
+show('#wl',33.1,.6);
+tl.to(CAM,{s:FS*1.04,duration:3.4,ease:'sine.inOut'},32.5);
+tl.to([wm,'#wl'],{opacity:0,duration:.45,ease:'power2.in'},35.4);
+tl.set(wm,{opacity:1},0);
+tl.to({},{duration:.01},DURATION);
+
+/* ============ GLUE ============ */
+const stage=$('#stage');
+const fit=()=>{const s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform=`translate(-50%,-50%) scale(${s})`;};
+addEventListener('resize',fit);fit();
+const clock=$('#clock'),scrub=$('#scrub'),btn=$('#btn-play');let scrubbing=false;
+(function frame(){const t=tl.time();render(t);clock.textContent=t.toFixed(2)+'s';
+  if(!scrubbing)scrub.value=String(t/DURATION*1000);requestAnimationFrame(frame);})();
+const toggle=()=>{if(tl.paused()||tl.progress()>=1){if(tl.progress()>=1)tl.progress(0);tl.play();btn.textContent='Pause';}
+  else{tl.pause();btn.textContent='Play';}};
+btn.onclick=toggle;
+$('#btn-restart').onclick=()=>{tl.pause(0);tl.play();btn.textContent='Pause';};
+scrub.addEventListener('pointerdown',()=>{scrubbing=true;tl.pause();btn.textContent='Play';});
+addEventListener('pointerup',()=>scrubbing=false);
+scrub.addEventListener('input',()=>{tl.pause();tl.time(scrub.value/1000*DURATION);});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();toggle();}
+  if(/^[rR]$/.test(e.key)){tl.pause(0);tl.play();}
+  if(/^[hH]$/.test(e.key))$('#ui').classList.toggle('on');});
+if(Q.has('debug'))$('#ui').classList.add('on');
+tl.eventCallback('onComplete',()=>{tl.play(0);});
+const seek=t=>{tl.pause();tl.time(t,false);if(gsap.ticker.tick)gsap.ticker.tick();render(t);};
+window.OPENER={tl,DURATION,seek,ready:false};
+window.OPENER.seekFrame=t=>{seek(t);return Promise.resolve();};
+window.OPENER.clipsReady=()=>true;
+document.fonts.ready.then(()=>{window.OPENER.ready=true;if(!Q.has('clean'))tl.play(0);});
+</script>
+</body>
+</html>
