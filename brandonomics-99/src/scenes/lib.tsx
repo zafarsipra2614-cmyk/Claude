@@ -64,7 +64,11 @@ export const Tag: React.FC<{
   const t = frame - start;
   const h = Math.round(w * 0.46);
   const drop = spring({ frame: t, fps, config: { damping: 14, mass: 0.8, stiffness: 120 }, durationInFrames: 34 });
-  const swing = t > 0 ? 7 * Math.exp(-t / 13) * Math.sin(t / 3.6) : 0;
+  // a short drop: enough to read as hanging, never long enough to pass over other content.
+  // tags with no string (sitting on something) pop in place instead.
+  const swing = t > 0 && string ? 7 * Math.exp(-t / 13) * Math.sin(t / 3.6) : 0;
+  const enterY = string ? interpolate(drop, [0, 1], [-90, 0]) : 0;
+  const enterS = string ? 1 : interpolate(drop, [0, 1], [0.7, 1]);
   const o = interpolate(frame, [start, start + 8], [0, 1], clamp);
   const out = exit === undefined ? 0 : ramp(frame, exit, exit + 12, Easing.in(Easing.cubic));
   const tone_ = TONES[tone];
@@ -85,7 +89,7 @@ export const Tag: React.FC<{
         width: w,
         height: h,
         opacity: o * (1 - out),
-        transform: `translateY(${interpolate(drop, [0, 1], [-300, 0]) - out * 60}px) rotate(${rot + swing}deg)`,
+        transform: `translateY(${enterY - out * 60}px) rotate(${rot + swing}deg) scale(${enterS})`,
         transformOrigin: `${w * 0.1}px ${h / 2}px`,
         zIndex: z,
       }}
