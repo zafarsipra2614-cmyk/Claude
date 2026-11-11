@@ -27,9 +27,11 @@ export const Rise: React.FC<{
   z?: number;
   stroke?: { x: number; y: number; radius?: number };
   exit?: number;
+  /** "over": an intentional overlay (allowed to sit on other boxes in the fit audit). */
+  layer?: "over";
   style?: React.CSSProperties;
   children?: React.ReactNode;
-}> = ({ start, dur = 30, dist = 390, left, top, bottom, width, height, rotate = 0, z = 12, stroke, exit, style, children }) => {
+}> = ({ start, dur = 30, dist = 390, left, top, bottom, width, height, rotate = 0, z = 12, stroke, exit, layer, style, children }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { opacity, progress } = getEntrance(frame, fps, start, start + dur);
@@ -37,7 +39,11 @@ export const Rise: React.FC<{
   const y = riseFrom(progress, dist) + out * 120;
   const box: React.CSSProperties = { position: "absolute", left, top, bottom, width, height };
   return (
-    <div style={{ ...box, opacity: opacity * (1 - out), transform: `translateY(${y}px) rotate(${rotate}deg)`, zIndex: z }}>
+    <div
+      data-moving={progress < 0.995 || out > 0 ? "" : undefined}
+      data-layer={layer}
+      style={{ ...box, opacity: opacity * (1 - out), transform: `translateY(${y}px) rotate(${rotate}deg)`, zIndex: z }}
+    >
       {stroke ? (
         <div
           aria-hidden
@@ -101,8 +107,8 @@ export const along = (pts: Pt[], t: number) => {
 };
 
 /**
- * Layout QC. Runs in the browser on every rendered frame and logs a FIT error
- * when content spills out of the box it is meant to sit in:
+ * Layout QC. Runs in the browser on every rendered frame and logs FIT errors
+ * (see runFitCheck for the rules). Tags:
  *   data-fit="name"          every text run and child element must stay inside it
  *   data-box="id"            a backing card…
  *   data-inside="id"         …that this separately positioned element must sit on
@@ -151,48 +157,138 @@ export const FitCheck: React.FC = () => {
 type Box = { left: number; top: number; right: number; bottom: number };
 const TOL = 6;
 
+/**
+ * The audit. Elements still entering or exiting (inside [data-moving]) are
+ * skipped, so it judges the settled layout. It reports:
+ *   CONTAIN  text crosses its container's padding, or a box leaves the frame
+ *   COVERED  something painted sits on top of a run of text
+ *   OVERLAP  two runs of text overlap, or two boxes collide
+ *            (boxes marked data-layer="over" — stamps, pinned cards — are
+ *            allowed to sit on other boxes, but still may not cover text)
+ */
 const runFitCheck = (frame: number, frameRect: Box) => {
   console.log("FITCHECK", frame);
-  const out = (name: string, inner: Box, outer: Box) => {
-    const o = { L: outer.left - inner.left, R: inner.right - outer.right, T: outer.top - inner.top, B: inner.bottom - outer.bottom };
-    const bad = Object.entries(o)
+  const report = (kind: string, msg: string) => console.error(`FIT frame=${frame} ${kind} ${msg}`);
+  const sides = (inner: Box, outer: Box) =>
+    Object.entries({ L: outer.left - inner.left, R: inner.right - outer.right, T: outer.top - inner.top, B: inner.bottom - outer.bottom })
       .filter(([, v]) => v > TOL)
       .map(([k, v]) => `${k}+${Math.round(v)}px`);
-    if (bad.length) console.error(`FIT frame=${frame} ${name}: ${bad.join(" ")}`);
+  const contain = (name: string, inner: Box, outer: Box) => {
+    const bad = sides(inner, outer);
+    if (bad.length) report("CONTAIN", `${name}: ${bad.join(" ")}`);
   };
-  // checkVisibility walks ancestors, so faded-out (exited) elements are skipped.
+  const inter = (a: Box, b: Box) => {
+    const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    return w > TOL && h > TOL ? { w: Math.round(w), h: Math.round(h) } : null;
+  };
+  // checkVisibility walks ancestors, so faded-out elements are skipped.
   const visible = (el: Element) =>
     (el as Element & { checkVisibility: (o: object) => boolean }).checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
-  const textRects = (el: Element) => {
-    const rects: { text: string; r: DOMRect }[] = [];
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    let n: Node | null;
-    while ((n = walker.nextNode())) {
-      const text = n.textContent?.trim();
-      if (!text) continue;
-      const range = document.createRange();
-      range.selectNodeContents(n);
-      const r = range.getBoundingClientRect();
-      if (r.width) rects.push({ text: text.slice(0, 24), r });
-    }
-    return rects;
+  const settled = (el: Element) => !el.closest("[data-moving]");
+  const live = (el: Element) => visible(el) && settled(el);
+  const describe = (el: Element) => {
+    const fit = el.closest<HTMLElement>("[data-fit]")?.dataset.fit;
+    const txt = el.textContent?.trim().slice(0, 20);
+    return fit ? `[${fit}]` : txt ? `<${el.tagName.toLowerCase()} "${txt}">` : `<${el.tagName.toLowerCase()}>`;
   };
-  document.querySelectorAll<HTMLElement>("[data-fit]").forEach((box) => {
-    if (!visible(box)) return;
+  const scene = document.querySelector("[data-frame]");
+  if (!scene) return;
+
+  // --- every visible, settled run of text, one rect per rendered line
+  type Run = { el: Element; text: string; lines: DOMRect[]; box: Box };
+  const runs: Run[] = [];
+  const walker = document.createTreeWalker(scene, NodeFilter.SHOW_TEXT);
+  let n: Node | null;
+  while ((n = walker.nextNode())) {
+    const text = n.textContent?.trim();
+    const el = n.parentElement;
+    if (!text || !el || !live(el)) continue;
+    const range = document.createRange();
+    range.selectNodeContents(n);
+    const lines = Array.from(range.getClientRects()).filter((r) => r.width > 1 && r.height > 1);
+    if (!lines.length) continue;
+    runs.push({ el, text: text.slice(0, 24), lines, box: range.getBoundingClientRect() });
+  }
+
+  // --- CONTAIN: tagged boxes inside the frame, their text inside their padding
+  const boxes = Array.from(scene.querySelectorAll<HTMLElement>("[data-fit]")).filter(live);
+  for (const box of boxes) {
     const br = box.getBoundingClientRect();
-    if (br.width === 0) return;
+    if (br.width === 0) continue;
     const name = box.dataset.fit!;
-    out(`${name} vs frame`, br, frameRect);
-    // Text must stay inside the padding, not just inside the border, or it reads as crammed.
+    contain(`${name} vs frame`, br, frameRect);
     const cs = getComputedStyle(box);
     const pad = (k: string) => Math.max(parseFloat(cs.getPropertyValue(`padding-${k}`)) || 0, 12);
     const content = { left: br.left + pad("left"), right: br.right - pad("right"), top: br.top + pad("top") * 0.5, bottom: br.bottom - pad("bottom") * 0.5 };
-    textRects(box).forEach(({ text, r }) => out(`${name} text "${text}"`, r, content));
+    runs.filter((r) => box.contains(r.el)).forEach((r) => contain(`${name} text "${r.text}"`, r.box, content));
+  }
+  // all text inside the frame, tagged or not
+  runs.forEach((r) => contain(`text "${r.text}" vs frame`, r.box, frameRect));
+  // text positioned over a separate backing card
+  scene.querySelectorAll<HTMLElement>("[data-inside]").forEach((el) => {
+    const card = scene.querySelector<HTMLElement>(`[data-box="${el.dataset.inside}"]`);
+    if (!card || !live(el)) return;
+    const cr = card.getBoundingClientRect();
+    runs.filter((r) => el.contains(r.el)).forEach((r) => contain(`${el.dataset.inside} ← "${r.text}"`, r.box, cr));
   });
-  document.querySelectorAll<HTMLElement>("[data-inside]").forEach((el) => {
-    const box = document.querySelector<HTMLElement>(`[data-box="${el.dataset.inside}"]`);
-    if (!box || !visible(el)) return;
-    const br = box.getBoundingClientRect();
-    textRects(el).forEach(({ text, r }) => out(`${el.dataset.inside} ← "${text}"`, r, br));
-  });
+
+  // --- COVERED: hit-test points across every line of text
+  const painted = (e: Element) => {
+    if (e instanceof HTMLImageElement) return true;
+    if (e instanceof SVGGeometryElement || e instanceof SVGTextElement) return true; // hit only where it paints
+    if (e instanceof SVGElement) return false; // <svg>, <g>: transparent containers
+    const cs = getComputedStyle(e);
+    const bg = cs.backgroundColor;
+    const hasBg = !(bg === "transparent" || /rgba\(.*,\s*0\)$/.test(bg));
+    const hasBorder = parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== "none" && !/rgba\(.*,\s*0\)$/.test(cs.borderTopColor);
+    return hasBg || cs.backgroundImage !== "none" || hasBorder;
+  };
+  const covered = new Set<string>();
+  for (const r of runs) {
+    for (const line of r.lines) {
+      for (const fx of [0.08, 0.3, 0.5, 0.7, 0.92]) {
+        const x = line.left + line.width * fx;
+        const y = line.top + line.height * 0.5;
+        const stack = document.elementsFromPoint(x, y);
+        const own = stack.indexOf(r.el);
+        const above = own < 0 ? stack : stack.slice(0, own);
+        for (const e of above) {
+          if (e.contains(r.el) || r.el.contains(e)) continue; // ancestor, or a deliberate mark on the text (strike)
+          if (!live(e) || !painted(e)) continue;
+          covered.add(`text "${r.text}" covered by ${describe(e)}`);
+          break;
+        }
+      }
+    }
+  }
+  covered.forEach((m) => report("COVERED", m));
+
+  // --- OVERLAP: text on text (different elements), and box on box
+  const seen = new Set<string>();
+  for (let i = 0; i < runs.length; i++)
+    for (let j = i + 1; j < runs.length; j++) {
+      const a = runs[i], b = runs[j];
+      if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      for (const la of a.lines)
+        for (const lb of b.lines) {
+          // shrink line boxes to the glyph band so stacked lines don't touch
+          const sh = (l: DOMRect) => ({ left: l.left, right: l.right, top: l.top + l.height * 0.2, bottom: l.bottom - l.height * 0.2 });
+          const o = inter(sh(la), sh(lb));
+          const key = `${a.text}|${b.text}`;
+          if (o && !seen.has(key)) {
+            seen.add(key);
+            report("OVERLAP", `text "${a.text}" and "${b.text}" (${o.w}×${o.h}px)`);
+          }
+        }
+    }
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j];
+      if (a.contains(b) || b.contains(a)) continue;
+      const over = (e: HTMLElement) => !!e.closest('[data-layer="over"]');
+      if (over(a) || over(b)) continue;
+      const o = inter(a.getBoundingClientRect(), b.getBoundingClientRect());
+      if (o) report("OVERLAP", `boxes [${a.dataset.fit}] and [${b.dataset.fit}] (${o.w}×${o.h}px)`);
+    }
 };

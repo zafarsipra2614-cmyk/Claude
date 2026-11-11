@@ -15,17 +15,32 @@ python3 ~/.claude/skills/vox-skill/scripts/sync_timing.py   # src/shared/timing.
 python3 ~/.claude/skills/vox-skill/scripts/score.py music/bed.wav --seconds 61.8 --key D --bpm 76 --motif 0.85 --pulse 0.8
 bash ~/.claude/skills/vox-skill/scripts/mix_audio.sh public/audio/vo.mp3 music/bed.wav music/mix.wav -12
 ffmpeg -y -i music/mix.wav -c:a libmp3lame -q:a 2 public/audio/mix.mp3
-node qc/fitcheck.mjs                                         # layout QC: must print "clean"
-npx remotion render src/index.ts GameStopSequence out/final.mp4
+npm run release                                              # audit, render, verify, copy
 ```
 
-## Layout QC
+## Layout audit and release
 
-`qc/fitcheck.mjs` renders each scene's fullest frame and runs an in-page checker
-(`FitCheck` in `src/scenes/kit.tsx`). Containers are tagged `data-fit` (text must
-stay inside the padding and the box inside the frame) or `data-box` / `data-inside`
-(text positioned over a separate backing card). Any overflow is reported with its
-side and size in px and the script exits 1. It also writes `out/qc/sheet.png`.
+```bash
+npm run audit     # layout audit only
+npm run release   # audit → render → poster → verify MP4 → copy deliverable
+```
+
+`qc/fitcheck.mjs` renders a settled frame after every cue in `src/shared/timing.ts`
+plus each scene's last frame, and an in-page checker (`FitCheck` in
+`src/scenes/kit.tsx`) reports:
+
+- **CONTAIN**: text crossing its container's padding, or any text/box outside the frame
+- **COVERED**: anything painted on top of a run of text (hit-tested across each line)
+- **OVERLAP**: text overlapping text, or two tagged boxes colliding; elements marked
+  `data-layer="over"` (stamps, the pinned rescue card) may sit on boxes, never on text
+
+Elements still entering or exiting (`data-moving`) are skipped, so only the
+settled layout is judged. Containers are tagged `data-fit`; text laid over a
+separate card uses `data-inside` / `data-box`.
+
+`qc/release.mjs` only replaces `gamestop_short_squeeze.mp4` when the audit is clean
+and every audited frame decoded from the rendered MP4 matches the audited still
+(results in `out/qc/release.json`).
 
 ## Facts on screen
 

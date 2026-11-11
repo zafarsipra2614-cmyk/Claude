@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig, spring } from "remotion";
 import { C, DROP, Grain, Paper } from "../shared/system";
-import { ARIAL, PaperBand, Stamp, Strike, Typewriter, tornClip } from "../shared/pieces";
+import { ARIAL, Stamp, Strike, Typewriter, tornClip } from "../shared/pieces";
 import { PLAYFAIR, PT_SERIF, TYPEWRITER } from "../shared/fonts";
 import { CUE } from "../shared/timing";
 import { FitCheck, Kicker, Label, Pt, Rise, along, clamp, pathOf, ramp } from "./kit";
@@ -48,9 +48,9 @@ const Certificate: React.FC<{ excess?: boolean; seed: number }> = ({ excess, see
 );
 
 export const HookScene: React.FC = () => {
-  const STEP = 50;
-  const H = 46;
-  const BASE = 150;
+  const STEP = 58;
+  const H = 52;
+  const BASE = 130;
   const leftStart = 6;
   const rightStart = CUE["s1.stackB"];
   const frame = useCurrentFrame();
@@ -79,14 +79,16 @@ export const HookScene: React.FC = () => {
         }}
       />
       <Stamp startFrame={CUE["s1.question"]} x={0} y={-330} rotate={-3} title="HOW?" width={260} zIndex={32} />
-      <PaperBand startFrame={0} endFrame={26} height={210} bottom={-60}>
-        <div style={{ position: "absolute", left: 425, top: 62, width: 400, textAlign: "center" }}>
+      <Rise start={leftStart} dur={22} dist={60} left={265} bottom={58} width={600} height={44} z={20} style={{ filter: "none" }}>
+        <div style={{ textAlign: "center" }}>
           <Label size={30} color={C.ink} spacing={4}>AVAILABLE TO TRADE</Label>
         </div>
-        <div style={{ position: "absolute", left: 1215, top: 62, width: 400, textAlign: "center" }}>
+      </Rise>
+      <Rise start={rightStart} dur={22} dist={60} left={1055} bottom={58} width={600} height={44} z={20} style={{ filter: "none" }}>
+        <div style={{ textAlign: "center" }}>
           <Label size={30} color={C.red} spacing={4}>ALREADY SOLD</Label>
         </div>
-      </PaperBand>
+      </Rise>
     </Frame>
   );
 };
@@ -234,8 +236,8 @@ export const MechanismScene: React.FC = () => {
   const arrowsOut = 1 - ramp(frame, out, out + 12);
 
   // bars: 100% float vs 140% sold short
-  const UNIT = 4.2; // px per percent
-  const BASE = 200;
+  const UNIT = 4.6; // px per percent
+  const BASE = 170;
   const floatGrow = ramp(frame, CUE["s3.barFloat"], CUE["s3.barFloat"] + 26, Easing.out(Easing.cubic));
   const shortT = ramp(frame, CUE["s3.barShort"], CUE["s3.countEnd"], Easing.out(Easing.cubic));
   const pct = Math.round(140 * shortT);
@@ -308,18 +310,18 @@ export const MechanismScene: React.FC = () => {
         </>
       ) : null}
 
-      <PaperBand startFrame={0} endFrame={24} height={240} bottom={-50} rotate={-0.5}>
-        {barsOn ? (
-          <>
-            <div style={{ position: "absolute", left: 620, top: 66, width: 300, textAlign: "center", opacity: floatGrow }}>
-              <Label size={26} color={C.ink} spacing={4}>FLOAT</Label>
-            </div>
-            <div style={{ position: "absolute", left: 1120, top: 66, width: 300, textAlign: "center", opacity: shortT > 0 ? 1 : 0 }}>
-              <Label size={26} color={C.red} spacing={4}>SOLD SHORT</Label>
-            </div>
-          </>
-        ) : null}
-      </PaperBand>
+      {barsOn ? (
+        <>
+          <div style={{ position: "absolute", left: 560, bottom: BASE - 56, width: 300, textAlign: "center", opacity: floatGrow, zIndex: 21 }}>
+            <Label size={28} color={C.ink} spacing={4}>FLOAT</Label>
+          </div>
+          <div style={{ position: "absolute", left: 1060, bottom: BASE - 56, width: 300, textAlign: "center", opacity: shortT > 0 ? 1 : 0, zIndex: 21 }}>
+            <Label size={28} color={C.red} spacing={4}>SOLD SHORT</Label>
+          </div>
+          {/* baseline */}
+          <div style={{ position: "absolute", left: 500, width: 920, bottom: BASE - 4, height: 4, background: C.ink, opacity: 0.8 * floatGrow, zIndex: 15 }} />
+        </>
+      ) : null}
       <div style={{ position: "absolute", right: 70, bottom: 26, zIndex: 26, opacity: barsOn ? 0.6 : 0 }}>
         <Label size={18} spacing={3}>SHORT INTEREST AS % OF FLOAT · MID-JANUARY 2021 · WIDELY REPORTED ESTIMATE</Label>
       </div>
@@ -338,6 +340,8 @@ const Node: React.FC<{ x: number; y: number; at: number; text: string; red?: boo
   const o = interpolate(frame, [at, at + 6], [0, 1], clamp);
   return (
     <div
+      data-fit={`loop node ${text}`}
+      data-moving={frame < at + 24 ? "" : undefined}
       style={{
         position: "absolute",
         left: x,
@@ -394,9 +398,9 @@ export const ForumScene: React.FC = () => {
   const a3 = ramp(frame, CUE["s4.loop"] - 8, CUE["s4.loop"] + 16);
   // triangle of nodes on the right
   const N = [
-    { x: 1390, y: 300 },
-    { x: 1690, y: 690 },
-    { x: 1090, y: 690 },
+    { x: 1440, y: 300 },
+    { x: 1700, y: 690 },
+    { x: 1200, y: 690 },
   ];
   const arc = (a: Pt, b: Pt, bend: number) => {
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -464,7 +468,7 @@ export const ForumScene: React.FC = () => {
 const JAN = [17.25, 17.37, 18.36, 18.08, 17.69, 19.94, 19.95, 31.4, 39.91, 35.5, 39.36, 39.12, 43.03, 65.01, 76.79, 147.98, 347.51];
 const AFTER = [347.51, 193.6, 325.0, 225.0, 90.0, 92.41, 53.5];
 
-const CH = { left: 300, right: 1560, top: 210, bottom: 860, max: 380 };
+const CH = { left: 300, right: 1560, top: 230, bottom: 900, max: 380 };
 const yOf = (v: number) => CH.bottom - (v / CH.max) * (CH.bottom - CH.top);
 
 export const SqueezeScene: React.FC = () => {
@@ -507,21 +511,25 @@ export const SqueezeScene: React.FC = () => {
         </div>
       ) : null}
       <Stamp startFrame={CUE["s5.peak"]} x={250} y={-270} rotate={-4} title="$347.51" sub="CLOSE · JAN 27" width={540} zIndex={30} />
-      <PaperBand startFrame={0} endFrame={24} height={210} bottom={-60} rotate={-0.4}>
-        {[
-          { i: 0, l: "JAN 4" },
-          { i: 7, l: "JAN 13" },
-          { i: 13, l: "JAN 22" },
-          { i: 16, l: "JAN 27" },
-        ].map((d) => (
-          <div key={d.l} style={{ position: "absolute", left: 60 + CH.left + (d.i / (JAN.length - 1)) * (CH.right - CH.left), top: 56, transform: "translateX(-50%)" }}>
+      {/* x axis: baseline, ticks and dates */}
+      <div style={{ position: "absolute", left: CH.left, width: (CH.right - CH.left) * axis, top: CH.bottom, height: 4, background: C.ink, opacity: 0.8, zIndex: 15 }} />
+      {[
+        { i: 0, l: "JAN 4" },
+        { i: 7, l: "JAN 13" },
+        { i: 13, l: "JAN 22" },
+        { i: 16, l: "JAN 27" },
+      ].map((d) => {
+        const x = CH.left + (d.i / (JAN.length - 1)) * (CH.right - CH.left);
+        return (
+          <div key={d.l} style={{ position: "absolute", left: x, top: CH.bottom, transform: "translateX(-50%)", opacity: axis, zIndex: 21, textAlign: "center" }}>
+            <div style={{ width: 4, height: 16, background: C.ink, margin: "0 auto 10px" }} />
             <Label size={24} color={C.ink} spacing={3}>{d.l}</Label>
           </div>
-        ))}
-        <div style={{ position: "absolute", right: 120, top: 112 }}>
-          <Label size={16} spacing={3}>PRICES BEFORE THE 2022 4-FOR-1 SPLIT</Label>
-        </div>
-      </PaperBand>
+        );
+      })}
+      <div style={{ position: "absolute", right: 80, bottom: 40, opacity: axis * 0.7, zIndex: 21 }}>
+        <Label size={18} spacing={3}>PRICES BEFORE THE 2022 4-FOR-1 SPLIT</Label>
+      </div>
     </Frame>
   );
 };
@@ -565,7 +573,7 @@ export const MelvinScene: React.FC = () => {
         </div>
       </Rise>
       <Stamp startFrame={CUE["s6.stamp"]} x={520} y={-350} rotate={-6} title="−53%" sub="IN ONE MONTH" width={500} zIndex={30} />
-      <Rise start={CUE["s6.rescue"]} dur={26} dist={300} left={1090} top={730} width={700} height={240} rotate={1.4} stroke={{ x: 22, y: 10 }} z={24}>
+      <Rise start={CUE["s6.rescue"]} dur={26} dist={300} left={1090} top={730} width={700} height={240} rotate={1.4} stroke={{ x: 22, y: 10 }} z={24} layer="over">
         <div data-fit="rescue card" style={{ position: "absolute", inset: 0, background: C.card, padding: "28px 36px", boxSizing: "border-box", overflow: "hidden" }}>
           <Label size={22} color={C.red} spacing={4}>JAN 25, 2021 · EMERGENCY FUNDING</Label>
           <div style={{ fontFamily: ARIAL, fontSize: 64, color: C.ink, marginTop: 12, lineHeight: 1, whiteSpace: "nowrap" }}>$2.75 BILLION</div>

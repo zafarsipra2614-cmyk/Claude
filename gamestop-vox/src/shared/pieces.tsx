@@ -164,6 +164,8 @@ export const Stamp: React.FC<{
   return (
     <div
       data-fit={`stamp ${title}`}
+      data-layer="over"
+      data-moving={frame < startFrame + 26 ? "" : undefined}
       style={{
         position: "absolute",
         left: 960 + x,

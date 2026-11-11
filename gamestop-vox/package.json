@@ -5,7 +5,9 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "remotion studio",
-    "render": "remotion render src/index.ts GameStopSequence out/final.mp4"
+    "render": "remotion render src/index.ts GameStopSequence out/final.mp4",
+    "audit": "node qc/fitcheck.mjs",
+    "release": "node qc/release.mjs"
   },
   "dependencies": {
     "@fontsource/archivo-black": "^5.3.0",
