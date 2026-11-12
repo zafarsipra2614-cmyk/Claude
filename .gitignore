@@ -1,3 +1,7 @@
 sukuk-explainer/render/
 sukuk-explainer/frames/
 sukuk-explainer/render.log
+
+# Python bytecode caches (e.g. from skill scripts)
+__pycache__/
+*.pyc
