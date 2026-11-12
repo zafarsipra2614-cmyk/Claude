@@ -4,3 +4,4 @@ music/*.wav
 public/audio/*.wav
 vo/voiceover_edit.wav
 .venv/
+music/papercut/

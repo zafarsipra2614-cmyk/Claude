@@ -7,15 +7,19 @@ export const T = 14;
 export const D = {
   hook: 150,
   ch1: 110,
+  doc: 210,
   endcard: 360,
 } as const;
 
-export const SCENE_ORDER = ["hook", "ch1", "endcard"] as const;
-export const SEQUENCE_DURATION = 620;
+export const SCENE_ORDER = ["hook", "ch1", "doc", "endcard"] as const;
+export const SEQUENCE_DURATION = 830;
 
 export const CUE = {
   "ch1.num": 8,
   "ch1.title": 34,
+  "doc.clip": 70,
+  "doc.photo": 4,
+  "doc.zoom": 150,
   "endcard.left": 30,
   "endcard.right": 70,
   "endcard.sub": 50,

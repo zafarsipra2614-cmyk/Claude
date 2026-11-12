@@ -195,6 +195,8 @@ const runFitCheck = (frame: number, frameRect: Box) => {
   };
   const scene = document.querySelector("[data-frame]");
   if (!scene) return;
+  // wholly outside the frame (the far end of a Pan's set): not on screen, so not judged
+  const offscreen = (r: Box) => r.right <= frameRect.left || r.left >= frameRect.right || r.bottom <= frameRect.top || r.top >= frameRect.bottom;
 
   // --- every visible, settled run of text, one rect per rendered line
   type Run = { el: Element; text: string; lines: DOMRect[]; box: Box };
@@ -227,15 +229,16 @@ const runFitCheck = (frame: number, frameRect: Box) => {
       .map(cut)
       .filter((r): r is DOMRect => r !== null);
     if (!lines.length) continue;
+    if (lines.every((l) => offscreen(l))) continue;
     const bb = lines.reduce((u, r) => ({ left: Math.min(u.left, r.left), top: Math.min(u.top, r.top), right: Math.max(u.right, r.right), bottom: Math.max(u.bottom, r.bottom) }), { left: 1e9, top: 1e9, right: -1e9, bottom: -1e9 });
     runs.push({ el, text: text.slice(0, 24), lines, box: bb });
   }
 
   // --- CONTAIN: tagged boxes inside the frame, their text inside their padding
-  const boxes = Array.from(scene.querySelectorAll<HTMLElement>("[data-fit]")).filter(live);
+  const boxes = Array.from(scene.querySelectorAll<HTMLElement>("[data-fit]")).filter((b) => live(b) && !offscreen(b.getBoundingClientRect()));
   for (const box of boxes) {
     const br = box.getBoundingClientRect();
-    if (br.width === 0) continue;
+    if (br.width === 0 || offscreen(br)) continue;
     const name = box.dataset.fit!;
     contain(`${name} vs frame`, br, frameRect);
     const cs = getComputedStyle(box);

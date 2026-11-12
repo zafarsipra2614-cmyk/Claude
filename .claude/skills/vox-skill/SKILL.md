@@ -17,7 +17,7 @@ timeline to drag. You direct the film by writing components and tuning props.
 | The user gives you | Mode | Follow |
 |---|---|---|
 | A topic (or a script) and wants you to narrate | **Topic mode**: 60–90 s, Edge TTS narration, ~8 scenes | this file, top to bottom |
-| A **script and their own voiceover recording** | **Voiceover mode**: long-form paper-cut explainer on their audio, chapter cards, varied transitions, YouTube end screen, audited release | **`references/voiceover-mode.md`**, starting with `scripts/scaffold_vo.sh` |
+| A **script and their own voiceover recording** | **Voiceover mode**: long-form paper-cut explainer on their audio, chapter cards, varied transitions, camera moves and synthesised foley (from papercut-explainer), credited archive photos (cinematic-film) and halftone newsprint (gbro-collage-info), Remotion best practices (official skills), YouTube end screen, audited release | **`references/voiceover-mode.md`**, starting with `scripts/scaffold_vo.sh` |
 
 In voiceover mode the recording is the clock: never re-voice it, never re-time
 it by hand, and apply requested audio edits (e.g. "remove 'Part two'") to the

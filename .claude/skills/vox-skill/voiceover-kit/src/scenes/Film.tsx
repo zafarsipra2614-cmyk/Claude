@@ -14,6 +14,7 @@ export { SEQUENCE_DURATION };
 const SCENES: Record<(typeof SCENE_ORDER)[number], React.FC> = {
   hook: S.Hook,
   ch1: S.Ch1,
+  doc: S.Doc,
   endcard: S.End,
 };
 
@@ -31,6 +32,7 @@ type Kind = "torn" | "tear" | "rise" | "right" | "left" | "fade";
 const ARRIVAL: Record<(typeof SCENE_ORDER)[number], Kind> = {
   hook: "right",
   ch1: "torn",
+  doc: "rise",
   endcard: "torn",
 };
 
