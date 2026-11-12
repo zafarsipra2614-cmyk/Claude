@@ -267,7 +267,10 @@ const runFitCheck = (frame: number, frameRect: Box) => {
   const covered = new Set<string>();
   for (const r of runs) {
     for (const line of r.lines) {
-      for (const fx of [0.08, 0.3, 0.5, 0.7, 0.92]) {
+      // one- or two-character runs (a price split into per-character spans, often rotated)
+      // are hit-tested at their centre: the edges of a rotated glyph's bounding box lie
+      // outside the glyph, and would land on its neighbour
+      for (const fx of r.text.length <= 2 ? [0.5] : [0.08, 0.3, 0.5, 0.7, 0.92]) {
         const x = line.left + line.width * fx;
         const y = line.top + line.height * 0.5;
         const stack = document.elementsFromPoint(x, y);
@@ -295,6 +298,9 @@ const runFitCheck = (frame: number, frameRect: Box) => {
     for (let j = i + 1; j < runs.length; j++) {
       const a = runs[i], b = runs[j];
       if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      // characters of one string split into sibling spans are laid out together by the text
+      // engine; their (rotated) bounding boxes overlap without the glyphs touching
+      if (a.el.parentElement && a.el.parentElement === b.el.parentElement && a.el.tagName === "SPAN" && b.el.tagName === "SPAN") continue;
       for (const la of a.lines)
         for (const lb of b.lines) {
           // shrink line boxes to the glyph band so stacked lines don't touch

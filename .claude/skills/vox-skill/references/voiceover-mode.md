@@ -207,6 +207,29 @@ it still warns above 50 MB) → poster frame → every audited frame is decoded 
 the MP4 and compared with its audited still → only then is the deliverable
 replaced.
 
+### 8. Thumbnail
+
+```bash
+npm run thumbnail    # src/scenes/Thumbnail.tsx -> audited youtube_thumbnail.jpg (1280×720, < 2 MB)
+```
+
+The newspaper-collage register (the client asked for "more newspaper Vox"):
+
+- **Right ~55 %: a torn newsprint page** — `#ECE6D8` with a 7 px halftone dot
+  screen, red offset stroke, masthead in Playfair 700 with double rules and a
+  dateline row, then the **headline in Playfair 700 at ~124 px, three lines, six
+  words at most**, the key token highlighted in amber and ringed in red marker
+  (`data-mark`; keep the ring clear of the line above). Under it, two short
+  columns of real body copy from the script and a small newsprint figure with an
+  italic "Fig. 1 —" caption, so the page has no empty quarter.
+- **Left: the hero object, huge** — for the .99 film a red tag with the key
+  digits in amber, and the "wrong answer" small and struck above it. Hero objects
+  may sit on the page's margin (`layer="over"`) but never on its text.
+- Ink, red and amber on paper only; nothing below ~90 px from an edge.
+- Tags in a thumbnail use `tracking={0}`: at giant sizes tight tracking makes
+  glyph boxes collide.
+- Judge it at 320×180 too: the headline and the hero must read at that size.
+
 ## Pitfalls already paid for
 
 | Symptom | Cause / fix |
@@ -222,3 +245,4 @@ replaced.
 | A label starts off-screen during a slide | fade labels in after the move, at their resting place |
 | 3D flip shows black | don't use flips; paper sits under the whole film anyway |
 | Chapter card flashes past | under 3 s: merge it with the next line's scene |
+| Audit flags letters of one rotated word as overlapping | rotated per-character spans have overlapping bounding boxes; the checker skips sibling spans of one string and hit-tests single characters at their centre |

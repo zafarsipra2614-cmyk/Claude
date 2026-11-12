@@ -58,7 +58,9 @@ export const Tag: React.FC<{
   z?: number;
   name?: string;
   layer?: "over";
-}> = ({ x, y, w, price, start, tone = "paper", label, hl = [], hlAt, dimAt, strikeAt, rot = 0, string = true, exit, z = 14, name, layer }) => {
+  /** letter-spacing as a fraction of the font size (tight by default; use 0 for very large tags) */
+  tracking?: number;
+}> = ({ x, y, w, price, start, tone = "paper", label, hl = [], hlAt, dimAt, strikeAt, rot = 0, string = true, exit, z = 14, name, layer, tracking = -0.02 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame - start;
@@ -121,7 +123,7 @@ export const Tag: React.FC<{
         {label ? (
           <div style={{ fontFamily: ARIAL, fontSize: h * 0.14, letterSpacing: h * 0.03, color: tone_.fg, opacity: 0.7, whiteSpace: "nowrap", lineHeight: 1, marginBottom: h * 0.05 }}>{label}</div>
         ) : null}
-        <div style={{ position: "relative", fontFamily: ARIAL, fontSize: fs, lineHeight: 1, letterSpacing: -fs * 0.02, whiteSpace: "nowrap", color: tone_.fg }}>
+        <div style={{ position: "relative", fontFamily: ARIAL, fontSize: fs, lineHeight: 1, letterSpacing: fs * tracking, whiteSpace: "nowrap", color: tone_.fg }}>
           {price.split("").map((ch, i) => {
             const isHl = hl.includes(i);
             return (

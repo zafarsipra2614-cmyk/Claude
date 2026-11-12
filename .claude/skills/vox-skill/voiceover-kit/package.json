@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "remotion studio",
     "audit": "node qc/fitcheck.mjs",
-    "release": "node qc/release.mjs"
+    "release": "node qc/release.mjs",
+    "thumbnail": "node qc/thumbnail.mjs"
   },
   "dependencies": {
     "@fontsource/archivo-black": "^5.3.0",
