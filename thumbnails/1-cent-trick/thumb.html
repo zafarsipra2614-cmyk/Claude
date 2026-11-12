@@ -1,0 +1,149 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Archivo Black;src:url(fonts/ArchivoBlack-400.woff2)}
+@font-face{font-family:Old Standard;src:url(fonts/OldStandardTT-400.woff2)}
+@font-face{font-family:Old Standard;font-weight:700;src:url(fonts/OldStandardTT-700.woff2)}
+@font-face{font-family:Courier Prime;src:url(fonts/CourierPrime-400.woff2)}
+@font-face{font-family:Courier Prime;font-weight:700;src:url(fonts/CourierPrime-700.woff2)}
+@font-face{font-family:Caslon;src:url(fonts/LibreCaslonText-400.woff2)}
+@font-face{font-family:Caslon;font-weight:700;src:url(fonts/LibreCaslonText-700.woff2)}
+:root{--bg:#d5d4d1;--paper:#efede7;--ink:#262524;--red:#e0452a;--cream:#f1eee5;--shadow:#1d1c1b}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1280px;height:720px;overflow:hidden;background:var(--bg)}
+#c{position:relative;width:1280px;height:720px;overflow:hidden;background:var(--bg)}
+.layer{position:absolute;inset:0}
+/* newsprint scraps */
+.doc{position:absolute;background:var(--paper);color:var(--ink);overflow:hidden;
+  box-shadow:0 2px 3px rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.14)}
+.doc .grain{position:absolute;inset:0;mix-blend-mode:multiply;opacity:.55;pointer-events:none}
+.doc .in{filter:blur(.35px)}
+#ad{left:-90px;top:-62px;width:620px;height:430px;transform:rotate(-14deg);padding:58px 44px 0 110px}
+#ad h1{font:700 54px/1 "Old Standard";letter-spacing:1px;text-transform:uppercase;border-bottom:3px double var(--ink);padding-bottom:8px}
+#ad .sub{font:italic 400 17px "Old Standard";margin:8px 0 12px}
+#ad .cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font:400 19px/1.35 "Old Standard"}
+#ad .cols div{display:flex;justify-content:space-between;border-bottom:1px dotted #777}
+#ad .cols b{font:700 21px "Old Standard"}
+#rc{right:10px;top:-70px;width:300px;height:760px;transform:rotate(8deg);padding:90px 34px 0 30px;font:400 18px/1.55 "Courier Prime"}
+#rc .h{font-weight:700;text-align:center;font-size:21px;letter-spacing:3px}
+#rc .r{display:flex;justify-content:space-between}
+#rc hr{border:0;border-top:2px dashed var(--ink);margin:8px 0}
+#rc .t{font-weight:700;font-size:21px}
+#pp{left:-40px;top:480px;width:600px;height:330px;transform:rotate(6deg);padding:34px 60px 0 90px;font:400 16.5px/1.5 "Caslon";text-align:justify;hyphens:auto}
+#pp h2{font:700 19px "Caslon";margin-bottom:8px}
+#pp .n{position:absolute;right:70px;top:36px;font:400 14px "Caslon"}
+</style></head>
+<body><div id="c">
+
+<svg width="0" height="0" style="position:absolute">
+ <defs>
+  <filter id="mottle" x="0" y="0" width="100%" height="100%">
+   <feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="4" seed="7"/>
+   <feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  1.6 0 0 0 -.45"/>
+  </filter>
+  <filter id="fine" x="0" y="0" width="100%" height="100%">
+   <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/>
+   <feColorMatrix type="saturate" values="0"/>
+   <feComponentTransfer><feFuncA type="table" tableValues="0 .22"/></feComponentTransfer>
+  </filter>
+  <filter id="papergrain" x="0" y="0" width="100%" height="100%">
+   <feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="11"/>
+   <feColorMatrix type="matrix" values="0 0 0 0 .35  0 0 0 0 .34  0 0 0 0 .32  0 0 0 -1.1 1.05"/>
+  </filter>
+  <pattern id="lines" width="6" height="4" patternUnits="userSpaceOnUse"><rect width="6" height="1" fill="#000" opacity=".045"/></pattern>
+ </defs>
+</svg>
+
+<!-- background: the video's grey mottled paper -->
+<svg class="layer" width="1280" height="720">
+ <rect width="1280" height="720" fill="#d6d5d2"/>
+ <rect width="1280" height="720" filter="url(#mottle)" opacity=".9"/>
+ <rect width="1280" height="720" filter="url(#fine)"/>
+</svg>
+
+<!-- scrap 1: old grocery ad -->
+<div class="doc" id="ad"><div class="in">
+ <h1>Saturday Specials</h1>
+ <div class="sub">Prices good while supplies last &mdash; Quality foods at savings</div>
+ <div class="cols">
+  <div>Coffee, lb.<b>29&cent;</b></div><div>Butter, lb.<b>49&cent;</b></div>
+  <div>Sugar, 5 lbs.<b>39&cent;</b></div><div>Fresh Eggs, doz.<b>59&cent;</b></div>
+  <div>Bread, loaf<b>9&cent;</b></div><div>Oranges, doz.<b>19&cent;</b></div>
+  <div>Flour, 10 lbs.<b>69&cent;</b></div><div>Soap, 3 bars<b>19&cent;</b></div>
+ </div></div>
+ <svg class="grain" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#papergrain)"/></svg>
+</div>
+
+<!-- scrap 2: receipt -->
+<div class="doc" id="rc"><div class="in">
+ <div class="h">SALES RECEIPT</div><hr>
+ <div class="r"><span>HEADPHONES</span><span>49.99</span></div>
+ <div class="r"><span>T-SHIRT</span><span>19.99</span></div>
+ <div class="r"><span>COFFEE BEANS</span><span>9.99</span></div>
+ <div class="r"><span>PHONE CASE</span><span>14.99</span></div>
+ <div class="r"><span>SNEAKERS</span><span>89.99</span></div>
+ <div class="r"><span>BOOK</span><span>12.99</span></div>
+ <div class="r"><span>CANDLE</span><span>7.99</span></div>
+ <hr>
+ <div class="r t"><span>TOTAL</span><span>205.93</span></div>
+ <hr>
+ <div class="r"><span>SAVED TODAY</span><span>0.07</span></div>
+ <div style="text-align:center;margin-top:14px">THANK YOU!</div>
+</div>
+ <svg class="grain" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#papergrain)"/></svg>
+</div>
+
+<!-- scrap 3: research paper -->
+<div class="doc" id="pp"><div class="in">
+
+ <h2>&sect;3. Left-Digit Bias</h2>
+ Shoppers read a price from left to right, and the first digit sets the
+ impression of how large the number is. A price of $9.99 is filed as
+ &ldquo;nine-something,&rdquo; while $10.00 is filed as &ldquo;ten,&rdquo;
+ even though the gap between them is a single cent. Because attention
+ fades across the remaining digits, the decision is often made before
+ the cents are read at all.
+</div>
+ <svg class="grain" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#papergrain)"/></svg>
+</div>
+
+<!-- centre: the stack of price tags, drawn like the video -->
+<svg class="layer" width="1280" height="720" viewBox="0 0 1280 720">
+ <defs>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="160%">
+   <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity=".22"/>
+  </filter>
+ </defs>
+
+ <!-- back tag, blank, peeking (like the stacked prints) -->
+ <g transform="translate(430 300) rotate(-12)" filter="url(#soft)">
+  <path d="M-250 -95 H250 V95 H-250 L-330 0 Z" fill="#e6e2d8"/>
+  <path d="M-250 -95 H250 V95 H-250 L-330 0 Z" fill="url(#lines)"/>
+  <circle cx="-268" cy="0" r="15" fill="#cfcdc9"/>
+ </g>
+
+ <!-- $10.00 cream tag (red offset edge, as in the video) -->
+ <g transform="translate(470 285) rotate(-5)" filter="url(#soft)">
+  <path d="M-250 -95 H250 V95 H-250 L-330 0 Z" fill="var(--red)" transform="translate(9 9)"/>
+  <path d="M-250 -95 H250 V95 H-250 L-330 0 Z" fill="var(--cream)"/>
+  <path d="M-250 -95 H250 V95 H-250 L-330 0 Z" fill="url(#lines)"/>
+  <circle cx="-268" cy="0" r="16" fill="#d4d3cf" stroke="#9c9a95" stroke-width="2"/>
+  <path d="M-268 0 C -285 -90, -250 -190, -262 -330" fill="none" stroke="#4a4846" stroke-width="2.5"/>
+  <text x="25" y="38" text-anchor="middle" font-family="Archivo Black" font-size="108" fill="#1b1a19" letter-spacing="-2">$10.00</text>
+ </g>
+ 
+
+ <!-- $9.99 red tag on top (hard black offset shadow) -->
+ <g transform="translate(760 455) rotate(4)" filter="url(#soft)">
+  <path d="M-260 -112 H285 V112 H-260 L-350 0 Z" fill="var(--shadow)" transform="translate(13 13)"/>
+  <path d="M-260 -112 H285 V112 H-260 L-350 0 Z" fill="var(--red)"/>
+  <circle cx="-282" cy="0" r="18" fill="#d4d3cf" stroke="#9c9a95" stroke-width="2"/>
+  <path d="M-282 0 C -300 -110, -255 -260, -275 -520" fill="none" stroke="#4a4846" stroke-width="2.5"/>
+  <text x="25" y="50" text-anchor="middle" font-family="Archivo Black" font-size="150" fill="var(--cream)" letter-spacing="-2">$9.99</text>
+ </g>
+ 
+</svg>
+
+<!-- overall print grain so everything sits on one surface -->
+<svg class="layer" width="1280" height="720" style="mix-blend-mode:multiply;opacity:.5"><rect width="1280" height="720" filter="url(#fine)"/></svg>
+</div></body></html>
