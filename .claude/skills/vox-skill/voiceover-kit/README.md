@@ -23,7 +23,6 @@ a fresh project compiles and renders; both are replaced for each film.
 | `src/scenes/endcard.tsx` | YouTube end screen |
 | `src/scenes/kit.tsx` | Rise/Label/Kicker and the in-page layout audit (FitCheck) |
 | `qc/fitcheck.mjs` | `npm run audit` |
-| `src/scenes/Thumbnail.tsx`, `qc/thumbnail.mjs` | newspaper-collage YouTube thumbnail; `npm run thumbnail` → audited 1280×720 JPEG |
 | `qc/release.mjs` | `npm run release`: audit → render → poster → verify MP4 → deliverable |
 
 `package.json` → `video.composition` / `video.deliverable` name the composition
