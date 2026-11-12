@@ -5,6 +5,20 @@
 - **Client gives a script + voiceover:** use the vox-skill's voiceover mode
   (`.claude/skills/vox-skill/references/voiceover-mode.md`, start with
   `scripts/scaffold_vo.sh`). It encodes every rule below.
+- **Raise the quality with the installed style skills** (sources and setup in
+  `.claude/skills/THIRD_PARTY_SKILLS.md`); borrow from them into the voiceover-mode
+  film rather than switching pipelines:
+  - `remotion-best-practices` (official): Remotion markup, animation, captions,
+    maps (`remotion-maps` for route/map scenes) — consult before writing scenes.
+  - `papercut-*`: its library's camera moves (crane, dolly zoom, rack focus,
+    snap zoom, pull back…), paper-fold transitions, synthesised SFX and QA
+    contact-sheet checklist (`papercut-qa`) — reels are 9:16, our films stay 16:9.
+  - `cinematic-film`: documentary grammar — one continuous camera over archival
+    photos, documents and maps, and public-domain Wikimedia images with licences
+    recorded (credits) — for history/true-story beats.
+  - `gbro-collage-info`: halftone paper-collage infographic patterns (number
+    impact, process, list convergence, comparison flip, result highlight) —
+    rebuild the chosen pattern in our Remotion system at 1920×1080.
 
 - **No footer of any kind.** No dark desk band (the skill's `DeskEdge`) and no
   pale paper strip (`PaperBand`) across the bottom. Compose every scene on the
