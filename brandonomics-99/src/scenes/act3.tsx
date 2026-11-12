@@ -380,29 +380,104 @@ export const Challenge: React.FC = () => {
 };
 
 /* 36 — The question for the comments; sign-off. */
-export const Comments: React.FC = () => {
-  const frame = useCurrentFrame();
-  const vig = ramp(frame, CUE["comments.end"] + 30, CUE["comments.end"] + 90, Easing.out(Easing.cubic));
-  return (
-    <Frame push={0.015}>
-      <Card start={0} left={360} top={190} width={1200} height={440} name="comment" rotate={-0.6} pad="50px 64px">
-        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-          <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.red }} />
-          <Label size={24} spacing={5}>YOUR COMMENT</Label>
-        </div>
-        <div style={{ height: 4, background: C.ink, opacity: 0.25, margin: "28px 0 30px" }} />
-        <Typewriter
-          text="What's the sneakiest pricing trick you've ever fallen for?"
-          startFrame={CUE["comments.type"]}
-          endFrame={CUE["comments.typeEnd"]}
-          style={{ fontFamily: TYPEWRITER, fontSize: 58, lineHeight: 1.3, color: C.inkDeep }}
-        />
-      </Card>
-      <Headline at={CUE["comments.cta"]} text="TELL ME IN THE COMMENTS" top={720} size={60} color={C.red} rule />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 880, textAlign: "center", opacity: useIn(CUE["comments.end"]), zIndex: 16 }}>
-        <Label size={28} spacing={8} color={C.ink}>SEE YOU IN THE NEXT ONE</Label>
+export const Comments: React.FC = () => (
+  <Frame push={0.015}>
+    <Card start={0} left={360} top={300} width={1200} height={440} name="comment" rotate={-0.6} pad="50px 64px">
+      <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+        <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.red }} />
+        <Label size={24} spacing={5}>YOUR COMMENT</Label>
       </div>
-      <AbsoluteFill aria-hidden style={{ background: "radial-gradient(circle at 50% 50%, transparent 40%, rgba(20,16,12,0.55) 100%)", opacity: vig, pointerEvents: "none", zIndex: 30 }} />
+      <div style={{ height: 4, background: C.ink, opacity: 0.25, margin: "28px 0 30px" }} />
+      <Typewriter
+        text="What's the sneakiest pricing trick you've ever fallen for?"
+        startFrame={CUE["comments.type"]}
+        endFrame={CUE["comments.typeEnd"]}
+        style={{ fontFamily: TYPEWRITER, fontSize: 58, lineHeight: 1.3, color: C.inkDeep }}
+      />
+    </Card>
+  </Frame>
+);
+
+/* 37 — YouTube end screen: a video placeholder either side, subscribe in the middle.
+ * The two 16:9 frames and the circle are where YouTube's own end-screen elements
+ * go (add them in YouTube Studio over the last ~13 s), so they hold still once in. */
+const VIDEO = { w: 640, h: 360, top: 370 };
+const VideoSlot: React.FC<{ at: number; left: number; label: string; rot: number }> = ({ at, left, label, rot }) => {
+  const frame = useCurrentFrame();
+  return (
+    <>
+      <div style={{ position: "absolute", left, width: VIDEO.w, top: VIDEO.top - 66, textAlign: "center", opacity: ramp(frame, at + 6, at + 18), zIndex: 18 }}>
+        <Label size={26} spacing={8} color={C.ink}>{label}</Label>
+      </div>
+      <Rise start={at} dur={28} dist={240} left={left} top={VIDEO.top} width={VIDEO.w} height={VIDEO.h} rotate={rot} z={14} style={{ filter: "none" }}>
+        <div aria-hidden style={{ position: "absolute", inset: 0, background: C.red, transform: "translate(-16px, 10px)" }} />
+        <div data-fit={`end screen ${label}`} style={{ position: "absolute", inset: 0, background: C.card, padding: 16, boxSizing: "border-box", filter: DROP }}>
+          <div style={{ width: "100%", height: "100%", background: C.inkDeep, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width={110} height={110} viewBox="0 0 110 110">
+              <circle cx={55} cy={55} r={52} fill="none" stroke="rgba(239,235,224,0.35)" strokeWidth={5} />
+              <path d="M 44 34 L 78 55 L 44 76 Z" fill="rgba(239,235,224,0.55)" />
+            </svg>
+          </div>
+        </div>
+      </Rise>
+    </>
+  );
+};
+
+export const EndCard: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = { fps: 30 };
+  const sub = CUE["endcard.sub"];
+  const pop = interpolate(frame, [sub, sub + 8, sub + 14], [0.6, 1.08, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
+  const subOn = ramp(frame, sub, sub + 8);
+  const btnAt = sub + 10;
+  const btn = ramp(frame, btnAt, btnAt + 12, Easing.out(Easing.back(1.6)));
+  // a slow, small pulse on the button once everything has landed: it draws the eye without moving the layout
+  const pulse = frame > btnAt + 40 ? 1 + 0.025 * Math.sin(((frame - btnAt - 40) / fps) * Math.PI * 1.4) : 1;
+  return (
+    <Frame push={0}>
+      <Headline at={CUE["endcard.thanks"]} text="THANKS FOR WATCHING" top={110} size={68} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 200, textAlign: "center", opacity: useIn(CUE["endcard.thanks"] + 12), zIndex: 18 }}>
+        <Label size={26} spacing={8} color={C.red}>TELL ME YOUR SNEAKIEST PRICE TRICK IN THE COMMENTS</Label>
+      </div>
+      <VideoSlot at={CUE["endcard.left"]} left={120} label="WATCH NEXT" rot={-0.6} />
+      <VideoSlot at={CUE["endcard.right"]} left={1160} label="YOU MAY ALSO LIKE" rot={0.6} />
+      {/* subscribe: the channel circle, then the button */}
+      <div data-fit="subscribe circle" style={{ position: "absolute", left: 960 - 110, top: 390, width: 220, height: 220, borderRadius: "50%", background: C.card, border: `10px solid ${C.red}`, boxSizing: "border-box", opacity: subOn, transform: `scale(${pop})`, filter: DROP, zIndex: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={96} height={96} viewBox="0 0 96 96">
+          <circle cx={48} cy={34} r={18} fill={C.ink} />
+          <path d="M 14 88 Q 14 58 48 58 Q 82 58 82 88 Z" fill={C.ink} />
+        </svg>
+      </div>
+      <div
+        data-fit="subscribe button"
+        style={{
+          position: "absolute",
+          left: 960 - 150,
+          top: 650,
+          width: 300,
+          height: 76,
+          borderRadius: 14,
+          background: C.red,
+          boxShadow: `6px 7px 0 ${C.ink}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 14,
+          opacity: btn > 0 ? 1 : 0,
+          transform: `translateY(${(1 - btn) * 40}px) scale(${pulse})`,
+          zIndex: 17,
+        }}
+      >
+        <svg width={30} height={30} viewBox="0 0 30 30">
+          <path d="M 15 3 Q 6 3 6 13 L 6 20 L 3 24 L 27 24 L 24 20 L 24 13 Q 24 3 15 3 Z" fill="#FFF6EE" />
+          <circle cx={15} cy={27} r={3} fill="#FFF6EE" />
+        </svg>
+        <div style={{ fontFamily: ARIAL, fontSize: 32, letterSpacing: 3, color: "#FFF6EE" }}>SUBSCRIBE</div>
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 860, textAlign: "center", opacity: useIn(CUE["endcard.right"] + 20), zIndex: 16 }}>
+        <Label size={26} spacing={8} color={C.ink}>SEE YOU IN THE NEXT ONE</Label>
+      </div>
     </Frame>
   );
 };

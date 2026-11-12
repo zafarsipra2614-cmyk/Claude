@@ -33,4 +33,5 @@
 33 twist        start  8574   215f   7.2s | And@7 here's@11 the@20 twist.@24 A@46 2019@50 study@62 found@79 that@88 prices@94 ending@103 in@113 nine@120 were@129 usually@137 higher@150 on@164 average,@173 not@184 lower.@197
 34 costume      start  8789    95f   3.2s | The@6 nine@11 isn't@18 a@32 discount,@36 it's@59 a@67 costume.@71
 35 challenge    start  8884   234f   7.8s | So@7 here's@11 a@24 challenge.@27 Next@48 time@53 you're@59 in@64 a@66 store,@70 count@94 how@96 many@104 prices@109 end@121 in@130 nine@137 and@148 how@164 many@174 of@180 them@183 are@187 actually@193 a@208 deal.@214
-36 comments     start  9118   272f   9.1s | What's@6 the@13 sneakiest@17 pricing@35 trick@46 you've@56 ever@69 fallen@73 for?@82 Tell@106 me@111 in@114 the@116 comments@119 below@126 and@138 I@151 shall@156 see@160 you@169 in@173 the@176 next@178 one.@184
+36 comments     start  9118    99f   3.3s | What's@6 the@13 sneakiest@17 pricing@35 trick@46 you've@56 ever@69 fallen@73 for?@82
+37 endcard      start  9217   398f  13.3s | Tell@7 me@12 in@15 the@17 comments@20 below@27 and@39 I@52 shall@57 see@61 you@70 in@74 the@77 next@79 one.@85

@@ -1,7 +1,7 @@
 {
  "fps": 30,
  "transition": 14,
- "tail": 75,
+ "tail": 300,
  "scenes": [
   {
    "name": "hook",
@@ -146,6 +146,10 @@
   {
    "name": "comments",
    "at": "whats the sneakiest"
+  },
+  {
+   "name": "endcard",
+   "at": "tell me in the comments"
   }
  ],
  "cues": {
@@ -714,11 +718,19 @@
    "at": "for",
    "word": "end"
   },
-  "comments.cta": {
-   "at": "comments",
+  "endcard.thanks": {
+   "at": "tell me",
+   "off": 2
+  },
+  "endcard.left": {
+   "at": "comments below",
    "off": -4
   },
-  "comments.end": {
+  "endcard.sub": {
+   "at": "and i shall",
+   "off": -4
+  },
+  "endcard.right": {
    "at": "see you",
    "off": -6
   }

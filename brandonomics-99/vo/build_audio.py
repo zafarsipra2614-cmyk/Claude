@@ -5,9 +5,10 @@
 - voice:  vo/voiceover_edit.wav, high-passed at 70 Hz and normalised to -16 LUFS.
           It is a real recording, so no TTS-style EQ or heavy compression.
 - music:  music/bed.wav (scripts/score.py), set `music_db` under the voice, eased down
-          ~5 dB across the film to offset the bed's own build, and sidechain-ducked a further ~6 dB while the voice speaks.
-- sfx:    a soft paper swish on every push transition, a thud on every stamp,
-          synthesised here so nothing is downloaded.
+          ~5 dB across the film to offset the bed's own build, swelled ~8 dB once the voice
+          ends (end screen) and faded over the last 2.5 s, and sidechain-ducked a further ~6 dB while the voice speaks.
+- sfx:    a soft thud on every stamp, synthesised here so nothing is downloaded.
+          (Transition whooshes were removed at the client's request.)
 Writes public/audio/mix.wav.
 """
 import re
@@ -73,11 +74,7 @@ def thud(dur=0.32):
     return y / np.abs(y).max()
 
 
-sw = swish()
-for i, name in enumerate(names[1:], start=1):
-    if name in ("impatient", "grabs"):  # cross-fades, no swish
-        continue
-    place(sw, start_of[name] / fps - 0.06, 0.16, pan=0.25)
+# no transition whooshes (client: they repeat too often); stamps keep their thud
 th = thud()
 for key in ("auction.stamp", "origin.year", "unproven.stamp", "twenties.stuck", "trick.badge"):
     sc = key.split(".")[0]
@@ -91,11 +88,13 @@ with wave.open(str(sfx), "wb") as w:
     w.setframerate(SR)
     w.writeframes(pcm.tobytes())
 
+import json
+vo_end = json.loads((ROOT / "vo/words.json").read_text())["words"][-1]["e"] + 0.3  # music swells for the end screen
 mix = ROOT / "public/audio/mix.wav"
 graph = f"""
 [0:a]highpass=f=70,loudnorm=I=-16:TP=-1.5:LRA=11,aformat=sample_fmts=fltp:sample_rates={SR}:channel_layouts=stereo,asplit=2[voice][keyraw];
 [keyraw]apad[key];
-[1:a]aformat=sample_fmts=fltp:sample_rates={SR}:channel_layouts=stereo,volume={music_db}dB,volume='1-0.44*t/{total:.1f}':eval=frame[bed];
+[1:a]aformat=sample_fmts=fltp:sample_rates={SR}:channel_layouts=stereo,volume={music_db}dB,volume='1-0.44*t/{total:.1f}':eval=frame,volume='if(lt(t,{vo_end:.2f}),1,min(2.5,1+1.5*(t-{vo_end:.2f})/1.5))':eval=frame,afade=t=out:st={total-2.5:.2f}:d=2.5[bed];
 [bed][key]sidechaincompress=threshold=0.03:ratio=8:attack=18:release=420:makeup=1[ducked];
 [2:a]aformat=sample_fmts=fltp:sample_rates={SR}:channel_layouts=stereo[fx];
 [voice][ducked][fx]amix=inputs=3:duration=longest:dropout_transition=0:normalize=0,alimiter=limit=0.94,atrim=0:{total:.3f}

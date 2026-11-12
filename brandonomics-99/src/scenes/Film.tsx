@@ -1,8 +1,10 @@
 import React from "react";
-import { Audio, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { TransitionSeries, springTiming } from "@remotion/transitions";
+import { AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { Paper } from "../shared/system";
+import { TransitionSeries, springTiming, type TransitionPresentation } from "@remotion/transitions";
 import { slide } from "@remotion/transitions/slide";
 import { fade } from "@remotion/transitions/fade";
+import { tornWipe } from "./transitions";
 import { D, SCENE_ORDER, SEQUENCE_DURATION, T } from "../shared/timing";
 import * as A1 from "./act1";
 import * as A2 from "./act2";
@@ -19,10 +21,45 @@ const SCENES: Record<(typeof SCENE_ORDER)[number], React.FC> = {
   origin: A3.Origin, register: A3.Register, unproven: A3.Unproven, twenties: A3.Twenties, everywhere: A3.Everywhere,
   ch4: A3.Ch4, luxury: A3.Luxury, champagne: A3.Champagne, hearthead: A3.HeartHead, trick: A3.Trick,
   message: A3.Message, twist: A3.Twist, costume: A3.Costume, challenge: A3.Challenge, comments: A3.Comments,
+  endcard: A3.EndCard,
 };
 
-/** Scenes that continue the previous scene's image cross-fade instead of pushing. */
-const CONTINUES = new Set(["impatient", "grabs"]);
+/**
+ * How each scene arrives. The transition says what kind of step it is:
+ *   torn   a new chapter (or the end screen): a fresh sheet torn across the old one
+ *   rise   the first scene of a chapter, a new study or section: the paper rises
+ *   right  the next step forward within a section: the camera pans along the sheet
+ *   left   going back to something already seen
+ *   tear   the twist: the sheet is torn upward instead of across
+ *   fade   the same image continues and builds
+ */
+type Kind = "torn" | "tear" | "rise" | "right" | "left" | "fade";
+const ARRIVAL: Record<(typeof SCENE_ORDER)[number], Kind> = {
+  hook: "right", brain: "right", stakes: "right", why99: "rise",
+  ch1: "torn", read: "rise", impatient: "fade", grabs: "fade", study1: "right", firstdigit: "right", numberline: "right", strange: "rise",
+  ch2: "torn", catalog: "rise", dresstest: "right", newitems: "right", cars: "rise", odometer: "right", cliff: "right", auction: "right",
+  ch3: "torn", origin: "rise", register: "right", unproven: "left", twenties: "rise", everywhere: "right",
+  ch4: "torn", luxury: "rise", champagne: "right", hearthead: "right", trick: "rise", message: "right",
+  twist: "tear", costume: "right", challenge: "rise", comments: "right", endcard: "torn",
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const presentation = (k: Kind): TransitionPresentation<any> => {
+  switch (k) {
+    case "torn":
+      return tornWipe({ direction: "right" });
+    case "rise":
+      return slide({ direction: "from-bottom" });
+    case "left":
+      return slide({ direction: "from-left" });
+    case "tear":
+      return tornWipe({ direction: "up" });
+    case "fade":
+      return fade();
+    default:
+      return slide({ direction: "from-right" });
+  }
+};
 
 const Soundtrack: React.FC = () => {
   const frame = useCurrentFrame();
@@ -33,6 +70,10 @@ const Soundtrack: React.FC = () => {
 export const NinetyNineFilm: React.FC = () => (
   <>
     <Soundtrack />
+    {/* paper under everything, so no transition can ever reveal a bare background */}
+    <AbsoluteFill>
+      <Paper asset="background.jpg" />
+    </AbsoluteFill>
     <TransitionSeries>
       {SCENE_ORDER.map((name, i) => {
         const Scene = SCENES[name];
@@ -45,7 +86,7 @@ export const NinetyNineFilm: React.FC = () => (
             </TransitionSeries.Sequence>
             {last ? null : (
               <TransitionSeries.Transition
-                presentation={CONTINUES.has(next) ? fade() : slide({ direction: "from-right" })}
+                presentation={presentation(ARRIVAL[next])}
                 timing={springTiming({ config: { damping: 200 }, durationInFrames: T })}
               />
             )}

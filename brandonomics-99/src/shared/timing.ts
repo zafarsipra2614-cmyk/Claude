@@ -42,11 +42,12 @@ export const D = {
   twist: 215,
   costume: 95,
   challenge: 234,
-  comments: 272,
+  comments: 99,
+  endcard: 398,
 } as const;
 
-export const SCENE_ORDER = ["hook", "brain", "stakes", "why99", "ch1", "read", "impatient", "grabs", "study1", "firstdigit", "numberline", "strange", "ch2", "catalog", "dresstest", "newitems", "cars", "odometer", "cliff", "auction", "ch3", "origin", "register", "unproven", "twenties", "everywhere", "ch4", "luxury", "champagne", "hearthead", "trick", "message", "twist", "costume", "challenge", "comments"] as const;
-export const SEQUENCE_DURATION = 9390;
+export const SCENE_ORDER = ["hook", "brain", "stakes", "why99", "ch1", "read", "impatient", "grabs", "study1", "firstdigit", "numberline", "strange", "ch2", "catalog", "dresstest", "newitems", "cars", "odometer", "cliff", "auction", "ch3", "origin", "register", "unproven", "twenties", "everywhere", "ch4", "luxury", "champagne", "hearthead", "trick", "message", "twist", "costume", "challenge", "comments", "endcard"] as const;
+export const SEQUENCE_DURATION = 9615;
 
 /** Scene-local frames, each on a spoken word. */
 export const CUE = {
@@ -93,8 +94,6 @@ export const CUE = {
   "cliff.eight": 311,
   "cliff.seven": 265,
   "cliff.ten": 104,
-  "comments.cta": 115,
-  "comments.end": 154,
   "comments.type": 6,
   "comments.typeEnd": 93,
   "costume.cost": 65,
@@ -108,6 +107,10 @@ export const CUE = {
   "dresstest.p44": 361,
   "dresstest.tag": 1,
   "dresstest.third": 316,
+  "endcard.left": 16,
+  "endcard.right": 55,
+  "endcard.sub": 35,
+  "endcard.thanks": 9,
   "everywhere.bar": 116,
   "everywhere.full": 284,
   "everywhere.odd": 254,
