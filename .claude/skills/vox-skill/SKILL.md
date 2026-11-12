@@ -1,6 +1,6 @@
 ---
 name: vox-skill
-description: Use when building a narrated, voiceover-synced motion-graphics explainer or B-roll film in Remotion — paper-texture collage, cut-out subjects with an offset red marker stroke, code-drawn charts, newspapers, documents and typewriter reveals. Horizontal 1920x1080 by default, vertical 1080x1920 for TikTok, Reels and Shorts on request. Triggers on "make a vox style video", "vox editorial video", "b-roll sequence", "Remotion explainer", "documentary motion graphics about X", "turn this script into a video", "make a TikTok explainer". Not for hard-sell product ads (use fastcut-ad).
+description: Use when building a narrated, voiceover-synced motion-graphics explainer or B-roll film in Remotion — paper-texture collage, cut-out subjects with an offset red marker stroke, code-drawn charts, newspapers, documents and typewriter reveals. Horizontal 1920x1080 by default, vertical 1080x1920 for TikTok, Reels and Shorts on request. Two modes: a short film you script and narrate yourself (Edge TTS), or VOICEOVER MODE — the user supplies a script plus their own recorded voiceover (MP3/WAV) and gets a long-form paper-cut explainer timed to that recording, with chapter cards, varied paper transitions, a layout audit that forbids overlap and misfit, and a YouTube end screen. Triggers on "make a vox style video", "vox editorial video", "b-roll sequence", "Remotion explainer", "documentary motion graphics about X", "turn this script into a video", "make a TikTok explainer", "here's my script and voiceover, make the video", "make a video for this script using this voiceover/audio". Not for hard-sell product ads (use fastcut-ad).
 ---
 
 # Remotion paper B-roll
@@ -11,6 +11,23 @@ shouting.
 
 Everything animates because code moves it. There is no After Effects step, no
 timeline to drag. You direct the film by writing components and tuning props.
+
+## Two modes — pick one first
+
+| The user gives you | Mode | Follow |
+|---|---|---|
+| A topic (or a script) and wants you to narrate | **Topic mode**: 60–90 s, Edge TTS narration, ~8 scenes | this file, top to bottom |
+| A **script and their own voiceover recording** | **Voiceover mode**: long-form paper-cut explainer on their audio, chapter cards, varied transitions, YouTube end screen, audited release | **`references/voiceover-mode.md`**, starting with `scripts/scaffold_vo.sh` |
+
+In voiceover mode the recording is the clock: never re-voice it, never re-time
+it by hand, and apply requested audio edits (e.g. "remove 'Part two'") to the
+recording itself before transcribing. The project kit lives in `voiceover-kit/`
+(paper system, price tags, cards, cut-paper icons, chapter cards, odometer,
+transitions, end screen, word-timing builder, soundtrack builder, layout audit
+and verified release). The visual system below — palette, type, the red marker
+stroke, springs, draw-ons — applies to both modes; the layer rules are relaxed
+in voiceover mode: **no foreground band or footer of any kind**, use the full
+16:9 frame, and get depth from cards, shadows and the slow camera push instead.
 
 ## Pick the right skill first
 
@@ -396,3 +413,6 @@ interface.
 - `scripts/captions.py` — burned captions from the narration's word boundaries
 - `scripts/scaffold.sh` — runnable Remotion project skeleton (`--vertical` for 9:16)
 - `references/vertical.md` — what changes for TikTok, Reels and Shorts
+- `references/voiceover-mode.md` — client script + voiceover → long-form paper-cut film (the full pipeline and its rules)
+- `voiceover-kit/` — the project template voiceover mode starts from
+- `scripts/scaffold_vo.sh` — copy the kit into a new project with the client's voiceover

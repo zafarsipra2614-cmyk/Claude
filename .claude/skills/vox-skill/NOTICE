@@ -17,3 +17,7 @@ Everything in this repository has since been rewritten or newly written:
   * All prose in SKILL.md and the reference documents is newly written.
 
 Upstream's own reference documents are not included here.
+
+Voiceover mode (references/voiceover-mode.md, voiceover-kit/, scripts/scaffold_vo.sh)
+was added to this copy of the skill: client script + recorded voiceover -> long-form
+paper-cut explainer with a layout audit and verified release.

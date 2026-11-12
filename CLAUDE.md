@@ -2,6 +2,10 @@
 
 ## Video work (vox-skill / Remotion)
 
+- **Client gives a script + voiceover:** use the vox-skill's voiceover mode
+  (`.claude/skills/vox-skill/references/voiceover-mode.md`, start with
+  `scripts/scaffold_vo.sh`). It encodes every rule below.
+
 - **No footer of any kind.** No dark desk band (the skill's `DeskEdge`) and no
   pale paper strip (`PaperBand`) across the bottom. Compose every scene on the
   full 16:9 frame (1920×1080) and put labels next to what they label.

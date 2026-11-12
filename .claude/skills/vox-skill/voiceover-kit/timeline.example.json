@@ -1,0 +1,21 @@
+{
+ "fps": 30,
+ "transition": 14,
+ "tail": 300,
+ "scenes": [
+  { "name": "hook", "at": "first words of the script" },
+  { "name": "ch1", "at": "chapter 1" },
+  { "name": "endcard", "at": "tell me in the comments" }
+ ],
+ "cues": {
+  "hook.a": { "at": "10", "off": 2 },
+  "hook.b": { "at": "9 99", "off": -4 },
+  "hook.stamp": { "at": "one cent apart", "off": -2 },
+  "ch1.num": "chapter 1",
+  "ch1.title": { "at": "the left digit", "off": -6 },
+  "endcard.thanks": { "at": "tell me", "off": 2 },
+  "endcard.left": { "at": "comments below", "off": -4 },
+  "endcard.sub": { "at": "and i shall", "off": -4 },
+  "endcard.right": { "at": "see you", "off": -6 }
+ }
+}
