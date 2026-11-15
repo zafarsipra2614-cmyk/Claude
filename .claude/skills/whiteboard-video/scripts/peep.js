@@ -2,7 +2,8 @@
 /*
   Build an Open Peeps character (hand-drawn people by Pablo Stanley, CC0) as an SVG for IMG().
 
-  node peep.js <out.svg> '{"body":"PointingUp","face":"SmileBig","hair":"Long","accessory":"GlassRound"}'
+  node peep.js <out.svg> '{"body":"PointingUp","face":"SmileBig","hair":"Long","accessory":"GlassRound","accent":"#4D96FF"}'
+  "accent" draws the body (clothes and their outlines) in that colour; the head stays black.
   node peep.js            list every body, face, hair, facial hair and accessory
 
   The SVG is cropped tightly around the figure. Then run prep.js on the project.
@@ -27,7 +28,16 @@ if (!out) {
 }
 const o = JSON.parse(spec || "{}");
 const big = { x: -1200, y: -1200, width: 3200, height: 4200 };
-let svg = renderToStaticMarkup(React.createElement(Peep, { strokeColor: "#1f2328", backgroundColor: "#ffffff", viewBox: big, ...o }));
+const { accent, ...props } = o;
+const draw = ink => renderToStaticMarkup(React.createElement(Peep, { strokeColor: ink, backgroundColor: "#ffffff", viewBox: big, ...props }));
+let svg = draw("#1f2328");
+if (accent) {
+  // brand accent: the body (clothes and their outlines) in the accent colour, the head stays black
+  const bodyOf = m => { const i = m.indexOf("<g", m.indexOf("<g") + 2), j = m.indexOf("</g>", i);   // inside the wrapper group: the body first, then the head
+    let depth = 0, k = i; while (k < m.length) { if (m.startsWith("<g", k)) depth++; if (m.startsWith("</g>", k) && --depth === 0) return [i, k + 4]; k++; } return [i, j]; };
+  const blue = draw(accent), [bi, bj] = bodyOf(blue), [ki, kj] = bodyOf(svg);
+  svg = svg.slice(0, ki) + blue.slice(bi, bj) + svg.slice(kj);
+}
 svg = svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
 (async () => {
   const browser = await puppeteer.launch({ executablePath: findChrome(), headless: "new",

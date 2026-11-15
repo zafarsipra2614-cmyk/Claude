@@ -13,6 +13,13 @@ Paths below are relative to this skill's folder. The engine lives in `scripts/`,
 
 A whiteboard video is cheap to re-render and expensive to re-think. Most wasted effort comes from drawing scenes for a script the user did not want, or from a voice they dislike. So the order is: context, then script approval, then voice choice, then drawing. Each gate is short, and each one saves a render.
 
+## House style (Brandonomics)
+
+- **Blue accent on every visual.** The brand blue is `#4D96FF` (already `palette.blue` in the template config). Every scene uses `BLUE` for at least one accent: an underline, a key word, a tick, an arrow. Characters are built with `"accent": "#4D96FF"` in `peep.js`, so their clothes are blue and their head stays black.
+- **Characters and pictures** are detailed line art drawn with `IMG` (see `references/drawing-api.md`), not stick figures. Pictures draw fast (about 1.8 s); text is written at a readable handwriting pace (about 0.1 s per character).
+- **The marker only**, no hand.
+- **Every drawing must come out right.** Read every line `prep.js` prints: a `WARNING` that art touches its canvas edge means it is cut off (fix the canvas; `peep.js` crops characters correctly), and a `WARNING` about unreached ink means the drawing would end incomplete. Then look at the last frame of every scene in the preview sheet and compare each picture with the original art before the full render.
+
 ## Step 0: one-time setup check
 
 Run these once per machine and fix what is missing before promising a video:
@@ -21,7 +28,8 @@ Run these once per machine and fix what is missing before promising a video:
 node --version        # 18 or newer
 python3 --version     # 3.9 or newer
 ffmpeg -version       # brew install ffmpeg / apt install ffmpeg
-cd scripts && npm install   # installs puppeteer-core (uses the local Chrome, no browser download)
+cd scripts && npm install   # puppeteer-core (uses the local Chrome) and the Open Peeps characters
+pip install scikit-image    # line-art tracing for IMG
 ```
 
 Chrome, Chromium or Edge must be installed. If it is somewhere unusual, set `CHROME_PATH`.

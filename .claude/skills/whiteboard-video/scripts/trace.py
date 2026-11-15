@@ -14,7 +14,7 @@ Output: {"w", "h", "strokes": [{"w": brush, "p": [x0, y0, x1, y1, ...]}, ...]}
 """
 import json, argparse
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage
 from skimage.morphology import skeletonize
 from skimage.measure import find_contours
@@ -131,13 +131,23 @@ def main():
     ap.add_argument("src"); ap.add_argument("out")
     ap.add_argument("--scale", type=float, default=1.0)
     ap.add_argument("--threshold", type=int, default=150)
+    ap.add_argument("--label", help="name used in messages")
     a = ap.parse_args()
+    name = a.label or a.src
 
     im = Image.open(a.src).convert("RGBA")
-    g = np.asarray(Image.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, 255)), im).convert("L"))
-    ink = g < a.threshold
+    rgb = np.asarray(Image.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, 255)), im).convert("RGB")).astype(int)
+    g = rgb.mean(2)
+    sat = rgb.max(2) - rgb.min(2)
+    ink = (g < a.threshold) | ((sat > 60) & (g < 235))     # black lines and coloured (accent) areas
     H, W = ink.shape
     S = max(W, H)
+    # art that touches its canvas edge is almost always cut off (a sliced arm, a chopped head)
+    edges = {"top": ink[0].sum(), "bottom": ink[-1].sum(), "left": ink[:, 0].sum(), "right": ink[:, -1].sum()}
+    cut = [k for k, v in edges.items() if v > 0.01 * (W if k in ("top", "bottom") else H)]
+    if cut:
+        print(f"WARNING {name}: the art touches the {' and '.join(cut)} edge of its canvas, so it is probably cut off. "
+              "Fix the canvas (peep.js crops characters correctly) before using it.")
     dist = ndimage.distance_transform_edt(ink)
 
     # solid areas: thick ink, big enough to colour in (small dots like eyes stay lines)
@@ -203,9 +213,30 @@ def main():
             seq = out_seq + fill_seq
         strokes += [{"w": round(w * a.scale, 1), "p": [round(float(v) * a.scale, 1) for q in p for v in q]} for w, p in seq]
 
+    # make sure the drawing ends complete: any ink the brush missed gets clean-up strokes at the end
+    def covered(sts):
+        cov = Image.new("L", (W, H), 0); cd = ImageDraw.Draw(cov)
+        for st in sts:
+            P = [(st["p"][i] / a.scale, st["p"][i + 1] / a.scale) for i in range(0, len(st["p"]), 2)]
+            r = st["w"] / a.scale / 2
+            if len(P) > 1: cd.line(P, fill=255, width=max(1, int(st["w"] / a.scale)), joint="curve")
+            for q in (P[0], P[-1]): cd.ellipse([q[0] - r, q[1] - r, q[0] + r, q[1] + r], fill=255)
+        return np.asarray(cov) > 0
+    miss = ink & ~covered(strokes)
+    miss = ndimage.binary_opening(miss) | (miss & (dist > 1.5))
+    if miss.any():
+        extra, _ = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & ink), dist), pos or (0, 0))
+        strokes += [{"w": round((w + 6) * a.scale, 1), "p": [round(float(v) * a.scale, 1) for q in p for v in q]} for w, p in extra]
+        left = ink & ~covered(strokes)
+    else:
+        left = miss
+    pct = 100 * left.sum() / max(ink.sum(), 1)
+    if pct > 0.3:
+        print(f"WARNING {name}: {pct:.1f}% of the ink is still not reached by the marker")
+
     json.dump({"w": round(W * a.scale, 1), "h": round(H * a.scale, 1), "strokes": strokes}, open(a.out, "w"))
     tot = sum(sum(np.hypot(np.diff(s["p"][0::2]), np.diff(s["p"][1::2]))) for s in strokes)
-    print(f"{a.src}: {len(units)} parts, {len(strokes)} strokes, {tot:.0f} units of line")
+    print(f"{name}: {len(units)} parts, {len(strokes)} strokes, {tot:.0f} units of line")
 
 
 if __name__ == "__main__":

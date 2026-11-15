@@ -44,7 +44,7 @@ const files = fs.readdirSync(dir).filter(f => /\.(svg|png|jpe?g)$/i.test(f));
       await page.screenshot({ path: png });
       await page.close();
     }
-    execFileSync("python3", [path.join(__dirname, "trace.py"), png, out, "--scale", String(scale)], { stdio: "inherit" });
+    execFileSync("python3", [path.join(__dirname, "trace.py"), png, out, "--scale", String(scale), "--label", f], { stdio: "inherit" });
     if (png !== src) fs.rmSync(png, { force: true });
   }
   if (browser) await browser.close();
