@@ -3,11 +3,11 @@
 
 Usage: trace.py <image.png> <out.strokes.json> [--scale S]
 
-The picture is split into parts, and the marker finishes each part before moving to the next:
+The marker finishes each element before moving to the nearest next one:
   - line parts: groups of nearby lines (a face with its eyes and mouth, a hand) traced along
     their skeleton, one continuous stroke after another
-  - solid parts: dark areas (hair, a sweater) split at narrow points like the neck; each is
-    outlined first, then coloured in with back-and-forth strokes
+  - solid shapes: each connected dark area (hair, a sweater) is outlined along its real edge,
+    then coloured in with back-and-forth strokes, as one piece
 Parts are drawn top first, then always the nearest unfinished part. Coordinates are multiplied
 by --scale (use it when the PNG is a resized render of an SVG).
 Output: {"w", "h", "strokes": [{"w": brush, "p": [x0, y0, x1, y1, ...]}, ...]}
@@ -17,8 +17,6 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 from skimage.morphology import skeletonize
-from skimage.segmentation import watershed
-from skimage.feature import peak_local_max
 from skimage.measure import find_contours
 
 NB = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -152,13 +150,7 @@ def main():
     fill = keep[lab0]
     lab0 = lab0 * fill
 
-    # split solid areas into parts at narrow points (hair and sweater meet at the neck)
-    fd = ndimage.distance_transform_edt(fill)
-    peaks = peak_local_max(fd, min_distance=int(0.09 * S), labels=lab0, exclude_border=False)
-    markers = np.zeros(fill.shape, int)
-    for i, (y, x) in enumerate(peaks, 1):
-        markers[y, x] = i
-    parts = watershed(-fd, markers, mask=fill) if len(peaks) else lab0
+    parts = lab0                                # each connected solid shape is drawn whole: outline, then colour in
 
     # line parts: nearby lines grouped (a face with its features), traced along the skeleton
     lines_ink = ink & ~fill

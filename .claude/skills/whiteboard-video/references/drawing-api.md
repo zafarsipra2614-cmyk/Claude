@@ -14,7 +14,7 @@ window.SCENES = {
 ## Timing
 
 - `A(line, fraction)` returns the moment `fraction` of the way through spoken line `line` of this scene. `A(0, 0)` is when the first sentence starts; `A(1, .5)` is halfway through the second sentence.
-- Every item has a start (`at`) and a duration in seconds. Typical durations: short word 0.3, title 0.6 to 1.0, icon 0.4 to 0.6, big diagram 0.8 to 1.2.
+- Every item has a start (`at`) and a duration in seconds. Pictures draw fast and text is written at a readable handwriting pace: about 0.1 s per character for text (a two-word title 1.0 to 1.2, a short phrase 1.2 to 1.5), icons 0.25 to 0.4, an `IMG` character 1.8.
 - Items in the same scene should not overlap in time; the marker can only be in one place. Stagger them.
 - Everything must finish before the board slides away, about 0.45 s before the scene ends. `render.js check` warns about anything that ends too late.
 - Time drawings to the word they illustrate. Listen for the word's position in the sentence and pick the fraction accordingly.
@@ -32,7 +32,7 @@ window.SCENES = {
 
 1. Put the art in `<project>/assets/<name>.svg` (or `.png` / `.jpg`): black line art on white or transparent works best.
 2. Run `node scripts/prep.js <project>` once. It traces every new or changed image into `<name>.strokes.json`.
-3. Call `IMG('<name>', ...)` in `scenes.js`. Give it about 1.8 s for a character (2.5 s for a busy scene). The marker works part by part (hair, face, sweater, hands): each part is outlined, coloured in completely, then the marker moves to the nearest unfinished part, starting at the top.
+3. Call `IMG('<name>', ...)` in `scenes.js`. Give it about 1.8 s for a character (2.5 s for a busy scene). The marker draws it naturally: continuous outlines first, then each solid shape coloured in as one piece, then the remaining details.
 
 Characters: `scripts/peep.js` builds Open Peeps characters (free hand-drawn people, CC0) from a body, face and hair: `node scripts/peep.js <project>/assets/maya.svg '{"body":"PointingUp","face":"SmileBig","hair":"Long"}'`. Keep `hair` the same across scenes so a character stays recognisable. Run it with no arguments to list every body, face, hair and accessory.
 
