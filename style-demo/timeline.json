@@ -1,32 +1,32 @@
 {
- "total": 12.166666666666666,
+ "total": 8.666666666666666,
  "scenes": [
   {
    "id": "meet",
    "start": 0.0,
-   "end": 7.067,
+   "end": 4.967,
    "lines": [
     {
      "text": "Meet Maya.",
-     "start": 0.35,
-     "end": 2.95
+     "start": 0.2,
+     "end": 2.0
     },
     {
      "text": "Her new shop is struggling.",
-     "start": 3.17,
-     "end": 6.5
+     "start": 2.12,
+     "end": 4.52
     }
    ]
   },
   {
    "id": "idea",
-   "start": 7.067,
-   "end": 12.167,
+   "start": 4.967,
+   "end": 8.667,
    "lines": [
     {
      "text": "Then she found a simple fix.",
-     "start": 7.417,
-     "end": 10.817
+     "start": 5.167,
+     "end": 7.627
     }
    ]
   }

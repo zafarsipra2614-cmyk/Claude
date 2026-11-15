@@ -32,7 +32,7 @@ window.SCENES = {
 
 1. Put the art in `<project>/assets/<name>.svg` (or `.png` / `.jpg`): black line art on white or transparent works best.
 2. Run `node scripts/prep.js <project>` once. It traces every new or changed image into `<name>.strokes.json`.
-3. Call `IMG('<name>', ...)` in `scenes.js`. Give it 2.5 to 3.5 s for a character; the marker moves faster on simpler art.
+3. Call `IMG('<name>', ...)` in `scenes.js`. Give it about 1.8 s for a character (2.5 s for a busy scene). The marker draws it in one continuous pass from the top: lines and solid areas together, each part finished as the marker reaches it.
 
 Characters: `scripts/peep.js` builds Open Peeps characters (free hand-drawn people, CC0) from a body, face and hair: `node scripts/peep.js <project>/assets/maya.svg '{"body":"PointingUp","face":"SmileBig","hair":"Long"}'`. Keep `hair` the same across scenes so a character stays recognisable. Run it with no arguments to list every body, face, hair and accessory.
 

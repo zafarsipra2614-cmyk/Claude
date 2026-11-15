@@ -157,6 +157,30 @@ def main():
                {"w": round(brush * 1.25 * a.scale, 1), "p": [round(float(v) * a.scale, 1) for xy in s for v in xy]}
                for s in strokes]
 
+    # one continuous pass: lines and colouring together, each next stroke the one nearest the marker,
+    # drawn from whichever end is closer, starting at the top of the picture
+    pool = strokes[:]
+    ends = np.array([[st["p"][0], st["p"][1], st["p"][-2], st["p"][-1]] for st in pool], float)
+    alive = np.ones(len(pool), bool)
+    tops = np.minimum(ends[:, 1], ends[:, 3])
+    pos = None
+    ordered = []
+    for _ in range(len(pool)):
+        if pos is None:
+            k = int(np.argmin(np.where(alive, tops, np.inf)))
+            rev = ends[k, 3] < ends[k, 1]
+        else:
+            d0 = np.hypot(ends[:, 0] - pos[0], ends[:, 1] - pos[1])
+            d1 = np.hypot(ends[:, 2] - pos[0], ends[:, 3] - pos[1])
+            d = np.where(alive, np.minimum(d0, d1), np.inf)
+            k = int(np.argmin(d)); rev = d1[k] < d0[k]
+        st = pool[k]; alive[k] = False
+        if rev:
+            q = st["p"]; st = {"w": st["w"], "p": [v for i in range(len(q) - 2, -1, -2) for v in q[i:i + 2]]}
+        ordered.append(st)
+        pos = (st["p"][-2], st["p"][-1])
+    strokes = ordered
+
     json.dump({"w": round(W * a.scale, 1), "h": round(H * a.scale, 1), "strokes": strokes}, open(a.out, "w"))
     tot = sum(sum(np.hypot(np.diff(s["p"][0::2]), np.diff(s["p"][1::2]))) for s in strokes)
     print(f"{a.src}: {len(strokes)} strokes, {tot:.0f} units of line")
