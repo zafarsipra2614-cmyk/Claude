@@ -150,6 +150,33 @@ function T(s, x, y, size, at, dur, o = {}) {
   return b;
 }
 
+// IMG(name, x, y, width, at, dur) draws a prepared line-art image (assets/<name>.svg|png + .strokes.json,
+// made by prep.js): the picture is revealed along its traced strokes, lines first, then solid areas
+// coloured in, with the marker on the stroke tip. Returns {x, y, width, height}.
+function IMG(name, x, y, w, at, dur, o = {}) {
+  const A = (window.ASSETS || {})[name];
+  if (!A) throw new Error(`IMG("${name}"): no assets/${name}.svg|png with a ${name}.strokes.json; run prep.js`);
+  const s = w / A.w, id = 'm' + items.length;
+  const g = el('g', { transform: `translate(${x},${y}) scale(${s})` }, cur.g);
+  const m = el('mask', { id, maskUnits: 'userSpaceOnUse', x: -50, y: -50, width: A.w + 100, height: A.h + 100 }, defs);
+  const segs = []; let last = null, total = 0;
+  for (const st of A.strokes) {
+    const pts = []; for (let i = 0; i < st.p.length; i += 2) pts.push([st.p[i], st.p[i + 1]]);
+    if (last) { const hop = Math.hypot(pts[0][0] - last[0], pts[0][1] - last[1]) * .3; segs.push({ hop: true, a: last, b: pts[0], len: hop }); total += hop; }
+    const d = 'M ' + pts.map(q => q[0] + ' ' + q[1]).join(' L ');
+    const path = el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': st.w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, m);
+    const len = Math.max(path.getTotalLength(), .1);
+    path.style.strokeDasharray = `${len} ${len + st.w * 2 + 10}`;
+    segs.push({ el: path, len, plen: len }); total += len;
+    last = pts[pts.length - 1];
+  }
+  let acc = 0; for (const sg of segs) { sg.t0 = acc / total; acc += sg.len; sg.t1 = acc / total; }
+  el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${id})` }, g);
+  const full = el('image', { href: A.src, width: A.w, height: A.h, opacity: 0 }, g);
+  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur });
+  return { x, y, width: w, height: A.h * s };
+}
+
 window.init = async function (tl, cfg) {
   TL = tl; CFG = cfg || {};
   W = CFG.width || 1920; H = CFG.height || 1080; PAN = CFG.pan ?? .45;
@@ -208,6 +235,12 @@ function sceneTx(s, t) {
 function pt(it, p, t) {
   const tx = sceneTx(it.scene, t);
   if (it.type === 'path') { const q = it.el.getPointAtLength(it.len * p); return [q.x + tx, q.y]; }
+  if (it.type === 'img') {
+    let sg = it.segs.find(g => p <= g.t1) || it.segs[it.segs.length - 1];
+    const k = clamp((p - sg.t0) / ((sg.t1 - sg.t0) || 1));
+    const q = sg.hop ? { x: sg.a[0] + (sg.b[0] - sg.a[0]) * k, y: sg.a[1] + (sg.b[1] - sg.a[1]) * k } : sg.el.getPointAtLength(sg.plen * k);
+    return [it.x + q.x * it.s + tx, it.y + q.y * it.s];
+  }
   const b = it.b;
   return [b.x + b.width * p + tx, b.y + b.height * .66 + Math.sin(p * b.width / 10) * b.height * .15];
 }
@@ -226,6 +259,13 @@ window.renderAt = function (t) {
       it.el.style.strokeDashoffset = it.len * (1 - p);
       it.el.style.visibility = p > 0 ? 'visible' : 'hidden';
       if (it.hasFill) it.el.setAttribute('fill-opacity', (it.fillOp * clamp((t - it.at - it.dur) / .35)).toFixed(3));
+    } else if (it.type === 'img') {
+      for (const sg of it.segs) if (!sg.hop) {
+        const k = clamp((p - sg.t0) / ((sg.t1 - sg.t0) || 1));
+        sg.el.style.strokeDashoffset = sg.plen * (1 - k);
+        sg.el.style.visibility = k > 0 ? 'visible' : 'hidden';
+      }
+      it.full.setAttribute('opacity', clamp((t - it.at - it.dur) / .4).toFixed(3));
     } else {
       it.rect.setAttribute('width', (p * (it.b.width + 24)).toFixed(1));
     }

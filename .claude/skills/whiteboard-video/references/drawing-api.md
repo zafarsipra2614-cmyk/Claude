@@ -26,6 +26,16 @@ window.SCENES = {
 | `P(d, at, dur, {c, w, fill, fillOp})` | a path, stroked progressively. `c` color, `w` stroke width (default 7), `fill` color that fades in after the stroke, `fillOp` its opacity (default 0.3). Returns the SVG element. |
 | `T(text, x, y, size, at, dur, {c, anchor, weight, font})` | handwritten text, revealed left to right. `anchor`: `middle` (default), `start`, `end`. `y` is the baseline. Returns the text's bounding box `{x, y, width, height}`, useful for placing things next to it. |
 
+## Detailed illustrations: `IMG`
+
+`IMG(name, x, y, width, at, dur)` draws a line-art picture (a character, a storefront, a phone) the way a person would: the marker traces the lines first, then colours in solid areas with diagonal strokes, and the finished picture stays on the board. It returns `{x, y, width, height}`.
+
+1. Put the art in `<project>/assets/<name>.svg` (or `.png` / `.jpg`): black line art on white or transparent works best.
+2. Run `node scripts/prep.js <project>` once. It traces every new or changed image into `<name>.strokes.json`.
+3. Call `IMG('<name>', ...)` in `scenes.js`. Give it 2.5 to 3.5 s for a character; the marker moves faster on simpler art.
+
+Characters: `scripts/peep.js` builds Open Peeps characters (free hand-drawn people, CC0) from a body, face and hair: `node scripts/peep.js <project>/assets/maya.svg '{"body":"PointingUp","face":"SmileBig","hair":"Long"}'`. Keep `hair` the same across scenes so a character stays recognisable. Run it with no arguments to list every body, face, hair and accessory.
+
 ## Path builders (return path strings; concatenate with `+`)
 
 | Builder | Shape |

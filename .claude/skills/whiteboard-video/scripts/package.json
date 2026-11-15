@@ -1,6 +1,11 @@
 {
   "name": "whiteboard-video-engine",
   "private": true,
-  "description": "Headless Chrome renderer for the whiteboard-video skill",
-  "dependencies": { "puppeteer-core": "^25.3.0" }
+  "description": "Headless Chrome renderer and line-art tracer for the whiteboard-video skill",
+  "dependencies": {
+    "puppeteer-core": "^25.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-peeps": "0.1.10"
+  }
 }

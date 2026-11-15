@@ -22,22 +22,12 @@ const cfg = Object.assign({ width: 1920, height: 1080, fps: 30, pan: 0.45, name:
   fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, "utf8")) : {});
 const tl = JSON.parse(fs.readFileSync(path.join(project, "timeline.json"), "utf8"));
 
-function findChrome() {
-  const c = [process.env.CHROME_PATH,
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser",
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"].filter(Boolean);
-  const hit = c.find(p => fs.existsSync(p));
-  if (!hit) { console.error("Chrome not found. Set CHROME_PATH=/path/to/chrome"); process.exit(1); }
-  return hit;
-}
+const { findChrome } = require("./chrome");
 
 (async () => {
   const browser = await puppeteer.launch({
     executablePath: findChrome(), headless: "new",
-    args: ["--use-mock-keychain", "--password-store=basic", "--no-first-run", "--hide-scrollbars", "--force-device-scale-factor=1", "--allow-file-access-from-files"],
+    args: [...(process.getuid && process.getuid() === 0 ? ["--no-sandbox"] : []), "--use-mock-keychain", "--password-store=basic", "--no-first-run", "--hide-scrollbars", "--force-device-scale-factor=1", "--allow-file-access-from-files"],
   });
   const page = await browser.newPage();
   const errors = [];
@@ -45,6 +35,16 @@ function findChrome() {
   page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
   await page.setViewport({ width: cfg.width, height: cfg.height });
   await page.goto("file://" + path.join(__dirname, "engine.html"));
+  // line-art images prepared by prep.js: assets/<name>.svg|png + <name>.strokes.json
+  const assets = {}, adir = path.join(project, "assets");
+  if (fs.existsSync(adir)) for (const f of fs.readdirSync(adir).filter(f => f.endsWith(".strokes.json"))) {
+    const name = f.slice(0, -13), img = fs.readdirSync(adir).find(g => g.startsWith(name + ".") && /\.(svg|png|jpe?g)$/i.test(g));
+    if (!img) continue;
+    const mime = img.endsWith(".svg") ? "image/svg+xml" : img.endsWith(".png") ? "image/png" : "image/jpeg";
+    assets[name] = { ...JSON.parse(fs.readFileSync(path.join(adir, f), "utf8")),
+      src: `data:${mime};base64,` + fs.readFileSync(path.join(adir, img)).toString("base64") };
+  }
+  await page.evaluate(a => { window.ASSETS = a; }, assets);
   await page.addScriptTag({ path: path.join(project, "scenes.js") });
   const info = await page.evaluate((t, c) => window.init(t, c), tl, cfg).catch(e => { errors.push(e.message); return null; });
   if (errors.length || !info) { console.error("ERROR in scenes.js:\n  " + errors.join("\n  ")); await browser.close(); process.exit(1); }
