@@ -4,7 +4,7 @@
   "height": 1080,
   "fps": 30,
   "captions": true,
-  "pen": true,
+  "pen": false,
   "pan": 0.45,
   "lead": 0.2,
   "gap": 0.12,

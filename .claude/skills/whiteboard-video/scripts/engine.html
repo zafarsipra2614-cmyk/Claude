@@ -15,7 +15,9 @@ svg{position:absolute;left:0;top:0;}
   font:500 34px/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#23262b;text-align:center;
   background:rgba(255,255,255,.92);border:2px solid #e6e4dc;border-radius:14px;padding:10px 24px;
   box-shadow:0 4px 18px rgba(0,0,0,.06);}
-</style></head>
+</style>
+<script src="../assets/fonts/fonts.js"></script>
+</head>
 <body>
 <svg id="board" xmlns="http://www.w3.org/2000/svg">
   <defs id="defs">
@@ -140,7 +142,8 @@ function P(d, at, dur, o = {}) {
   return p;
 }
 function T(s, x, y, size, at, dur, o = {}) {
-  const t = el('text', { x, y, 'font-family': o.font || FONT, 'font-size': size, 'font-weight': o.weight || 700,
+  const fam = o.font || FONT, wts = ((window.FONT_LIST || {})[fam] || {}).weights || [700];
+  const t = el('text', { x, y, 'font-family': `'${fam}'`, 'font-size': size, 'font-weight': o.weight || (wts.includes(700) ? 700 : 400),
     fill: o.c || INK, 'text-anchor': o.anchor || 'middle' }, cur.g);
   t.textContent = s;
   const b = t.getBBox(), id = 'c' + items.length;
@@ -225,11 +228,19 @@ window.init = async function (tl, cfg) {
   cap.style.maxWidth = (W - 100) + 'px';
   if (CFG.captionSize) cap.style.fontSize = CFG.captionSize + 'px';
 
+  // handwritten fonts from assets/fonts (fonts.js): config "font" picks the default, T(..., { font }) overrides per line
+  const FL = window.FONT_LIST || {}, loads = [];
+  for (const [fam, f] of Object.entries(FL)) if (f.file) for (const w of f.weights) {
+    const face = new FontFace(fam, `url(../assets/fonts/${f.file}-${w}.woff2)`, { weight: String(w) });
+    document.fonts.add(face); loads.push(face.load().catch(() => null));
+  }
+  await Promise.all(loads);
   await document.fonts.load(`700 80px ${FONT}`);
   await document.fonts.load(`600 80px ${FONT}`);
   defs = document.getElementById('defs');
   const root = document.getElementById('scenes');
   const warn = [];
+  if (window.FONT_LIST && !(FONT in window.FONT_LIST)) warn.push(`font "${FONT}" is not in assets/fonts/fonts.js: ${Object.keys(window.FONT_LIST).join(', ')}`);
   if (!window.SCENES) throw new Error('scenes.js did not define window.SCENES');
   TL.scenes.forEach((s, i) => {
     if (!window.SCENES[s.id]) { warn.push(`missing scene builder for "${s.id}"`); return; }

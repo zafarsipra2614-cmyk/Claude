@@ -54,6 +54,15 @@ A pie slice: `circ(cx, cy, r) ` for the outline, then a second path `` `M ${cx} 
 
 Topic-specific logos: write a small helper at the top of `scenes.js` that returns path strings (see `eth()` in `examples/rwa-on-ethereum/scenes.js`).
 
+## Fonts
+
+21 free handwritten fonts ship with the skill (OFL or Apache licences; files in `assets/fonts/`, list in `assets/fonts/fonts.js`). `references/font-options.png` shows every one with the same title and phrase.
+
+- Whole video: `"font": "Patrick Hand"` in `config.json` (default `Caveat`). An unknown name prints a warning listing the valid ones.
+- One line: `T('text', x, y, size, at, dur, { font: 'Amatic SC' })`.
+- Fonts with a real bold (Caveat, Kalam, Amatic SC) draw bold; the others use their regular weight.
+- Narrow fonts (Amatic SC, Just Another Hand, Sue Ellen Francisco) fit about 1.6 times more characters per line than the width rule below; wide ones (Rock Salt, Permanent Marker, Architects Daughter) fit about 0.8 times as many.
+
 ## Colors and board
 
 `INK`, `BLUE`, `GOLD`, `RED`, `GREEN`, `GRAY`; override them in `config.json` under `palette`. `W` and `H` are the board size.
