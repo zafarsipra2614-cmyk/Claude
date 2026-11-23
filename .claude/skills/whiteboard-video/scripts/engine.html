@@ -183,19 +183,25 @@ function IMG(name, x, y, w, at, dur, o = {}) {
     return { out, total };
   }
   const place = (st, from, to) => { let acc = 0; for (const sg of st.out) { sg.t0 = from + (to - from) * acc / (st.total || 1); acc += sg.len; sg.t1 = from + (to - from) * acc / (st.total || 1); segs.push(sg); } };
-  let phases = null, sketchG = null, inkImg = null;
+  let phases = null, sketchG = null, inkImg = null, shadowImg = null, lateOutline = null;
   if (A.inkSrc && A.ink && A.color) {
     // sketch (pencil) -> ink (black line art) -> colour (one colour group at a time)
     const share = o.phases || [.15, .45, .40];
+    if (A.shadowSrc && o.shadow !== false)   // hand-drawn hatched shadow, under everything, shaded in during colouring
+      shadowImg = el('image', { href: A.shadowSrc, width: A.shadow.w, height: A.shadow.h, opacity: 0 }, g);
     sketchG = el('g', {}, g);
     const sk = stage(A.sketch ? A.sketch.strokes : [], sketchG, { stroke: '#aeb3bc', w: A.sketch ? A.sketch.w : 4, color: GRAY, extra: { opacity: .9 } });
+    // the bold black outline is inked first, then the inner lines; it is a vector layer kept on top to the end
+    const outlineG = el('g', {}), ol = A.outline && o.outline !== false
+      ? stage(A.outline.strokes, outlineG, { stroke: INK, w: A.outline.w, color: INK }) : { out: [], total: 0 };
     const mInk = mask(base + 'i'), ik = stage(A.ink, mInk, { stroke: '#fff' });
     const mCol = mask(base + 'c'), co = stage(A.color, mCol, { stroke: '#fff' });
     const a1 = sk.out.length ? share[0] : 0, sum = a1 + share[1] + share[2];
-    const e1 = a1 / sum, e2 = (a1 + share[1]) / sum;
-    place(sk, 0, e1); place(ik, e1, e2); place(co, e2, 1);
+    const e1 = a1 / sum, e2 = (a1 + share[1]) / sum, eo = ol.out.length ? e1 + (e2 - e1) * .3 : e1;
+    place(sk, 0, e1); place(ol, e1, eo); place(ik, eo, e2); place(co, e2, 1);
     inkImg = el('image', { href: A.inkSrc, width: A.w, height: A.h, mask: `url(#${base}i)` }, g);
     el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${base}c)` }, g);
+    lateOutline = outlineG;
     phases = { e1, e2 };
   } else {
     const m = mask(base), st = stage(A.strokes, m, { stroke: '#fff' });
@@ -203,12 +209,13 @@ function IMG(name, x, y, w, at, dur, o = {}) {
     el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${base})` }, g);
   }
   const full = el('image', { href: A.src, width: A.w, height: A.h, opacity: 0 }, g);
+  if (lateOutline) g.appendChild(lateOutline);          // outline above the finished picture
   // the drawing's real extent (from its strokes), so empty canvas around the art never counts as overlap
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   for (const st of [...(A.ink || []), ...(A.color || []), ...(A.strokes || [])]) for (let i = 0; i < st.p.length; i += 2) {
     x0 = Math.min(x0, st.p[i]); x1 = Math.max(x1, st.p[i]); y0 = Math.min(y0, st.p[i + 1]); y1 = Math.max(y1, st.p[i + 1]); }
   const blue = (A.color || []).some(st => (st.c || '').toLowerCase() === BLUE.toLowerCase());
-  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur, phases, sketchG, inkImg,
+  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur, phases, sketchG, inkImg, shadowImg,
     over: !!o.over, name, blue, box: { x: x + x0 * s, y: y + y0 * s, w: (x1 - x0) * s, h: (y1 - y0) * s } });
   return { x, y, width: w, height: A.h * s };
 }
@@ -352,6 +359,7 @@ window.renderAt = function (t) {
         const e = it.phases.e2 + (1 - it.phases.e2) * .45;
         it.sketchG.setAttribute('opacity', (1 - clamp((p - it.phases.e2) / Math.max(e - it.phases.e2, .01))).toFixed(3));
         it.inkImg.setAttribute('opacity', fin >= 1 ? '0' : '1');
+        if (it.shadowImg) it.shadowImg.setAttribute('opacity', clamp((p - it.phases.e2) / Math.max(1 - it.phases.e2, .01)).toFixed(3));
       }
     } else {
       it.rect.setAttribute('width', (p * (it.b.width + 24)).toFixed(1));

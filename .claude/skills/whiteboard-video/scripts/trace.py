@@ -291,7 +291,42 @@ def main():
     if pct > 0.3:
         print(f"WARNING {name}: {pct:.1f}% of the picture is still not reached by the marker")
 
+    # ---- bold black outline around the whole picture (house style: every visual outlined in bold black) ----
+    if (alpha < 20).mean() > 0.05:
+        body = alpha > 128
+    else:
+        body = ink | fill
+    body = ndimage.binary_fill_holes(ndimage.binary_closing(body, iterations=3))
+    bl, nbl = ndimage.label(body)
+    outline_px = max(4.0, 0.011 * S)
+    outline = []
+    for k in range(1, nbl + 1):
+        m = bl == k
+        if m.sum() < (0.012 * S) ** 2:
+            continue
+        for cnt in find_contours(np.pad(m, 1).astype(float), .5):
+            if len(cnt) > 20:
+                outline.append(rdp([(c[1] - 1, c[0] - 1) for c in cnt], 1.0))
+    outline_seq, _ = chain([(0, p) for p in outline], (0, 0))
+
+    # ---- hand-drawn shadow: the silhouette offset down-right, shaded with light pencil hatching ----
+    sdx, sdy = int(0.026 * S), int(0.032 * S)
+    SW_, SH_ = W + sdx + 4, H + sdy + 4
+    sil = np.zeros((SH_, SW_), bool); sil[sdy:sdy + H, sdx:sdx + W] = blob
+    own = np.zeros((SH_, SW_), bool); own[:H, :W] = blob
+    shade = sil & ~own
+    yy, xx = np.mgrid[0:SH_, 0:SW_]
+    gap = max(5.0, 0.0085 * S)
+    wob = (xx + yy + 2.5 * np.sin(yy / (0.06 * S)) * gap / 4) % gap        # slightly wavy diagonal strokes
+    hatch_px = shade & (wob < max(2.0, 0.0034 * S))
+    sh = np.zeros((SH_, SW_, 4), np.uint8)
+    sh[hatch_px] = (118, 126, 142, 225)                                    # pencil grey
+    shadow_path = ink_path[:-len(".ink.png")] + ".shadow.png"
+    Image.fromarray(sh, "RGBA").save(shadow_path)
+
     out = {"w": round(W * a.scale, 1), "h": round(H * a.scale, 1), "inkimg": ink_path.rsplit("/", 1)[-1],
+           "shadow": {"img": shadow_path.rsplit("/", 1)[-1], "w": round(SW_ * a.scale, 1), "h": round(SH_ * a.scale, 1)},
+           "outline": {"w": round(outline_px * a.scale, 1), "strokes": [pack(0, p)["p"] for _, p in outline_seq]},
            "sketch": {"w": round(max(3.0, 0.0035 * S) * a.scale, 1), "strokes": [pack(0, p)["p"] for _, p in sketch_seq]},
            "ink": ink_out, "color": colour_out}
     json.dump(out, open(a.out, "w"))

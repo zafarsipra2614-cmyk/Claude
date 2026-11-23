@@ -43,8 +43,8 @@ svg("chart-up", (-30, -40, 560, 480), f'''
   <rect x="70" y="280" width="90" height="120" fill="{B}" {st} stroke-width="13"/>
   <rect x="210" y="190" width="90" height="210" fill="{B}" {st} stroke-width="13"/>
   <rect x="350" y="90" width="90" height="310" fill="{B}" {st} stroke-width="13"/>
-  <path d="M70 230 L230 140 L330 110 L440 30" fill="none" {st} stroke-width="13"/>
-  <path d="M385 28 L440 30 L425 82" fill="none" {st} stroke-width="13"/>''')
+  <path d="M115 235 L255 145 L395 45 L428 22" fill="none" {st} stroke-width="13"/>
+  <path d="M382 27 L428 22 L408 63" fill="none" {st} stroke-width="13"/>''')
 
 svg("chart-flat", (-30, -40, 620, 480), f'''
   <path d="M20 0 L20 400 L560 400" fill="none" {st} stroke-width="16"/>

@@ -23,7 +23,7 @@ const TEETH = { Concerned: "Solemn or ConcernedFear", Explaining: "Smile or Awe"
 // Ready-made cast: the same person across poses. Mix men and women; alternate who leads from video to video.
 // LOCKED: James is the channel's recurring lead. His look never changes; only "body" (pose) and "face" (expression) may vary.
 const LOCKED = {
-  james: { hair: "ShortWavy", facialHair: "None", accessory: "None", accent: "#4D96FF" },
+  james: { hair: "ShortVolumed", facialHair: "None", accessory: "None", accent: "#4D96FF" },   // 25, Gen Z: volume quiff, clean-shaven
 };
 const CAST = {
   ...LOCKED,
