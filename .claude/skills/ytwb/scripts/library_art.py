@@ -1,4 +1,4 @@
-"""Bold line-art object library for brandonomics-whiteboard (black ink, Brandonomics blue #4D96FF). Writes assets/library/*.svg."""
+"""Bold line-art object library for ytwb (black ink, Brandonomics blue #4D96FF). Writes assets/library/*.svg."""
 import os
 K, B, G, Wt = "#1f2328", "#4D96FF", "#8a8f98", "#ffffff"
 st = f'stroke="{K}" stroke-linecap="round" stroke-linejoin="round"'

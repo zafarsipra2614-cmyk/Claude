@@ -1,9 +1,9 @@
 ---
-name: brandonomics-whiteboard
+name: ytwb
 description: Make Brandonomics hand-drawn whiteboard explainer videos in the locked house style - detailed line-art characters (James and the cast) and objects that sketch, ink and colour themselves, bold black outlines, hatched pencil shadows, Brandonomics blue (#4D96FF) in every scene, Permanent Marker titles and Indie Flower labels, captions, MP4. Use whenever the user wants an explainer video, a whiteboard or "drawn" animation, a short video that explains a concept, or asks to turn a topic, script or article into a video, even if they don't say "whiteboard".
 ---
 
-# Brandonomics whiteboard video
+# ytwb · Brandonomics whiteboard video
 
 Turn a topic into a whiteboard explainer: every picture sketches itself in pencil, inks itself in bold black line art and colours itself in, text writes itself in a handwritten font, the board slides to the next scene, captions run along the bottom, and the result is a 1920x1080 MP4.
 

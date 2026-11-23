@@ -9,5 +9,5 @@
 
 ## Rebuild
 Regenerate silent clips (see timing rule above) into audio/<scene>_<line>.wav, then:
-  python3 ../.claude/skills/brandonomics-whiteboard/scripts/make_audio.py .
-  CHROME_PATH=<chrome launched with --no-sandbox when running as root> node ../.claude/skills/brandonomics-whiteboard/scripts/render.js . full
+  python3 ../.claude/skills/ytwb/scripts/make_audio.py .
+  CHROME_PATH=<chrome launched with --no-sandbox when running as root> node ../.claude/skills/ytwb/scripts/render.js . full

@@ -1,6 +1,6 @@
-# brandonomics-whiteboard
+# ytwb
 
-The Brandonomics whiteboard explainer video skill for Claude Code. Pictures sketch, ink and colour themselves; bold black outlines; hatched pencil shadows; Brandonomics blue in every scene; Permanent Marker titles and Indie Flower labels; James as the locked recurring lead; captions; 1920x1080 MP4. Rendered locally with headless Chrome and ffmpeg.
+ytwb: the Brandonomics YouTube whiteboard explainer video skill for Claude Code. Pictures sketch, ink and colour themselves; bold black outlines; hatched pencil shadows; Brandonomics blue in every scene; Permanent Marker titles and Indie Flower labels; James as the locked recurring lead; captions; 1920x1080 MP4. Rendered locally with headless Chrome and ffmpeg.
 
 Read `SKILL.md` for the house style, the quality gate and the workflow. Quick start:
 
