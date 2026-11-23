@@ -8,13 +8,13 @@ function write(s, x, y, size, at, o = {}) {           // handwriting pace: ~0.08
 }
 function draw(name, x, y, w, at, d) { const r = IMG(name, x, y, w, at, d); r.end = at + d + GAP; return r; }
 function path(dstr, at, d, o) { P(dstr, at, d, o); return at + d + GAP; }
-function title(s, A) { return write(s, 960, 150, 104, A(0, 0), { rate: .09 }).end; }
+function title(s, A) { return write(s, 960, 150, 96, A(0, 0), { rate: .09, font: TITLE_FONT }).end; }
 const warn = (x, y) => poly([[x, y - 34], [x + 32, y + 24], [x - 32, y + 24]], true, 1) + line(x, y - 12, x, y + 6, 1) + circ(x, y + 15, 2.5);
 
 window.SCENES = {
   intro(A) {
     let c = A(0, 0);
-    const t = write('The Hawthorne Effect', 960, 215, 140, c, { rate: .08 }); c = t.end;
+    const t = write('The Hawthorne Effect', 960, 215, 110, c, { rate: .08, font: TITLE_FONT }); c = t.end;
     c = path(wave(t.b.x + 20, t.b.x + t.b.width - 20, 252, 6, 110), c, .25, { c: BLUE, w: 10 });
     c = draw('worker-watched', 700, 300, 420, c, 1.6).end;
     c = draw('eye', 1180, 380, 380, c, 1.0).end;
@@ -52,7 +52,7 @@ window.SCENES = {
     c = write('the lights', 620, 610, 58, c, { c: RED }).end;
     c = draw('eye', 1150, 300, 300, c, .8).end;
     c = path(icon.tick(1175, 590, 30), c, .25, { c: BLUE, fill: BLUE, fillOp: .15 });
-    c = write('the attention', 1360, 610, 58, c, { c: BLUE }).end;
+    c = write('the attention', 1390, 610, 58, c, { c: BLUE }).end;
     c = path(rect(560, 690, 800, 200, 2), c, .4, { c: BLUE, fill: BLUE, fillOp: .06 });
     c = write('“the Hawthorne effect”', 960, 775, 70, c, { c: BLUE }).end;
     write('named by Henry Landsberger · 1958', 960, 850, 48, c, { c: GRAY });
@@ -88,6 +88,6 @@ window.SCENES = {
     c = path(line(760, 440, 1060, 400, 2) + line(760, 480, 1060, 520, 2), c, .3, { c: GRAY, w: 4 });
     c = draw('worker-point', 1050, 290, 360, c, 1.6).end;
     const t = write('watching changes what you see', 960, 860, 72, c);
-    path(wave(t.b.x + 20, t.b.x + t.b.width - 20, 888, 5, 110), t.end, .3, { c: BLUE, w: 9 });
+    path(wave(t.b.x + 20, t.b.x + t.b.width - 20, 902, 5, 110), t.end, .3, { c: BLUE, w: 9 });
   },
 };

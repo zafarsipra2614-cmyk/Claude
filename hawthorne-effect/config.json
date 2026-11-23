@@ -20,5 +20,7 @@
     "paper": "#fbfbf8",
     "paperCenter": "#ffffff",
     "paperEdge": "#f1f0ea"
-  }
+  },
+  "font": "Indie Flower",
+  "titleFont": "Permanent Marker"
 }

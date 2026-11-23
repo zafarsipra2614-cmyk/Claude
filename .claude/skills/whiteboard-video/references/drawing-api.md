@@ -58,7 +58,8 @@ Topic-specific logos: write a small helper at the top of `scenes.js` that return
 
 21 free handwritten fonts ship with the skill (OFL or Apache licences; files in `assets/fonts/`, list in `assets/fonts/fonts.js`). `references/font-options.png` shows every one with the same title and phrase.
 
-- Whole video: `"font": "Patrick Hand"` in `config.json` (default `Caveat`). An unknown name prints a warning listing the valid ones.
+- Whole video: `"font"` (labels and body text) and `"titleFont"` (board titles) in `config.json`; the template uses Indie Flower and Permanent Marker. In `scenes.js`, `FONT` and `TITLE_FONT` hold them: write titles with `T(..., { font: TITLE_FONT })`. An unknown name prints a warning listing the valid ones.
+- Permanent Marker is wide and all capitals: keep board titles to about 104 px and a cover title to about 110 px.
 - One line: `T('text', x, y, size, at, dur, { font: 'Amatic SC' })`.
 - Fonts with a real bold (Caveat, Kalam, Amatic SC) draw bold; the others use their regular weight.
 - Narrow fonts (Amatic SC, Just Another Hand, Sue Ellen Francisco) fit about 1.6 times more characters per line than the width rule below; wide ones (Rock Salt, Permanent Marker, Architects Daughter) fit about 0.8 times as many.
