@@ -32,7 +32,7 @@ window.SCENES = {
 
 1. Put the art in `<project>/assets/<name>.svg` (or `.png` / `.jpg`): black line art on white or transparent works best.
 2. Run `node scripts/prep.js <project>` once. It traces every new or changed image into `<name>.strokes.json`.
-3. Call `IMG('<name>', ...)` in `scenes.js`. Give it about 1.8 s for a character (2.5 s for a busy scene). The marker draws it naturally: continuous outlines first, then each solid shape coloured in as one piece, then the remaining details.
+3. Call `IMG('<name>', ...)` in `scenes.js`. Give it about 1.8 s for a character (2.5 s for a busy scene). It draws in three stages, like an illustrator: a light pencil **sketch** of the outline, then the whole picture **inked** as black line art in one continuous pass, then **colour**, one colour group at a time (all the blue, then all the black), with the marker cap taking that colour. The pencil sketch is erased during colouring. The default time split is 15% sketch, 45% ink, 40% colour; change it with a seventh argument, for example `IMG('eye', x, y, w, at, 1.8, { phases: [.1, .5, .4] })`.
 
 Characters: `scripts/peep.js` builds Open Peeps characters (free hand-drawn people, CC0) from a body, face and hair: `node scripts/peep.js <project>/assets/maya.svg '{"body":"PointingUp","face":"SmileBig","hair":"Long"}'`. Keep `hair` the same across scenes so a character stays recognisable. Run it with no arguments to list every body, face, hair and accessory.
 

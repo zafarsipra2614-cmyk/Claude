@@ -16,13 +16,14 @@ const { findChrome } = require("./chrome");
 const project = path.resolve(process.argv[2] || ".");
 const dir = path.join(project, "assets");
 if (!fs.existsSync(dir)) { console.log("no assets/ folder, nothing to prepare"); process.exit(0); }
-const files = fs.readdirSync(dir).filter(f => /\.(svg|png|jpe?g)$/i.test(f));
+const files = fs.readdirSync(dir).filter(f => /\.(svg|png|jpe?g)$/i.test(f) && !/\.ink\.png$/i.test(f));   // .ink.png = generated line-art layer
 
 (async () => {
   let browser;
   for (const f of files) {
     const src = path.join(dir, f), name = f.replace(/\.[^.]+$/, ""), out = path.join(dir, name + ".strokes.json");
-    if (fs.existsSync(out) && fs.statSync(out).mtimeMs > fs.statSync(src).mtimeMs) continue;
+    if (fs.existsSync(out) && fs.statSync(out).mtimeMs > fs.statSync(src).mtimeMs
+        && JSON.parse(fs.readFileSync(out, "utf8")).ink) continue;      // older traces (no sketch/ink/colour stages) are redone
     let png = src, scale = 1;
     if (/\.svg$/i.test(f)) {
       browser = browser || await puppeteer.launch({ executablePath: findChrome(), headless: "new", args: [...(process.getuid && process.getuid() === 0 ? ["--no-sandbox"] : []), "--allow-file-access-from-files"] });

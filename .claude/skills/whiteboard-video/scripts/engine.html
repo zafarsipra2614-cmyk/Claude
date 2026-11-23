@@ -156,26 +156,53 @@ function T(s, x, y, size, at, dur, o = {}) {
 function IMG(name, x, y, w, at, dur, o = {}) {
   const A = (window.ASSETS || {})[name];
   if (!A) throw new Error(`IMG("${name}"): no assets/${name}.svg|png with a ${name}.strokes.json; run prep.js`);
-  const s = w / A.w, id = 'm' + items.length;
+  const s = w / A.w, base = 'm' + items.length;
   const g = el('g', { transform: `translate(${x},${y}) scale(${s})` }, cur.g);
-  const m = el('mask', { id, maskUnits: 'userSpaceOnUse', x: -50, y: -50, width: A.w + 100, height: A.h + 100 }, defs);
-  const segs = []; let last = null, total = 0;
-  for (const st of A.strokes) {
-    const pts = []; for (let i = 0; i < st.p.length; i += 2) pts.push([st.p[i], st.p[i + 1]]);
-    if (last) { const hop = Math.hypot(pts[0][0] - last[0], pts[0][1] - last[1]) * .6; segs.push({ hop: true, a: last, b: pts[0], len: hop }); total += hop; }
-    const d = 'M ' + pts.map(q => q[0] + ' ' + q[1]).join(' L ');
-    const path = el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': st.w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, m);
-    const len = Math.max(path.getTotalLength(), .1);
-    path.style.strokeDasharray = `${len} ${len + st.w * 2 + 10}`;
-    segs.push({ el: path, len, plen: len }); total += len;
-    last = pts[pts.length - 1];
+  const segs = []; let last = null;
+  const mask = id => el('mask', { id, maskUnits: 'userSpaceOnUse', x: -50, y: -50, width: A.w + 100, height: A.h + 100 }, defs);
+  // add one stage's strokes; returns its length (drawing + pen travel) so stages can share the time
+  function stage(list, parent, style) {
+    let total = 0; const out = [];
+    for (const st of list) {
+      const p = st.p || st, pts = [];
+      for (let i = 0; i < p.length; i += 2) pts.push([p[i], p[i + 1]]);
+      if (pts.length < 2) continue;
+      if (last) { const hop = Math.hypot(pts[0][0] - last[0], pts[0][1] - last[1]) * .6; out.push({ hop: true, a: last, b: pts[0], len: hop }); total += hop; }
+      const sw = style.w || st.w;
+      const path = el('path', { d: 'M ' + pts.map(q => q[0] + ' ' + q[1]).join(' L '), fill: 'none', stroke: style.stroke,
+        'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', ...(style.extra || {}) }, parent);
+      const len = Math.max(path.getTotalLength(), .1);
+      path.style.strokeDasharray = `${len} ${len + sw * 2 + 10}`;
+      out.push({ el: path, len, plen: len, color: style.color || (st.c ? st.c : INK) }); total += len;
+      last = pts[pts.length - 1];
+    }
+    return { out, total };
   }
-  let acc = 0; for (const sg of segs) { sg.t0 = acc / total; acc += sg.len; sg.t1 = acc / total; }
-  el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${id})` }, g);
+  const place = (st, from, to) => { let acc = 0; for (const sg of st.out) { sg.t0 = from + (to - from) * acc / (st.total || 1); acc += sg.len; sg.t1 = from + (to - from) * acc / (st.total || 1); segs.push(sg); } };
+  let phases = null, sketchG = null, inkImg = null;
+  if (A.inkSrc && A.ink && A.color) {
+    // sketch (pencil) -> ink (black line art) -> colour (one colour group at a time)
+    const share = o.phases || [.15, .45, .40];
+    sketchG = el('g', {}, g);
+    const sk = stage(A.sketch ? A.sketch.strokes : [], sketchG, { stroke: '#aeb3bc', w: A.sketch ? A.sketch.w : 4, color: GRAY, extra: { opacity: .9 } });
+    const mInk = mask(base + 'i'), ik = stage(A.ink, mInk, { stroke: '#fff' });
+    const mCol = mask(base + 'c'), co = stage(A.color, mCol, { stroke: '#fff' });
+    const a1 = sk.out.length ? share[0] : 0, sum = a1 + share[1] + share[2];
+    const e1 = a1 / sum, e2 = (a1 + share[1]) / sum;
+    place(sk, 0, e1); place(ik, e1, e2); place(co, e2, 1);
+    inkImg = el('image', { href: A.inkSrc, width: A.w, height: A.h, mask: `url(#${base}i)` }, g);
+    el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${base}c)` }, g);
+    phases = { e1, e2 };
+  } else {
+    const m = mask(base), st = stage(A.strokes, m, { stroke: '#fff' });
+    place(st, 0, 1);
+    el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${base})` }, g);
+  }
   const full = el('image', { href: A.src, width: A.w, height: A.h, opacity: 0 }, g);
-  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur });
+  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur, phases, sketchG, inkImg });
   return { x, y, width: w, height: A.h * s };
 }
+function imgSeg(it, p) { return it.segs.find(g => p <= g.t1) || it.segs[it.segs.length - 1]; }
 
 window.init = async function (tl, cfg) {
   TL = tl; CFG = cfg || {};
@@ -236,7 +263,7 @@ function pt(it, p, t) {
   const tx = sceneTx(it.scene, t);
   if (it.type === 'path') { const q = it.el.getPointAtLength(it.len * p); return [q.x + tx, q.y]; }
   if (it.type === 'img') {
-    let sg = it.segs.find(g => p <= g.t1) || it.segs[it.segs.length - 1];
+    const sg = imgSeg(it, p);
     const k = clamp((p - sg.t0) / ((sg.t1 - sg.t0) || 1));
     const q = sg.hop ? { x: sg.a[0] + (sg.b[0] - sg.a[0]) * k, y: sg.a[1] + (sg.b[1] - sg.a[1]) * k } : sg.el.getPointAtLength(sg.plen * k);
     return [it.x + q.x * it.s + tx, it.y + q.y * it.s];
@@ -265,7 +292,13 @@ window.renderAt = function (t) {
         sg.el.style.strokeDashoffset = sg.plen * (1 - k);
         sg.el.style.visibility = k > 0 ? 'visible' : 'hidden';
       }
-      it.full.setAttribute('opacity', clamp((t - it.at - it.dur) / .4).toFixed(3));
+      const fin = clamp((t - it.at - it.dur) / .4);
+      it.full.setAttribute('opacity', fin.toFixed(3));
+      if (it.phases) {   // the pencil sketch is erased early in the colour stage; the line-art layer hands over to the finished picture
+        const e = it.phases.e2 + (1 - it.phases.e2) * .45;
+        it.sketchG.setAttribute('opacity', (1 - clamp((p - it.phases.e2) / Math.max(e - it.phases.e2, .01))).toFixed(3));
+        it.inkImg.setAttribute('opacity', (1 - fin).toFixed(3));
+      }
     } else {
       it.rect.setAttribute('width', (p * (it.b.width + 24)).toFixed(1));
     }
@@ -295,7 +328,11 @@ function penPos(t) {
 
 function penAt(t, active, prev, next) {
   let pos, color = INK;
-  if (active) { pos = pt(active, clamp((t - active.at) / active.dur), t); color = active.color; }
+  if (active) {
+    const p = clamp((t - active.at) / active.dur);
+    pos = pt(active, p, t);
+    color = active.type === 'img' ? (imgSeg(active, p).color || active.color) : active.color;
+  }
   else {
     const pe = prev ? prev.at + prev.dur : -9, pp = prev ? pt(prev, 1, t) : REST;
     const np = next ? pt(next, 0, t) : REST, gap = next ? next.at - pe : 99;

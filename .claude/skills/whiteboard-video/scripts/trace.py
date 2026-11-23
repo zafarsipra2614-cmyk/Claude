@@ -3,14 +3,14 @@
 
 Usage: trace.py <image.png> <out.strokes.json> [--scale S]
 
-The marker finishes each element before moving to the nearest next one:
-  - line parts: groups of nearby lines (a face with its eyes and mouth, a hand) traced along
-    their skeleton, one continuous stroke after another
-  - solid shapes: each connected dark area (hair, a sweater) is outlined along its real edge,
-    then coloured in with back-and-forth strokes, as one piece
-Parts are drawn top first, then always the nearest unfinished part. Coordinates are multiplied
-by --scale (use it when the PNG is a resized render of an SVG).
-Output: {"w", "h", "strokes": [{"w": brush, "p": [x0, y0, x1, y1, ...]}, ...]}
+Three stages, the way an illustrator works:
+  1. sketch: a light, loose pencil outline of the whole figure (erased at the end)
+  2. ink:    the whole picture as black line art, one continuous pass from the top; solid shapes
+             get their outline here (saved as <name>.ink.png next to the strokes file)
+  3. colour: one colour group at a time (all the blue, then all the black...), with back-and-forth strokes
+
+Coordinates are multiplied by --scale (use it when the PNG is a resized render of an SVG).
+Output: {"w", "h", "inkimg", "sketch": {"w", "strokes"}, "ink": [{"w", "p"}], "color": [{"w", "p", "c"}]}
 """
 import json, argparse
 import numpy as np
@@ -151,7 +151,7 @@ def main():
     dist = ndimage.distance_transform_edt(ink)
 
     # solid areas: thick ink, big enough to colour in (small dots like eyes stay lines)
-    T = max(5.0, 0.0065 * S)
+    T = max(5.0, 0.016 * S)                     # thicker than ~3% of the picture = a solid area; bold lines stay lines
     fill = ndimage.binary_dilation(dist > T, iterations=int(T) + 3) & ink
     fill = ndimage.binary_opening(fill, iterations=2)
     lab0, _ = ndimage.label(fill)
@@ -160,84 +160,123 @@ def main():
     fill = keep[lab0]
     lab0 = lab0 * fill
 
-    parts = lab0                                # each connected solid shape is drawn whole: outline, then colour in
-
-    # line parts: nearby lines grouped (a face with its features), traced along the skeleton
-    lines_ink = ink & ~fill
-    grp, _ = ndimage.label(ndimage.binary_dilation(lines_ink, iterations=int(0.012 * S) + 2))
-    near_fill = ndimage.binary_dilation(fill, iterations=int(0.012 * S))
-    groups = {}
-    for w, p in walk_skeleton(skeletonize(lines_ink), dist):
-        P = np.array(p)
-        xi, yi = np.clip(P[:, 0].astype(int), 0, W - 1), np.clip(P[:, 1].astype(int), 0, H - 1)
-        if near_fill[yi, xi].all():
-            continue                            # an edge of a solid area: its outline covers it
-        groups.setdefault(int(grp[yi[0], xi[0]]), []).append((w, p))
-
-    brush = max(14.0, 0.03 * S)
-    units = [("lines", st) for st in groups.values()]
-    for k in range(1, int(parts.max()) + 1):
-        m = parts == k
-        if m.sum() < brush * brush:
+    # ---- colour groups: split solid areas by colour (blue clothes, black hair, grey glass...) ----
+    key = (rgb // 40) @ np.array([10000, 100, 1])
+    core = ndimage.binary_erosion(fill, iterations=2)
+    groups_lab = np.zeros((H, W), int); n_lab = 0
+    for kv in np.unique(key[core]):
+        m = core & (key == kv)
+        if m.sum() < (0.02 * S) ** 2:
             continue
-        ys, xs = np.nonzero(m)
-        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-        mm = m[y0:y1, x0:x1]
-        outline = []
-        for cnt in find_contours(np.pad(mm, 1).astype(float), .5):
-            if len(cnt) > 12:
-                outline.append((max(8.0, 0.012 * S), rdp([(c[1] + x0 - 1, c[0] + y0 - 1) for c in cnt], 1.5)))
-        units.append(("solid", (outline, [(brush * 1.25, h) for h in hatch(mm, np.array([x0, y0]), brush)])))
+        lab, n = ndimage.label(m)
+        groups_lab[lab > 0] = lab[lab > 0] + n_lab; n_lab += n
+    if n_lab:   # edge pixels and stray colours join their nearest group
+        _, (iy, ix) = ndimage.distance_transform_edt(groups_lab == 0, return_indices=True)
+        groups_lab = np.where(fill, groups_lab[iy, ix], 0)
+    parts = []
+    for k in range(1, n_lab + 1):
+        m = groups_lab == k
+        if m.sum() < 30:
+            continue
+        c = np.median(rgb[m & core] if (m & core).any() else rgb[m], axis=0)
+        parts.append((m, "#%02x%02x%02x" % tuple(int(v) for v in c)))
 
-    # draw part by part: top part first, then always the nearest unfinished part; finish it, move on
-    def ends_of(u):
-        kind, d = u
-        sts = d if kind == "lines" else d[0] + d[1]
-        return np.array([q for _, p in sts for q in (p[0], p[-1])], float)
-    ends = [ends_of(u) for u in units]
-    pos, done, strokes = None, [False] * len(units), []
-    for _ in range(len(units)):
-        if pos is None:
-            k = min(range(len(units)), key=lambda i: ends[i][:, 1].min())
-            pos = tuple(ends[k][np.argmin(ends[k][:, 1])])
-        else:
-            k = min((i for i in range(len(units)) if not done[i]),
-                    key=lambda i: np.hypot(ends[i][:, 0] - pos[0], ends[i][:, 1] - pos[1]).min())
-        done[k] = True
-        kind, d = units[k]
-        if kind == "lines":
-            seq, pos = chain(d, pos)
-        else:
-            out_seq, pos = chain(d[0], pos)      # outline the part
-            fill_seq, pos = chain(d[1], pos)     # then colour it in
-            seq = out_seq + fill_seq
-        strokes += [{"w": round(w * a.scale, 1), "p": [round(float(v) * a.scale, 1) for q in p for v in q]} for w, p in seq]
+    # ---- the ink layer: the picture as black line art (lines + outlines of every solid shape) ----
+    line_px = ink & ~fill
+    edge_w = max(2, int(0.0025 * S))
+    edges_px = np.zeros((H, W), bool)
+    for m, _ in parts:
+        edges_px |= m & ~ndimage.binary_erosion(m, iterations=edge_w)
+    ink_layer = np.zeros((H, W, 4), np.uint8)
+    ink_layer[line_px, :3] = rgb[line_px]
+    ink_layer[edges_px, :3] = (31, 35, 40)
+    ink_layer[line_px | edges_px, 3] = 255
+    ink_path = a.out[:-len(".strokes.json")] + ".ink.png" if a.out.endswith(".strokes.json") else a.out + ".ink.png"
+    Image.fromarray(ink_layer, "RGBA").save(ink_path)
+    ink_any = line_px | edges_px
 
-    # make sure the drawing ends complete: any ink the brush missed gets clean-up strokes at the end
-    def covered(sts):
+    def pack(w, p, c=None):
+        d = {"w": round(w * a.scale, 1), "p": [round(float(v) * a.scale, 1) for q in p for v in q]}
+        if c: d["c"] = c
+        return d
+
+    def covered(sts, scale=a.scale):
         cov = Image.new("L", (W, H), 0); cd = ImageDraw.Draw(cov)
         for st in sts:
-            P = [(st["p"][i] / a.scale, st["p"][i + 1] / a.scale) for i in range(0, len(st["p"]), 2)]
-            r = st["w"] / a.scale / 2
-            if len(P) > 1: cd.line(P, fill=255, width=max(1, int(st["w"] / a.scale)), joint="curve")
+            P = [(st["p"][i] / scale, st["p"][i + 1] / scale) for i in range(0, len(st["p"]), 2)]
+            r = st["w"] / scale / 2
+            if len(P) > 1: cd.line(P, fill=255, width=max(1, int(st["w"] / scale)), joint="curve")
             for q in (P[0], P[-1]): cd.ellipse([q[0] - r, q[1] - r, q[0] + r, q[1] + r], fill=255)
         return np.asarray(cov) > 0
-    miss = ink & ~covered(strokes)
-    miss = ndimage.binary_opening(miss) | (miss & (dist > 1.5))
+
+    # ---- 1. sketch: a light, loose pencil outline of the whole figure, erased later ----
+    blob = ndimage.binary_fill_holes(ndimage.binary_closing(ink | fill, iterations=int(0.02 * S) + 1))
+    blob_lab, nb = ndimage.label(blob)
+    sketch = []
+    rng = np.random.default_rng(7)
+    for k in range(1, nb + 1):
+        m = blob_lab == k
+        if m.sum() < (0.05 * S) ** 2:
+            continue
+        for cnt in find_contours(np.pad(m, 1).astype(float), .5):
+            if len(cnt) < 40:
+                continue
+            pts = rdp([(c[1] - 1, c[0] - 1) for c in cnt], 0.012 * S)
+            for jit in (0.006, 0.0):            # two loose passes, like a pencil going round twice
+                sketch.append([(x + rng.normal(0, jit * S), y + rng.normal(0, jit * S)) for x, y in pts])
+    sketch_seq, pos = chain([(0, p) for p in sketch], (0, 0))
+
+    # ---- 2. ink: every line and every outline, one continuous pass from the top ----
+    near_fill = ndimage.binary_dilation(fill, iterations=int(0.012 * S))
+    ink_strokes = []
+    for w, p in walk_skeleton(skeletonize(line_px), dist):
+        P = np.array(p)
+        xi, yi = np.clip(P[:, 0].astype(int), 0, W - 1), np.clip(P[:, 1].astype(int), 0, H - 1)
+        if not near_fill[yi, xi].all():
+            ink_strokes.append((w, p))
+    outline_w = max(8.0, 0.012 * S)
+    for m, _ in parts:
+        for cnt in find_contours(np.pad(m, 1).astype(float), .5):
+            if len(cnt) > 12:
+                ink_strokes.append((outline_w, rdp([(c[1] - 1, c[0] - 1) for c in cnt], 1.5)))
+    ink_seq, pos = chain(ink_strokes, pos)
+    ink_out = [pack(w, p) for w, p in ink_seq]
+    miss = ink_any & ~covered(ink_out)
+    if miss.any():                                  # clean-up so the line art always ends complete
+        extra, pos = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & ink_any), dist), pos)
+        ink_out += [pack(w + 6, p) for w, p in extra]
+
+    # ---- 3. colour: one colour group at a time (all the blue, then the black...), top group first ----
+    brush = max(14.0, 0.03 * S)
+    colour_out = []
+    by_colour = {}
+    for m, c in parts:
+        by_colour.setdefault(c, []).append(m)
+    order = sorted(by_colour, key=lambda c: min(np.nonzero(m)[0].min() for m in by_colour[c]))
+    for c in order:
+        sts = []
+        for m in by_colour[c]:
+            ys, xs = np.nonzero(m)
+            y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+            sts += [(brush * 1.25, h) for h in hatch(m[y0:y1, x0:x1], np.array([x0, y0]), brush)]
+        seq, pos = chain(sts, pos)
+        colour_out += [pack(w, p, c) for w, p in seq]
+    miss = fill & ~covered(colour_out)
+    miss = ndimage.binary_opening(miss)
     if miss.any():
-        extra, _ = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & ink), dist), pos or (0, 0))
-        strokes += [{"w": round((w + 6) * a.scale, 1), "p": [round(float(v) * a.scale, 1) for q in p for v in q]} for w, p in extra]
-        left = ink & ~covered(strokes)
-    else:
-        left = miss
-    pct = 100 * left.sum() / max(ink.sum(), 1)
+        extra, pos = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & fill), dist), pos)
+        colour_out += [pack(w + 6, p) for w, p in extra]
+
+    left = (ink_any & ~covered(ink_out)) | (ndimage.binary_opening(fill & ~covered(colour_out)))
+    pct = 100 * left.sum() / max((ink_any | fill).sum(), 1)
     if pct > 0.3:
-        print(f"WARNING {name}: {pct:.1f}% of the ink is still not reached by the marker")
+        print(f"WARNING {name}: {pct:.1f}% of the picture is still not reached by the marker")
 
-    json.dump({"w": round(W * a.scale, 1), "h": round(H * a.scale, 1), "strokes": strokes}, open(a.out, "w"))
-    tot = sum(sum(np.hypot(np.diff(s["p"][0::2]), np.diff(s["p"][1::2]))) for s in strokes)
-    print(f"{name}: {len(units)} parts, {len(strokes)} strokes, {tot:.0f} units of line")
-
+    out = {"w": round(W * a.scale, 1), "h": round(H * a.scale, 1), "inkimg": ink_path.rsplit("/", 1)[-1],
+           "sketch": {"w": round(max(3.0, 0.0035 * S) * a.scale, 1), "strokes": [pack(0, p)["p"] for _, p in sketch_seq]},
+           "ink": ink_out, "color": colour_out}
+    json.dump(out, open(a.out, "w"))
+    print(f"{name}: sketch {len(sketch_seq)}, ink {len(ink_out)}, colour {len(colour_out)} strokes in {len(order)} colour groups")
 
 if __name__ == "__main__":
     main()

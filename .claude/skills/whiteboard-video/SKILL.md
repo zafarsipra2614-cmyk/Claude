@@ -16,6 +16,7 @@ A whiteboard video is cheap to re-render and expensive to re-think. Most wasted 
 ## House style (Brandonomics)
 
 - **Blue accent on every visual.** The brand blue is `#4D96FF` (already `palette.blue` in the template config). Every scene uses `BLUE` for at least one accent: an underline, a key word, a tick, an arrow. Characters are built with `"accent": "#4D96FF"` in `peep.js`, so their clothes are blue and their head stays black.
+- **Sketch, ink, colour.** Every picture is drawn as a pencil sketch, then black line art, then colour one group at a time (`IMG` does this automatically).
 - **Characters and pictures** are detailed line art drawn with `IMG` (see `references/drawing-api.md`), not stick figures. Pictures draw fast (about 1.8 s); text is written at a readable handwriting pace (about 0.1 s per character).
 - **Men and women.** Use both across a channel: alternate the lead character's gender from video to video, and when a video has more than one character, include both. `peep.js` has a ready-made cast (`man1`-`man4`, `woman1`-`woman4`): pick one with `"cast"` and keep it for every pose of that person.
 - **No expressions that show teeth.** `peep.js` refuses those faces (Concerned, SmileBig, Explaining and others) and suggests one without teeth: Solemn or ConcernedFear for worry, Smile, Cute or CheersNM for happiness.

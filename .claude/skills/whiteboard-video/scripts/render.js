@@ -38,11 +38,13 @@ const { findChrome } = require("./chrome");
   // line-art images prepared by prep.js: assets/<name>.svg|png + <name>.strokes.json
   const assets = {}, adir = path.join(project, "assets");
   if (fs.existsSync(adir)) for (const f of fs.readdirSync(adir).filter(f => f.endsWith(".strokes.json"))) {
-    const name = f.slice(0, -13), img = fs.readdirSync(adir).find(g => g.startsWith(name + ".") && /\.(svg|png|jpe?g)$/i.test(g));
+    const name = f.slice(0, -13), img = fs.readdirSync(adir).find(g => g.startsWith(name + ".") && /\.(svg|png|jpe?g)$/i.test(g) && !/\.ink\.png$/i.test(g));
     if (!img) continue;
     const mime = img.endsWith(".svg") ? "image/svg+xml" : img.endsWith(".png") ? "image/png" : "image/jpeg";
     assets[name] = { ...JSON.parse(fs.readFileSync(path.join(adir, f), "utf8")),
       src: `data:${mime};base64,` + fs.readFileSync(path.join(adir, img)).toString("base64") };
+    const inkFile = assets[name].inkimg && path.join(adir, assets[name].inkimg);   // line-art layer for the ink stage
+    if (inkFile && fs.existsSync(inkFile)) assets[name].inkSrc = "data:image/png;base64," + fs.readFileSync(inkFile).toString("base64");
   }
   await page.evaluate(a => { window.ASSETS = a; }, assets);
   await page.addScriptTag({ path: path.join(project, "scenes.js") });
