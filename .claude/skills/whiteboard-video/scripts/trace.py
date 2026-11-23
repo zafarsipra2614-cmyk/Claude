@@ -174,6 +174,16 @@ def main():
         _, (iy, ix) = ndimage.distance_transform_edt(groups_lab == 0, return_indices=True)
         groups_lab = np.where(fill, groups_lab[iy, ix], 0)
     parts = []
+    # white fills (skin, eye whites, bulb glass): only when the art has real transparency, so a white
+    # background is never mistaken for a shape. They are painted during colouring, so nothing pops at the end.
+    alpha = np.asarray(im)[..., 3]
+    whites = None
+    if (alpha < 20).mean() > 0.05:
+        whites = ndimage.binary_opening((alpha > 200) & ~ink & ~fill, iterations=2)
+        wl, nw = ndimage.label(whites)
+        if nw:
+            keep_w = np.bincount(wl.ravel()) >= (0.02 * S) ** 2; keep_w[0] = False
+            whites = keep_w[wl]
     for k in range(1, n_lab + 1):
         m = groups_lab == k
         if m.sum() < 30:
@@ -181,12 +191,18 @@ def main():
         c = np.median(rgb[m & core] if (m & core).any() else rgb[m], axis=0)
         parts.append((m, "#%02x%02x%02x" % tuple(int(v) for v in c)))
 
+    if whites is not None and whites.any():
+        wl, nw = ndimage.label(whites)
+        for k in range(1, nw + 1):
+            parts.append((wl == k, "#ffffff"))
+
     # ---- the ink layer: the picture as black line art (lines + outlines of every solid shape) ----
     line_px = ink & ~fill
     edge_w = max(2, int(0.0025 * S))
     edges_px = np.zeros((H, W), bool)
-    for m, _ in parts:
-        edges_px |= m & ~ndimage.binary_erosion(m, iterations=edge_w)
+    for m, c in parts:
+        if c != "#ffffff":                       # white shapes already sit inside black lines
+            edges_px |= m & ~ndimage.binary_erosion(m, iterations=edge_w)
     ink_layer = np.zeros((H, W, 4), np.uint8)
     ink_layer[line_px, :3] = rgb[line_px]
     ink_layer[edges_px, :3] = (31, 35, 40)
@@ -235,7 +251,9 @@ def main():
         if not near_fill[yi, xi].all():
             ink_strokes.append((w, p))
     outline_w = max(8.0, 0.012 * S)
-    for m, _ in parts:
+    for m, col in parts:
+        if col == "#ffffff":
+            continue
         for cnt in find_contours(np.pad(m, 1).astype(float), .5):
             if len(cnt) > 12:
                 ink_strokes.append((outline_w, rdp([(c[1] - 1, c[0] - 1) for c in cnt], 1.5)))
@@ -261,14 +279,15 @@ def main():
             sts += [(brush * 1.25, h) for h in hatch(m[y0:y1, x0:x1], np.array([x0, y0]), brush)]
         seq, pos = chain(sts, pos)
         colour_out += [pack(w, p, c) for w, p in seq]
-    miss = fill & ~covered(colour_out)
+    paint = fill | (whites if whites is not None else False)
+    miss = paint & ~covered(colour_out)
     miss = ndimage.binary_opening(miss)
     if miss.any():
-        extra, pos = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & fill), dist), pos)
+        extra, pos = chain(walk_skeleton(skeletonize(ndimage.binary_dilation(miss, iterations=2) & paint), ndimage.distance_transform_edt(paint)), pos)
         colour_out += [pack(w + 6, p) for w, p in extra]
 
-    left = (ink_any & ~covered(ink_out)) | (ndimage.binary_opening(fill & ~covered(colour_out)))
-    pct = 100 * left.sum() / max((ink_any | fill).sum(), 1)
+    left = (ink_any & ~covered(ink_out)) | (ndimage.binary_opening(paint & ~covered(colour_out)))
+    pct = 100 * left.sum() / max((ink_any | paint).sum(), 1)
     if pct > 0.3:
         print(f"WARNING {name}: {pct:.1f}% of the picture is still not reached by the marker")
 

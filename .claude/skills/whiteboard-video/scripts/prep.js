@@ -39,10 +39,10 @@ const files = fs.readdirSync(dir).filter(f => /\.(svg|png|jpe?g)$/i.test(f) && !
       await page.evaluate((pw, ph) => {
         const s = document.querySelector("svg");
         s.setAttribute("width", pw); s.setAttribute("height", ph);
-        s.style.background = "#fff"; s.style.display = "block";
+        s.style.background = "transparent"; s.style.display = "block"; document.documentElement.style.background = "transparent";
       }, pw, ph);
       png = path.join(os.tmpdir(), `wbv-${name}-${process.pid}.png`);
-      await page.screenshot({ path: png });
+      await page.screenshot({ path: png, omitBackground: true });
       await page.close();
     }
     execFileSync("python3", [path.join(__dirname, "trace.py"), png, out, "--scale", String(scale), "--label", f], { stdio: "inherit" });

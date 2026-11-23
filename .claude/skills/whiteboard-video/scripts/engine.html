@@ -310,7 +310,7 @@ window.renderAt = function (t) {
       if (it.phases) {   // the pencil sketch is erased early in the colour stage; the line-art layer hands over to the finished picture
         const e = it.phases.e2 + (1 - it.phases.e2) * .45;
         it.sketchG.setAttribute('opacity', (1 - clamp((p - it.phases.e2) / Math.max(e - it.phases.e2, .01))).toFixed(3));
-        it.inkImg.setAttribute('opacity', (1 - fin).toFixed(3));
+        it.inkImg.setAttribute('opacity', fin >= 1 ? '0' : '1');
       }
     } else {
       it.rect.setAttribute('width', (p * (it.b.width + 24)).toFixed(1));
