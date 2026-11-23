@@ -6,7 +6,7 @@ function write(s, x, y, size, at, o = {}) {           // handwriting pace: ~0.08
   const d = Math.max(.5, s.length * (o.rate || .082));
   return { b: T(s, x, y, size, at, d, o), end: at + d + GAP };
 }
-function draw(name, x, y, w, at, d) { const r = IMG(name, x, y, w, at, d); r.end = at + d + GAP; return r; }
+function draw(name, x, y, w, at, d, o) { const r = IMG(name, x, y, w, at, d, o); r.end = at + d + GAP; return r; }
 function path(dstr, at, d, o) { P(dstr, at, d, o); return at + d + GAP; }
 function title(s, A) { return write(s, 960, 150, 96, A(0, 0), { rate: .09, font: TITLE_FONT }).end; }
 const warn = (x, y) => poly([[x, y - 34], [x + 32, y + 24], [x - 32, y + 24]], true, 1) + line(x, y - 12, x, y + 6, 1) + circ(x, y + 15, 2.5);
@@ -17,9 +17,9 @@ window.SCENES = {
     const t = write('The Hawthorne Effect', 960, 215, 110, c, { rate: .08, font: TITLE_FONT }); c = t.end;
     c = path(wave(t.b.x + 20, t.b.x + t.b.width - 20, 252, 6, 110), c, .25, { c: BLUE, w: 10 });
     c = draw('worker-watched', 700, 300, 420, c, 1.6).end;
-    c = draw('eye', 1180, 380, 380, c, 1.0).end;
-    c = path(line(1205, 520, 1075, 488, 2) + line(1215, 560, 1075, 560, 2), c, .3, { c: GRAY, w: 4 });
-    write('watched', 1370, 720, 64, c, { c: BLUE });
+    c = draw('eye', 1230, 380, 380, c, 1.0).end;
+    c = path(line(1225, 515, 1135, 495, 2) + line(1230, 555, 1135, 555, 2), c, .3, { c: GRAY, w: 4, label: 'sight lines' });
+    write('watched', 1420, 720, 64, c, { c: BLUE });
   },
 
   what(A) {
@@ -66,14 +66,14 @@ window.SCENES = {
     c = write('surveys', 960, 690, 60, c).end;
     c = draw('review', 1310, 350, 260, c, .8).end;
     c = write('reviews', 1440, 690, 60, c).end;
-    path(warn(600, 330) + warn(1080, 330) + warn(1590, 330), c, .4, { c: RED, fill: GOLD, fillOp: .25 });
+    path(warn(600, 292) + warn(1080, 292) + warn(1590, 292), c, .4, { c: RED, fill: GOLD, fillOp: .25, label: 'warning signs' });
   },
 
   catch(A) {
     let c = title('The Catch', A);
     c = draw('chart-flat', 200, 360, 400, c, .8).end;
-    c = draw('magnifier', 400, 290, 260, c, .7).end;
-    c = write('?', 505, 452, 120, c, { c: RED, rate: .25 }).end;
+    c = draw('magnifier', 400, 290, 260, c, .7, { over: true }).end;   // deliberately over the chart
+    c = write('?', 505, 452, 120, c, { c: RED, rate: .25, over: true }).end;   // inside the lens
     write('2011 re-analysis', 420, 800, 56, c);
     c = A(1, 0);
     c = path(icon.bubble(1320, 420, 480, 200), c, .4, { c: BLUE, w: 8, fill: BLUE, fillOp: .1 });
@@ -85,7 +85,7 @@ window.SCENES = {
   takeaway(A) {
     let c = title('Takeaway', A);
     c = draw('eye', 430, 330, 320, c, 1.0).end;
-    c = path(line(760, 440, 1060, 400, 2) + line(760, 480, 1060, 520, 2), c, .3, { c: GRAY, w: 4 });
+    c = path(line(760, 440, 1030, 405, 2) + line(760, 480, 1030, 515, 2), c, .3, { c: GRAY, w: 4, label: 'sight lines' });
     c = draw('worker-point', 1050, 290, 360, c, 1.6).end;
     const t = write('watching changes what you see', 960, 860, 72, c);
     path(wave(t.b.x + 20, t.b.x + t.b.width - 20, 902, 5, 110), t.end, .3, { c: BLUE, w: 9 });

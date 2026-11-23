@@ -138,7 +138,7 @@ function P(d, at, dur, o = {}) {
     'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, cur.g);
   const len = p.getTotalLength();
   p.style.strokeDasharray = `${len} ${len + 20}`;
-  items.push({ type: 'path', el: p, len, at, dur, color: o.c || INK, fillOp: o.fillOp ?? .3, hasFill: !!o.fill, scene: cur });
+  items.push({ type: 'path', el: p, len, at, dur, color: o.c || INK, fillOp: o.fillOp ?? .3, hasFill: !!o.fill, scene: cur, over: !!o.over, label: o.label, sw: o.w || 7 });
   return p;
 }
 function T(s, x, y, size, at, dur, o = {}) {
@@ -149,7 +149,8 @@ function T(s, x, y, size, at, dur, o = {}) {
   const b = t.getBBox(), id = 'c' + items.length;
   const r = el('rect', { x: b.x - 12, y: b.y - 30, width: 0, height: b.height + 60 }, el('clipPath', { id }, defs));
   t.setAttribute('clip-path', `url(#${id})`);
-  items.push({ type: 'text', el: t, rect: r, b, at, dur, color: o.c || INK, scene: cur, overflow: b.x < 30 || b.x + b.width > W - 30 });
+  items.push({ type: 'text', el: t, rect: r, b, at, dur, color: o.c || INK, scene: cur, overflow: b.x < 30 || b.x + b.width > W - 30,
+    over: !!o.over, font: fam, box: { x: b.x, y: y - .74 * size, w: b.width, h: .96 * size } });   // box: the letters, not the line height
   return b;
 }
 
@@ -202,10 +203,48 @@ function IMG(name, x, y, w, at, dur, o = {}) {
     el('image', { href: A.src, width: A.w, height: A.h, mask: `url(#${base})` }, g);
   }
   const full = el('image', { href: A.src, width: A.w, height: A.h, opacity: 0 }, g);
-  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur, phases, sketchG, inkImg });
+  // the drawing's real extent (from its strokes), so empty canvas around the art never counts as overlap
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const st of [...(A.ink || []), ...(A.color || []), ...(A.strokes || [])]) for (let i = 0; i < st.p.length; i += 2) {
+    x0 = Math.min(x0, st.p[i]); x1 = Math.max(x1, st.p[i]); y0 = Math.min(y0, st.p[i + 1]); y1 = Math.max(y1, st.p[i + 1]); }
+  const blue = (A.color || []).some(st => (st.c || '').toLowerCase() === BLUE.toLowerCase());
+  items.push({ type: 'img', el: g, segs, full, x, y, s, at, dur, color: o.c || INK, scene: cur, phases, sketchG, inkImg,
+    over: !!o.over, name, blue, box: { x: x + x0 * s, y: y + y0 * s, w: (x1 - x0) * s, h: (y1 - y0) * s } });
   return { x, y, width: w, height: A.h * s };
 }
 function imgSeg(it, p) { return it.segs.find(g => p <= g.t1) || it.segs[it.segs.length - 1]; }
+
+// ---------- layout and house-style check (render.js check / preview / full print these as WARN) ----------
+// Overlap: two items in a scene whose boxes cross by more than a few pixels. Allowed: anything marked { over: true }
+// (a red X over a picture, a magnifier over a chart), and text or a picture sitting fully inside a drawn frame (a card, a bubble).
+function itemBox(it) {
+  if (it.box) return it.box;
+  const b = it.el.getBBox(), h = (it.sw || 7) / 2;
+  return { x: b.x - h, y: b.y - h, w: b.width + 2 * h, h: b.height + 2 * h };
+}
+function itemName(it) {
+  if (it.type === 'text') return `text "${it.el.textContent}"`;
+  if (it.type === 'img') return `picture "${it.name}"`;
+  const b = itemBox(it); return it.label ? `drawing "${it.label}"` : `drawing at ${Math.round(b.x)},${Math.round(b.y)}`;
+}
+function layoutCheck(s, its, warn) {
+  const boxes = its.map(itemBox), inside = (a, b) => a.x >= b.x - 2 && a.y >= b.y - 2 && a.x + a.w <= b.x + b.w + 2 && a.y + a.h <= b.y + b.h + 2;
+  for (let i = 0; i < its.length; i++) for (let j = i + 1; j < its.length; j++) {
+    const A = its[i], B = its[j], a = boxes[i], b = boxes[j];
+    if (A.over || B.over) continue;
+    const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    if (ox <= 6 || oy <= 6) continue;
+    if ((A.type === 'path' && inside(b, a)) || (B.type === 'path' && inside(a, b))) continue;   // label inside its frame
+    warn.push(`${s.id}: ${itemName(A)} overlaps ${itemName(B)} (${Math.round(ox)}x${Math.round(oy)} px)`);
+  }
+  const bottom = CFG.captions === false ? H - 40 : H - 140;
+  its.forEach((it, i) => { const b = boxes[i];
+    if (b.x < 40 || b.y < 40 || b.x + b.w > W - 40) warn.push(`${s.id}: ${itemName(it)} is too close to the edge of the board`);
+    else if (b.y + b.h > bottom) warn.push(`${s.id}: ${itemName(it)} runs into the caption strip (bottom ${Math.round(b.y + b.h)} > ${bottom})`); });
+  // house style: a title in the title font, and the brand blue somewhere in every scene
+  if (!its.some(it => it.type === 'text' && it.font === TITLE_FONT)) warn.push(`${s.id}: no title in the title font (${TITLE_FONT})`);
+  if (!its.some(it => (it.color || '').toLowerCase() === BLUE.toLowerCase() || it.blue)) warn.push(`${s.id}: no blue accent (${BLUE}) in this scene`);
+}
 
 window.init = async function (tl, cfg) {
   TL = tl; CFG = cfg || {};
@@ -241,6 +280,7 @@ window.init = async function (tl, cfg) {
   defs = document.getElementById('defs');
   const root = document.getElementById('scenes');
   const warn = [];
+  if (CFG.pen !== false) warn.push('the marker is on: the house style is "pen": false (the content draws itself)');
   if (window.FONT_LIST && !(TITLE_FONT in window.FONT_LIST)) warn.push(`titleFont "${TITLE_FONT}" is not in assets/fonts/fonts.js`);
   if (window.FONT_LIST && !(FONT in window.FONT_LIST)) warn.push(`font "${FONT}" is not in assets/fonts/fonts.js: ${Object.keys(window.FONT_LIST).join(', ')}`);
   if (!window.SCENES) throw new Error('scenes.js did not define window.SCENES');
@@ -261,6 +301,7 @@ window.init = async function (tl, cfg) {
       if (it.at < s.start) warn.push(`${s.id}: item starts ${it.at.toFixed(2)}s, before the scene ${s.start.toFixed(2)}s`);
       if (it.overflow) warn.push(`${s.id}: text "${it.el.textContent}" runs off the board`);
     }
+    layoutCheck(s, items.slice(n0), warn);
   });
   items.sort((a, b) => a.at - b.at);
   return { total: TL.total, items: items.length, warn };

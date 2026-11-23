@@ -4,7 +4,8 @@
 
   node peep.js <out.svg> '{"body":"PointingUp","face":"SmileBig","hair":"Long","accessory":"GlassRound","accent":"#4D96FF"}'
   "accent" draws the body (clothes and their outlines) in that colour; the head stays black.
-  node peep.js <out.svg> '{"cast":"man2","body":"Coffee","face":"Calm","accent":"#4D96FF"}'   a ready-made person
+  node peep.js <out.svg> '{"cast":"james","body":"Coffee","face":"Calm"}'   James, the locked lead (only body and face change)
+  node peep.js <out.svg> '{"cast":"woman1","body":"Coffee","face":"Calm","accent":"#4D96FF"}'   another cast member
   node peep.js            list the cast and every body, face, hair, facial hair and accessory
 
   The SVG is cropped tightly around the figure. Then run prep.js on the project.
@@ -20,8 +21,13 @@ const TEETH = { Concerned: "Solemn or ConcernedFear", Explaining: "Smile or Awe"
   LoveGrinTeeth: "Smile", Rage: "VeryAngry", SmileBig: "Smile, Cute or CheersNM", SmileLol: "Cute or CheersNM",
   SmileTeeth: "Smile", Monster: "Suspicious", Cyclops: "Suspicious" };
 // Ready-made cast: the same person across poses. Mix men and women; alternate who leads from video to video.
+// LOCKED: James is the channel's recurring lead. His look never changes; only "body" (pose) and "face" (expression) may vary.
+const LOCKED = {
+  james: { hair: "ShortWavy", facialHair: "None", accessory: "None", accent: "#4D96FF" },
+};
 const CAST = {
-  man1: { hair: "ShortWavy" }, man2: { hair: "Short", facialHair: "Goatee" },
+  ...LOCKED,
+  man2: { hair: "Short", facialHair: "Goatee" },
   man3: { hair: "Afro", facialHair: "FullMedium" }, man4: { hair: "BaldSides", facialHair: "Full", accessory: "GlassRound" },
   woman1: { hair: "Long" }, woman2: { hair: "BunCurly", accessory: "GlassRound" },
   woman3: { hair: "MediumBangs" }, woman4: { hair: "Hijab" },
@@ -41,7 +47,12 @@ if (!out) {
 }
 let o = JSON.parse(spec || "{}");
 if (o.cast) { if (!CAST[o.cast]) { console.error(`unknown cast "${o.cast}": ${Object.keys(CAST).join(", ")}`); process.exit(1); }
-  const { cast, ...rest } = o; o = { ...CAST[cast], ...rest }; }
+  const { cast, ...rest } = o;
+  if (LOCKED[cast]) {                      // a locked character: refuse anything that would change how they look
+    const changed = Object.keys(rest).filter(k => !["body", "face"].includes(k));
+    if (changed.length) { console.error(`${cast} is locked: only "body" and "face" can change, not ${changed.join(", ")}.`); process.exit(1); }
+  }
+  o = { ...CAST[cast], ...rest }; }
 const big = { x: -1200, y: -1200, width: 3200, height: 4200 };
 if (TEETH[o.face]) { console.error(`face "${o.face}" shows teeth, which the house style does not allow. Use ${TEETH[o.face]} instead.`); process.exit(1); }
 const { accent, ...props } = o;
